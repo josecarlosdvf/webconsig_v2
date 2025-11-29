@@ -839,10 +839,10 @@ class DocumentSimilarityService:
             bytes: Embedding serializado
         """
         import numpy as np
-        from PIL import ImageFilter
+        from PIL import Image, ImageFilter
         
         # Reduz para tamanho pequeno para embedding compacto
-        small = img.resize((64, 64), resample=0)
+        small = img.resize((64, 64), resample=Image.Resampling.NEAREST)
         gray = small.convert('L')
         
         # Extrai características simples:
@@ -991,10 +991,11 @@ class DocumentSimilarityService:
                 result['message'] = f'Documento não compatível com o modelo esperado ({overall_similarity:.0%} de similaridade, mínimo: {threshold:.0%})'
         
         except Exception as e:
-            current_app.logger.error(f'Erro na validação visual: {e}')
+            current_app.logger.error(f'Erro na validação visual: {e}', exc_info=True)
             result['message'] = 'Erro ao processar validação visual'
-            # Em caso de erro, permite o upload mas registra
             result['details']['error'] = str(e)
+            # Em caso de erro técnico, não bloqueia o upload mas marca como não validado
+            result['compatible'] = None  # Indica que não foi possível validar
         
         return result
     
@@ -1009,15 +1010,25 @@ class DocumentSimilarityService:
         
         Returns:
             str: Caminho relativo do arquivo salvo
+        
+        Raises:
+            ValueError: Se extensão do arquivo não for permitida
         """
         import uuid
         from werkzeug.utils import secure_filename
         
+        # Extensões permitidas para modelos de referência
+        ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf', 'gif', 'webp'}
+        
         upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
         
-        # Define caminho
+        # Define caminho e valida extensão
         original_name = secure_filename(file.filename)
-        extension = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else 'bin'
+        extension = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+        
+        if extension not in ALLOWED_EXTENSIONS:
+            raise ValueError(f'Extensão não permitida: {extension}. Use: {", ".join(ALLOWED_EXTENSIONS)}')
+        
         stored_name = f'ref_model_{uuid.uuid4().hex}.{extension}'
         relative_path = os.path.join('reference_models', category.code)
         

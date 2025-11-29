@@ -1,0 +1,224 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Modais{% endblock %}
+
+{% block content %}
+
+<div class="py-4">
+    <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+        <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('home_blueprint.dashboard') }}">
+                    <i class="fas fa-home"></i>
+                </a>
+            </li>
+            <li class="breadcrumb-item"><a href="#">Componentes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modais</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+        <div>
+            <h2 class="h4">Modais</h2>
+            <p class="mb-0">Exemplos de diálogos modais disponíveis</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow components-section">
+            <div class="card-body">
+                
+                <div class="row mb-4">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Modal Padrão</h2>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalDefault">
+                            <i class="fas fa-window-restore me-2"></i> Abrir Modal
+                        </button>
+                        
+                        <div class="modal fade" id="modalDefault" tabindex="-1" role="dialog" aria-labelledby="modalDefaultLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="modalDefaultLabel">Título do Modal</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Este é um exemplo de modal padrão. Você pode usar modais para exibir informações, formulários ou confirmações.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                        <button type="button" class="btn btn-primary">Salvar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Modal de Confirmação</h2>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalConfirm">
+                            <i class="fas fa-trash me-2"></i> Excluir Item
+                        </button>
+                        
+                        <div class="modal fade" id="modalConfirm" tabindex="-1" role="dialog" aria-labelledby="modalConfirmLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header border-0">
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body text-center py-4">
+                                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-4"></i>
+                                        <h4>Confirmar Exclusão</h4>
+                                        <p class="text-gray-600">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+                                    </div>
+                                    <div class="modal-footer border-0 justify-content-center">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="button" class="btn btn-danger">Sim, Excluir</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Modal de Sucesso</h2>
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalSuccess">
+                            <i class="fas fa-check me-2"></i> Mostrar Sucesso
+                        </button>
+                        
+                        <div class="modal fade" id="modalSuccess" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-body text-center py-5">
+                                        <i class="fas fa-check-circle fa-4x text-success mb-4"></i>
+                                        <h4>Operação Concluída!</h4>
+                                        <p class="text-gray-600 mb-4">O registro foi salvo com sucesso.</p>
+                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Entendido</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Modal de Formulário</h2>
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalForm">
+                            <i class="fas fa-plus me-2"></i> Novo Registro
+                        </button>
+                        
+                        <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Novo Registro</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form>
+                                            <div class="mb-3">
+                                                <label class="form-label">Nome</label>
+                                                <input type="text" class="form-control" placeholder="Digite o nome">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">E-mail</label>
+                                                <input type="email" class="form-control" placeholder="Digite o e-mail">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Descrição</label>
+                                                <textarea class="form-control" rows="3" placeholder="Digite uma descrição"></textarea>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="button" class="btn btn-info">Salvar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 col-md-4">
+                        <h2 class="h5 mb-3">Modal Pequeno</h2>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalSmall">
+                            Modal Pequeno
+                        </button>
+                        
+                        <div class="modal fade" id="modalSmall" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Modal Pequeno</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Este é um modal de tamanho pequeno.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-4">
+                        <h2 class="h5 mb-3">Modal Grande</h2>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalLarge">
+                            Modal Grande
+                        </button>
+                        
+                        <div class="modal fade" id="modalLarge" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Modal Grande</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Este é um modal de tamanho grande, ideal para formulários mais complexos ou exibição de conteúdo mais extenso.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-4">
+                        <h2 class="h5 mb-3">Modal Extra Grande</h2>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalXL">
+                            Modal XL
+                        </button>
+                        
+                        <div class="modal fade" id="modalXL" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Modal Extra Grande</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Este é um modal extra grande, ideal para exibir tabelas, gráficos ou conteúdo que necessita de mais espaço.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

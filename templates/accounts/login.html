@@ -1,0 +1,112 @@
+{% extends "layouts/base-fullscreen.html" %}
+
+{% block title %}Entrar{% endblock %}
+
+{% block content %}
+
+<div class="page page-center">
+    <div class="container container-tight py-4">
+        
+        <!-- Logo -->
+        <div class="text-center mb-4">
+            <a href="." class="navbar-brand navbar-brand-autodark">
+                <img src="{{ system.logo_url }}" alt="{{ system.name }}" height="48">
+            </a>
+        </div>
+        
+        <!-- Card de Login -->
+        <div class="card card-md">
+            <div class="card-body">
+                <h2 class="h2 text-center mb-4">{{ system.name }}</h2>
+                
+                <!-- Mensagem de Erro -->
+                {% if msg %}
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                    <div class="d-flex">
+                        <div>
+                            <i class="ti ti-alert-circle me-2"></i>
+                        </div>
+                        <div>{{ msg }}</div>
+                    </div>
+                    <a class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></a>
+                </div>
+                {% endif %}
+                
+                <!-- Formulário de Login -->
+                <form method="POST" action="" autocomplete="off">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Usuário -->
+                    <div class="mb-3">
+                        <label class="form-label">Usuário ou E-mail</label>
+                        <div class="input-icon">
+                            <span class="input-icon-addon">
+                                <i class="ti ti-user"></i>
+                            </span>
+                            {{ form.username(class="form-control", placeholder="seu.usuario") }}
+                        </div>
+                        {% if form.username.errors %}
+                            {% for error in form.username.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Senha -->
+                    <div class="mb-2">
+                        <label class="form-label">
+                            Senha
+                            <span class="form-label-description">
+                                <a href="#">Esqueci minha senha</a>
+                            </span>
+                        </label>
+                        <div class="input-icon">
+                            <span class="input-icon-addon">
+                                <i class="ti ti-lock"></i>
+                            </span>
+                            {{ form.password(class="form-control", type="password", placeholder="Sua senha") }}
+                        </div>
+                        {% if form.password.errors %}
+                            {% for error in form.password.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Lembrar-me -->
+                    <div class="mb-2">
+                        <label class="form-check">
+                            {{ form.remember(class="form-check-input") }}
+                            <span class="form-check-label">Lembrar-me neste dispositivo</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Botão Login -->
+                    <div class="form-footer">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="ti ti-login me-2"></i> Entrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Link para Registro (apenas se permitido) -->
+        {% if system.allow_registration %}
+        <div class="text-center text-muted mt-3">
+            Não tem uma conta? <a href="{{ url_for('authentication_blueprint.register') }}" tabindex="-1">Criar conta</a>
+        </div>
+        {% endif %}
+        
+        <!-- Rodapé -->
+        <div class="text-center text-muted mt-4">
+            <small>
+                {{ system.company_name }} - Desenvolvido por 
+                <a href="{{ system.developer_url }}" target="_blank" class="link-muted">{{ system.developer_name }}</a>
+            </small>
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}

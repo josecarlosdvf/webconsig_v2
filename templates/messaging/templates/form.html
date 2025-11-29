@@ -1,0 +1,215 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ 'Editar' if template else 'Novo' }} Template{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">Mensageria / Templates</div>
+        <h2 class="page-title">
+            <i class="ti ti-template me-2"></i>
+            {{ 'Editar' if template else 'Novo' }} Template
+        </h2>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row">
+            <div class="col-lg-8">
+                <form method="POST" class="card">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="card-header">
+                        <h3 class="card-title">Dados do Template</h3>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label required">Nome do Template</label>
+                            {{ form.name(class="form-control", placeholder="Ex: Boas-vindas, Cobrança, Lembrete") }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Categoria</label>
+                            {{ form.category(class="form-select") }}
+                            {% if form.category.errors %}
+                            <div class="invalid-feedback d-block">{{ form.category.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">Conteúdo da Mensagem</label>
+                            {{ form.body(class="form-control", rows="6", id="templateBody", placeholder="Digite sua mensagem aqui...") }}
+                            {% if form.body.errors %}
+                            <div class="invalid-feedback d-block">{{ form.body.errors[0] }}</div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="form-hint">
+                                    Use {variavel} para criar campos dinâmicos. Ex: Olá {nome}!
+                                </small>
+                                <small class="text-muted"><span id="charCount">0</span>/4096</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="variablesContainer">
+                            <label class="form-label">Variáveis Detectadas</label>
+                            <div id="variablesList" class="d-flex flex-wrap gap-1">
+                                <span class="text-muted">Nenhuma variável detectada</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-check">
+                                {{ form.is_active(class="form-check-input") }}
+                                <span class="form-check-label">Template ativo</span>
+                            </label>
+                            <small class="form-hint d-block">Templates inativos não aparecem na lista de envio</small>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer d-flex">
+                        <a href="{{ url_for('messaging_blueprint.templates_list') }}" class="btn btn-ghost-secondary">
+                            <i class="ti ti-arrow-left me-1"></i> Voltar
+                        </a>
+                        <div class="ms-auto">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="ti ti-device-floppy me-1"></i> 
+                                {{ 'Atualizar' if template else 'Criar' }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Preview -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-eye me-2"></i> Preview
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="bg-success-lt rounded p-3">
+                            <p class="mb-0" id="previewText" style="white-space: pre-wrap;">
+                                Digite uma mensagem para ver o preview...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Variáveis Disponíveis -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-variable me-2"></i> Variáveis Comuns
+                        </h3>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action var-item" data-var="{nome}">
+                            <code>{nome}</code> - Nome do destinatário
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action var-item" data-var="{empresa}">
+                            <code>{empresa}</code> - Nome da empresa
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action var-item" data-var="{data}">
+                            <code>{data}</code> - Data atual
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action var-item" data-var="{hora}">
+                            <code>{hora}</code> - Hora atual
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action var-item" data-var="{valor}">
+                            <code>{valor}</code> - Valor monetário
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Dicas -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-bulb me-2"></i> Dicas
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="ti ti-check text-success me-1"></i>
+                                Use variáveis para personalizar mensagens
+                            </li>
+                            <li class="mb-2">
+                                <i class="ti ti-check text-success me-1"></i>
+                                Clique nas variáveis para inserir
+                            </li>
+                            <li class="mb-2">
+                                <i class="ti ti-check text-success me-1"></i>
+                                Categorize seus templates
+                            </li>
+                            <li>
+                                <i class="ti ti-check text-success me-1"></i>
+                                Teste antes de usar em massa
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateBody = document.getElementById('templateBody');
+    const charCount = document.getElementById('charCount');
+    const previewText = document.getElementById('previewText');
+    const variablesList = document.getElementById('variablesList');
+    
+    function updatePreview() {
+        const text = templateBody.value;
+        charCount.textContent = text.length;
+        previewText.textContent = text || 'Digite uma mensagem para ver o preview...';
+        
+        // Detectar variáveis
+        const varRegex = /\{([^}]+)\}/g;
+        const variables = [];
+        let match;
+        while ((match = varRegex.exec(text)) !== null) {
+            if (!variables.includes(match[1])) {
+                variables.push(match[1]);
+            }
+        }
+        
+        if (variables.length > 0) {
+            variablesList.innerHTML = variables.map(v => 
+                `<span class="badge bg-blue-lt">{${v}}</span>`
+            ).join('');
+        } else {
+            variablesList.innerHTML = '<span class="text-muted">Nenhuma variável detectada</span>';
+        }
+    }
+    
+    templateBody.addEventListener('input', updatePreview);
+    updatePreview();
+    
+    // Inserir variáveis
+    document.querySelectorAll('.var-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const variable = this.dataset.var;
+            const pos = templateBody.selectionStart;
+            const text = templateBody.value;
+            templateBody.value = text.slice(0, pos) + variable + text.slice(pos);
+            templateBody.focus();
+            templateBody.setSelectionRange(pos + variable.length, pos + variable.length);
+            updatePreview();
+        });
+    });
+});
+</script>
+{% endblock %}

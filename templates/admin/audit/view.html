@@ -1,0 +1,107 @@
+{% extends "layouts/base.html" %}
+{% block title %}Log de Auditoria{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <a href="{{ url_for('admin_blueprint.audit_list') }}" class="btn btn-ghost-secondary me-3">
+                    <i class="ti ti-arrow-left"></i>
+                </a>
+            </div>
+            <div class="col">
+                <div class="page-pretitle">Auditoria</div>
+                <h2 class="page-title">Detalhes do Log #{{ log.id }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <span class="badge bg-{{ 'green' if 'created' in log.action else 'blue' if 'updated' in log.action else 'red' if 'deleted' in log.action else 'azure' }} me-2">
+                                {{ log.action }}
+                            </span>
+                            {{ log.table_name or 'Sistema' }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-4">ID:</dt>
+                            <dd class="col-8">#{{ log.id }}</dd>
+                            
+                            <dt class="col-4">Data/Hora:</dt>
+                            <dd class="col-8">{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</dd>
+                            
+                            <dt class="col-4">Usuário:</dt>
+                            <dd class="col-8">
+                                {% if log.user %}
+                                <a href="{{ url_for('admin_blueprint.users_view', user_id=log.user_id) }}">
+                                    {{ log.user.full_name }} (@{{ log.user.username }})
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Sistema</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-4">Ação:</dt>
+                            <dd class="col-8">
+                                <code>{{ log.action }}</code>
+                            </dd>
+                            
+                            <dt class="col-4">Tabela:</dt>
+                            <dd class="col-8">{{ log.table_name or '-' }}</dd>
+                            
+                            <dt class="col-4">ID do Registro:</dt>
+                            <dd class="col-8">{{ log.record_id or '-' }}</dd>
+                            
+                            <dt class="col-4">Descrição:</dt>
+                            <dd class="col-8">{{ log.description or '-' }}</dd>
+                            
+                            <dt class="col-4">IP:</dt>
+                            <dd class="col-8">{{ log.ip_address or '-' }}</dd>
+                            
+                            <dt class="col-4">User Agent:</dt>
+                            <dd class="col-8">
+                                <small class="text-muted">{{ log.user_agent or '-' }}</small>
+                            </dd>
+                        </dl>
+                        
+                        {% if log.old_data or log.new_data %}
+                        <hr>
+                        <h4>Dados</h4>
+                        
+                        <div class="row">
+                            {% if log.old_data %}
+                            <div class="col-md-6">
+                                <h5 class="text-danger">Dados Anteriores</h5>
+                                <pre class="bg-light p-3 rounded"><code>{{ log.old_data | tojson(indent=2) }}</code></pre>
+                            </div>
+                            {% endif %}
+                            
+                            {% if log.new_data %}
+                            <div class="col-md-6">
+                                <h5 class="text-success">Dados Novos</h5>
+                                <pre class="bg-light p-3 rounded"><code>{{ log.new_data | tojson(indent=2) }}</code></pre>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('admin_blueprint.audit_list') }}" class="btn btn-ghost-secondary">
+                            <i class="ti ti-arrow-left me-2"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

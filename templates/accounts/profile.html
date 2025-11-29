@@ -1,0 +1,184 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Conta</div>
+                <h2 class="page-title">Meu Perfil</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page Body -->
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row">
+            
+            <!-- Coluna Principal -->
+            <div class="col-lg-8">
+                
+                <!-- Informações Pessoais -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Informações Pessoais</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('authentication_blueprint.profile') }}">
+                            {{ form.hidden_tag() }}
+                            <input type="hidden" name="save_profile" value="1">
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nome</label>
+                                    {{ form.first_name(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sobrenome</label>
+                                    {{ form.last_name(class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">E-mail</label>
+                                    <input type="email" class="form-control" value="{{ current_user.email }}" readonly disabled>
+                                    <small class="form-hint">O e-mail não pode ser alterado</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Telefone</label>
+                                    {{ form.phone(class="form-control", placeholder="+55 (00) 00000-0000") }}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Sobre mim</label>
+                                    {{ form.bio(class="form-control", rows="3") }}
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ti ti-device-floppy me-2"></i> Salvar Alterações
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Alterar Senha -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Alterar Senha</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('authentication_blueprint.change_password') }}">
+                            {{ password_form.hidden_tag() }}
+                            
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Senha Atual</label>
+                                    {{ password_form.current_password(class="form-control", type="password", placeholder="Digite sua senha atual") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Nova Senha</label>
+                                    {{ password_form.new_password(class="form-control", type="password", placeholder="Nova senha") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Confirmar Nova Senha</label>
+                                    {{ password_form.confirm_password(class="form-control", type="password", placeholder="Confirme a nova senha") }}
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="ti ti-key me-2"></i> Alterar Senha
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Coluna Lateral -->
+            <div class="col-lg-4">
+                
+                <!-- Card do Perfil -->
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <span class="avatar avatar-xl mb-3" 
+                              style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})">
+                        </span>
+                        <h3 class="m-0 mb-1">{{ current_user.full_name }}</h3>
+                        <div class="text-muted">@{{ current_user.username }}</div>
+                        <div class="text-muted mb-3">{{ current_user.email }}</div>
+                        
+                        <button class="btn btn-outline-primary btn-sm" disabled>
+                            <i class="ti ti-camera me-1"></i> Alterar Foto
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Informações da Conta -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Informações da Conta</h3>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar bg-primary-lt">
+                                        <i class="ti ti-calendar"></i>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Membro desde</div>
+                                    <div>{{ current_user.created_at.strftime('%d/%m/%Y') if current_user.created_at else '-' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar bg-azure-lt">
+                                        <i class="ti ti-clock"></i>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Último acesso</div>
+                                    <div>{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') if current_user.last_login else 'Primeiro acesso' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar bg-green-lt">
+                                        <i class="ti ti-user-check"></i>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Tipo de conta</div>
+                                    <div>
+                                        {% if current_user.is_admin %}
+                                        <span class="badge bg-red">Administrador</span>
+                                        {% else %}
+                                        <span class="badge bg-blue">Usuário</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+{% endblock %}

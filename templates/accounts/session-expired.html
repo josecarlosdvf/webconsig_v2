@@ -1,0 +1,50 @@
+{% extends "layouts/base-fullscreen.html" %}
+
+{% block title %}Sessão Expirada{% endblock %}
+
+{% block content %}
+
+<main>
+    <!-- Section -->
+    <section class="vh-100 d-flex align-items-center justify-content-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6 text-center">
+                    
+                    <!-- Ícone de alerta -->
+                    <div class="mb-4">
+                        <span class="text-warning">
+                            <i class="fas fa-exclamation-triangle fa-5x"></i>
+                        </span>
+                    </div>
+                    
+                    <!-- Título -->
+                    <h1 class="fw-bolder text-warning mb-4">
+                        Sessão Encerrada
+                    </h1>
+                    
+                    <!-- Descrição -->
+                    <p class="lead mb-4">
+                        Sua sessão foi encerrada porque o mesmo usuário realizou login em outro dispositivo.
+                    </p>
+                    
+                    <p class="text-muted mb-4">
+                        Por motivos de segurança, apenas uma sessão ativa é permitida por usuário.
+                        Se você não reconhece este acesso, considere alterar sua senha.
+                    </p>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('authentication_blueprint.login') }}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Fazer Login Novamente
+                        </a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+{% endblock %}

@@ -1,0 +1,92 @@
+<header class="navbar navbar-expand-md d-none d-lg-flex" hx-boost="true" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML show:window:top" hx-push-url="true">
+    <div class="container-xl">
+        
+        <!-- Busca -->
+        <div class="navbar-nav flex-row order-md-last">
+            
+            <!-- Theme Switcher -->
+            <div class="nav-item d-flex me-3">
+                <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleTheme()" title="Ativar tema escuro" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                    <i class="ti ti-moon fs-2"></i>
+                </a>
+                <a href="javascript:void(0)" class="nav-link px-0 hide-theme-light" onclick="toggleTheme()" title="Ativar tema claro" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                    <i class="ti ti-sun fs-2"></i>
+                </a>
+            </div>
+            
+            <!-- Notificações -->
+            <div class="nav-item dropdown d-flex me-3">
+                <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" tabindex="-1" aria-label="Mostrar notificações">
+                    <i class="ti ti-bell fs-2"></i>
+                    <span class="badge bg-red badge-notification badge-blink"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Notificações</h3>
+                        </div>
+                        <div class="list-group list-group-flush list-group-hoverable">
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="status-dot status-dot-animated bg-green d-block"></span>
+                                    </div>
+                                    <div class="col text-truncate">
+                                        <a href="#" class="text-body d-block">Sistema</a>
+                                        <div class="d-block text-muted text-truncate mt-n1">
+                                            Bem-vindo ao {{ system.name }}!
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <span class="text-muted small">agora</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center">
+                            <a href="#" class="text-muted">Ver todas as notificações</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Menu do Usuário -->
+            <div class="nav-item dropdown">
+                <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Abrir menu do usuário">
+                    <span class="avatar avatar-sm" style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})"></span>
+                    <div class="d-none d-xl-block ps-2">
+                        <div>{{ current_user.display_name }}</div>
+                        <div class="mt-1 small text-muted">{{ current_user.email }}</div>
+                    </div>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                    <a href="{{ url_for('authentication_blueprint.profile') }}" class="dropdown-item">
+                        <i class="ti ti-user me-2"></i> Meu Perfil
+                    </a>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('settings_blueprint.index') }}" class="dropdown-item">
+                        <i class="ti ti-settings me-2"></i> Configurações
+                    </a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ url_for('authentication_blueprint.logout') }}" class="dropdown-item text-danger" hx-boost="false">
+                        <i class="ti ti-logout me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Busca Central -->
+        <div class="collapse navbar-collapse" id="navbar-menu">
+            <form class="d-flex" autocomplete="off">
+                <div class="input-icon">
+                    <span class="input-icon-addon">
+                        <i class="ti ti-search"></i>
+                    </span>
+                    <input type="text" class="form-control" placeholder="Buscar..." aria-label="Buscar no sistema">
+                </div>
+            </form>
+        </div>
+        
+    </div>
+</header>

@@ -1,0 +1,188 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <a href="{{ url_for('admin_blueprint.groups_list') }}" class="btn btn-ghost-secondary me-3">
+                    <i class="ti ti-arrow-left"></i>
+                </a>
+            </div>
+            <div class="col">
+                <div class="page-pretitle">Grupos</div>
+                <h2 class="page-title">
+                    {{ group.name }}
+                    {% if group.is_system %}
+                    <span class="badge bg-blue-lt ms-2">Sistema</span>
+                    {% endif %}
+                </h2>
+            </div>
+            <div class="col-auto ms-auto">
+                {% if perm.can('groups.edit') and not group.is_system %}
+                <a href="{{ url_for('admin_blueprint.groups_edit', group_id=group.id) }}" class="btn btn-primary">
+                    <i class="ti ti-edit me-2"></i> Editar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <!-- Informações do Grupo -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Informações</h3>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-5">Nome:</dt>
+                            <dd class="col-7">{{ group.name }}</dd>
+                            
+                            <dt class="col-5">Descrição:</dt>
+                            <dd class="col-7">{{ group.description or '-' }}</dd>
+                            
+                            <dt class="col-5">Status:</dt>
+                            <dd class="col-7">
+                                {% if group.is_active %}
+                                <span class="badge bg-green">Ativo</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-5">Tipo:</dt>
+                            <dd class="col-7">
+                                {% if group.is_system %}
+                                <span class="badge bg-blue">Sistema</span>
+                                {% else %}
+                                <span class="badge bg-azure">Personalizado</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-5">Membros:</dt>
+                            <dd class="col-7">{{ group.member_count }}</dd>
+                            
+                            <dt class="col-5">Permissões:</dt>
+                            <dd class="col-7">{{ group.permissions|length }}</dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                <!-- Permissões -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Permissões</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% set perms_grouped = {} %}
+                            {% for perm in group.permissions %}
+                                {% if perm.module not in perms_grouped %}
+                                    {% set _ = perms_grouped.update({perm.module: []}) %}
+                                {% endif %}
+                                {% set _ = perms_grouped[perm.module].append(perm) %}
+                            {% endfor %}
+                            
+                            {% for module, perms in perms_grouped.items() %}
+                            <div class="list-group-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="ti ti-folder me-2 text-muted"></i>
+                                    <strong class="text-capitalize">{{ module }}</strong>
+                                    <span class="badge bg-primary ms-auto">{{ perms|length }}</span>
+                                </div>
+                                <div class="mt-2">
+                                    {% for p in perms %}
+                                    <span class="badge bg-azure-lt me-1 mb-1">{{ p.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="list-group-item text-muted text-center">
+                                Nenhuma permissão atribuída
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Membros -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Membros do Grupo</h3>
+                        <div class="card-actions">
+                            <span class="badge bg-primary">{{ members|length }} membros</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>E-mail</th>
+                                    <th>Status</th>
+                                    <th>Último Login</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in members %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex py-1 align-items-center">
+                                            <span class="avatar me-2"
+                                                  {% if user.avatar_url %}style="background-image: url({{ user.avatar_url }})"{% endif %}>
+                                                {% if not user.avatar_url %}{{ user.display_name[:2]|upper }}{% endif %}
+                                            </span>
+                                            <div class="flex-fill">
+                                                <div class="font-weight-medium">{{ user.full_name }}</div>
+                                                <div class="text-muted">@{{ user.username }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted">{{ user.email }}</td>
+                                    <td>
+                                        {% if user.is_locked %}
+                                        <span class="badge bg-red">Bloqueado</span>
+                                        {% elif user.is_active %}
+                                        <span class="badge bg-green">Ativo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">
+                                        {% if user.last_login %}
+                                        {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin_blueprint.users_view', user_id=user.id) }}" class="btn btn-sm btn-ghost-primary">
+                                            Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        Nenhum membro neste grupo
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

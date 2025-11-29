@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    
+    <!-- Título -->
+    <title>{% block title %}{% endblock %} | {{ system.name }}</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="{{ system.description }}">
+    <meta name="author" content="{{ system.developer_name }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ system.favicon_url }}">
+    
+    <!-- Tabler Core CSS (CDN) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    
+    <!-- Sweet Alert 2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Notyf -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    
+    <!-- Custom Tabler CSS -->
+    <link rel="stylesheet" href="{{ ASSETS_ROOT }}/css/tabler.css">
+    
+    {% block stylesheets %}{% endblock %}
+    
+    <!-- Theme Script (prevents flash) -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('tabler-theme');
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
+    <style>
+        /* Esconde o body até o tema ser aplicado */
+        html:not([data-bs-theme]) body { visibility: hidden; }
+    </style>
+</head>
+
+<body class="d-flex flex-column">
+    <div class="page page-center">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Tabler Core JS (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+    
+    <!-- Vendor JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    
+    <!-- Custom Tabler JS -->
+    <script src="{{ ASSETS_ROOT }}/js/tabler.js"></script>
+    
+    <!-- Sistema de Notificações -->
+    <script src="{{ ASSETS_ROOT }}/js/notifications.js"></script>
+    
+    {% block javascripts %}{% endblock %}
+
+</body>
+</html>

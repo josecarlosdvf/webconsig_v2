@@ -1,0 +1,369 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Arquivos{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">Gestão</div>
+        <div class="d-flex align-items-center">
+            <h2 class="page-title">
+                Arquivos
+            </h2>
+            <div class="ms-auto btn-list">
+                {% if user_has_permission('files.upload') or current_user.is_admin %}
+                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="ti ti-upload me-1"></i> Upload
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <!-- Filtros -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('files_blueprint.index') }}">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="search" class="form-control" placeholder="Nome do arquivo..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Categoria</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">Todas</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if request.args.get('category_id') == category.id|string %}selected{% endif %}>{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tipo</label>
+                            <select name="file_type" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="image" {% if request.args.get('file_type') == 'image' %}selected{% endif %}>Imagens</option>
+                                <option value="document" {% if request.args.get('file_type') == 'document' %}selected{% endif %}>Documentos</option>
+                                <option value="spreadsheet" {% if request.args.get('file_type') == 'spreadsheet' %}selected{% endif %}>Planilhas</option>
+                                <option value="pdf" {% if request.args.get('file_type') == 'pdf' %}selected{% endif %}>PDF</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="ti ti-search me-1"></i> Filtrar
+                            </button>
+                            <a href="{{ url_for('files_blueprint.index') }}" class="btn btn-outline-secondary">
+                                <i class="ti ti-x"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Ações em lote -->
+        <div class="card mb-3" id="bulkActions" style="display: none;">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3"><span id="selectedCount">0</span> arquivo(s) selecionado(s)</span>
+                    <div class="btn-list">
+                        <a href="#" class="btn btn-sm btn-outline-primary" id="bulkDownload">
+                            <i class="ti ti-download me-1"></i> Baixar
+                        </a>
+                        {% if user_has_permission('files.delete') or current_user.is_admin %}
+                        <a href="#" class="btn btn-sm btn-outline-danger" id="bulkDelete">
+                            <i class="ti ti-trash me-1"></i> Excluir
+                        </a>
+                        {% endif %}
+                    </div>
+                    <a href="#" class="ms-auto text-muted" id="clearSelection">Limpar seleção</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Arquivos -->
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter table-hover card-table">
+                    <thead>
+                        <tr>
+                            <th class="w-1">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>Arquivo</th>
+                            <th>Categoria</th>
+                            <th>Tamanho</th>
+                            <th>Enviado por</th>
+                            <th>Data</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input file-checkbox" value="{{ file.id }}">
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if file.is_image %}
+                                    <span class="avatar avatar-sm me-2" style="background-image: url({{ url_for('files_blueprint.thumbnail', file_id=file.id) }})"></span>
+                                    {% else %}
+                                    <span class="avatar avatar-sm bg-{{ file.icon_color }}-lt me-2">
+                                        <i class="ti ti-{{ file.icon }} text-{{ file.icon_color }}"></i>
+                                    </span>
+                                    {% endif %}
+                                    <div>
+                                        <div class="font-weight-medium">{{ file.original_filename }}</div>
+                                        <div class="text-muted small">{{ file.mime_type }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if file.category %}
+                                <span class="badge bg-azure-lt">{{ file.category.name }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ file.size_formatted }}</td>
+                            <td>{{ file.uploaded_by.username if file.uploaded_by else '-' }}</td>
+                            <td>{{ file.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-ghost-secondary btn-icon" data-bs-toggle="dropdown">
+                                        <i class="ti ti-dots-vertical"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end">
+                                        {% if file.is_image %}
+                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#previewModal{{ file.id }}">
+                                            <i class="ti ti-eye me-2"></i> Visualizar
+                                        </a>
+                                        <a class="dropdown-item" href="{{ url_for('files_blueprint.edit_image', id=file.id) }}">
+                                            <i class="ti ti-photo-edit me-2"></i> Editar Imagem
+                                        </a>
+                                        {% endif %}
+                                        <a class="dropdown-item" href="{{ url_for('files_blueprint.download', file_id=file.id) }}">
+                                            <i class="ti ti-download me-2"></i> Baixar
+                                        </a>
+                                        {% if user_has_permission('files.delete') or current_user.is_admin %}
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ file.id }}">
+                                            <i class="ti ti-trash me-2"></i> Excluir
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="ti ti-folder-off icon icon-lg mb-2"></i>
+                                <p class="mb-0">Nenhum arquivo encontrado</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if pagination and pagination.pages > 1 %}
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">
+                    Mostrando <span>{{ pagination.per_page * (pagination.page - 1) + 1 }}</span> a 
+                    <span>{{ [pagination.per_page * pagination.page, pagination.total]|min }}</span> de 
+                    <span>{{ pagination.total }}</span> registros
+                </p>
+                <ul class="pagination m-0 ms-auto">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('files_blueprint.index', page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}">
+                            <i class="ti ti-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                        {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('files_blueprint.index', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('files_blueprint.index', page=pagination.next_num, **request.args) if pagination.has_next else '#' }}">
+                            <i class="ti ti-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal modal-blur fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload de Arquivo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('files_blueprint.upload') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Arquivo</label>
+                        <input type="file" name="file" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoria</label>
+                        <select name="category_id" class="form-select">
+                            <option value="">Nenhuma</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Descrição do arquivo..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modals -->
+{% for file in files if file.is_image %}
+<div class="modal modal-blur fade" id="previewModal{{ file.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ file.original_filename }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="{{ url_for('files_blueprint.view', file_id=file.id) }}" class="img-fluid" alt="{{ file.original_filename }}">
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('files_blueprint.download', file_id=file.id) }}" class="btn btn-primary">
+                    <i class="ti ti-download me-1"></i> Baixar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Delete Modals -->
+{% for file in files %}
+<div class="modal modal-blur fade" id="deleteModal{{ file.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o arquivo <strong>{{ file.original_filename }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('files_blueprint.delete', file_id=file.id) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="ti ti-trash me-1"></i> Excluir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    const clearSelection = document.getElementById('clearSelection');
+    const bulkDownload = document.getElementById('bulkDownload');
+    const bulkDelete = document.getElementById('bulkDelete');
+    
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('.file-checkbox:checked');
+        const count = selected.length;
+        selectedCount.textContent = count;
+        bulkActions.style.display = count > 0 ? 'block' : 'none';
+    }
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateBulkActions();
+    });
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkActions);
+    });
+    
+    clearSelection.addEventListener('click', function(e) {
+        e.preventDefault();
+        selectAll.checked = false;
+        checkboxes.forEach(cb => cb.checked = false);
+        updateBulkActions();
+    });
+    
+    bulkDownload.addEventListener('click', function(e) {
+        e.preventDefault();
+        const selected = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(cb => cb.value);
+        if (selected.length > 0) {
+            window.location.href = '{{ url_for("files_blueprint.bulk_download") }}?ids=' + selected.join(',');
+        }
+    });
+    
+    if (bulkDelete) {
+        bulkDelete.addEventListener('click', function(e) {
+            e.preventDefault();
+            const selected = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(cb => cb.value);
+            if (selected.length > 0) {
+                Notify.confirm('Excluir Arquivos', 'Tem certeza que deseja excluir ' + selected.length + ' arquivo(s)?', 'Sim, excluir', 'Cancelar')
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '{{ url_for("files_blueprint.bulk_delete") }}';
+                        
+                        const csrf = document.createElement('input');
+                        csrf.type = 'hidden';
+                        csrf.name = 'csrf_token';
+                        csrf.value = '{{ csrf_token() }}';
+                        form.appendChild(csrf);
+                        
+                        const ids = document.createElement('input');
+                        ids.type = 'hidden';
+                        ids.name = 'ids';
+                        ids.value = selected.join(',');
+                        form.appendChild(ids);
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+        });
+    }
+});
+</script>
+{% endblock %}

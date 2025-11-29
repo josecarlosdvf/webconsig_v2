@@ -1,0 +1,114 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Botões{% endblock %}
+
+{% block content %}
+
+<div class="py-4">
+    <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+        <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('home_blueprint.dashboard') }}">
+                    <i class="fas fa-home"></i>
+                </a>
+            </li>
+            <li class="breadcrumb-item"><a href="#">Componentes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Botões</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+        <div>
+            <h2 class="h4">Botões</h2>
+            <p class="mb-0">Exemplos de estilos de botões disponíveis</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow components-section">
+            <div class="card-body">     
+                <div class="row mb-4 mb-lg-5">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Botões Primários</h2>
+                        <button type="button" class="btn btn-primary mb-2">Primário</button>
+                        <button type="button" class="btn btn-secondary mb-2">Secundário</button>
+                        <button type="button" class="btn btn-tertiary mb-2">Terciário</button>
+                        <button type="button" class="btn btn-info mb-2">Info</button>
+                        <button type="button" class="btn btn-success mb-2">Sucesso</button>
+                        <button type="button" class="btn btn-warning mb-2">Alerta</button>
+                        <button type="button" class="btn btn-danger mb-2">Perigo</button>
+                        <button type="button" class="btn btn-dark mb-2">Escuro</button>
+                        <button type="button" class="btn btn-gray mb-2">Cinza</button>
+                        <button type="button" class="btn btn-light mb-2">Claro</button>
+                        <button type="button" class="btn btn-white mb-2">Branco</button>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Botões Outline</h2>
+                        <button type="button" class="btn btn-outline-primary mb-2">Primário</button>
+                        <button type="button" class="btn btn-outline-secondary mb-2">Secundário</button>
+                        <button type="button" class="btn btn-outline-tertiary mb-2">Terciário</button>
+                        <button type="button" class="btn btn-outline-info mb-2">Info</button>
+                        <button type="button" class="btn btn-outline-success mb-2">Sucesso</button>
+                        <button type="button" class="btn btn-outline-warning mb-2">Alerta</button>
+                        <button type="button" class="btn btn-outline-danger mb-2">Perigo</button>
+                        <button type="button" class="btn btn-outline-dark mb-2">Escuro</button>
+                        <button type="button" class="btn btn-outline-gray mb-2">Cinza</button>
+                    </div>
+                </div>
+                
+                <div class="row mb-4 mb-lg-5">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Tamanhos de Botões</h2>
+                        <button type="button" class="btn btn-sm btn-primary mb-2">Pequeno</button>
+                        <button type="button" class="btn btn-primary mb-2">Padrão</button>
+                        <button type="button" class="btn btn-lg btn-primary mb-2">Grande</button>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Botões com Ícones</h2>
+                        <button type="button" class="btn btn-primary mb-2">
+                            <i class="fas fa-download me-2"></i> Download
+                        </button>
+                        <button type="button" class="btn btn-success mb-2">
+                            <i class="fas fa-save me-2"></i> Salvar
+                        </button>
+                        <button type="button" class="btn btn-danger mb-2">
+                            <i class="fas fa-trash me-2"></i> Excluir
+                        </button>
+                        <button type="button" class="btn btn-info mb-2">
+                            <i class="fas fa-edit me-2"></i> Editar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Botões de Loading</h2>
+                        <button class="btn btn-primary mb-2" type="button" disabled>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span class="visually-hidden">Carregando...</span>
+                        </button>
+                        <button class="btn btn-primary mb-2" type="button" disabled>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Carregando...
+                        </button>
+                        <button class="btn btn-secondary mb-2" type="button" disabled>
+                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                            Aguarde...
+                        </button>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Grupo de Botões</h2>
+                        <div class="btn-group mb-2" role="group" aria-label="Grupo de botões">
+                            <button type="button" class="btn btn-primary">Esquerda</button>
+                            <button type="button" class="btn btn-primary">Centro</button>
+                            <button type="button" class="btn btn-primary">Direita</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

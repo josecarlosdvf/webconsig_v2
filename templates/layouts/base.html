@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    
+    <!-- Título -->
+    <title>{% block title %}{% endblock %} | {{ system.name }}</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="{{ system.description }}">
+    <meta name="author" content="{{ system.developer_name }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ system.favicon_url }}">
+    
+    <!-- Tabler Core CSS (CDN) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    
+    <!-- Sweet Alert 2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Notyf -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    
+    <!-- NProgress (loading indicator) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css">
+    
+    <!-- Custom Tabler CSS -->
+    <link rel="stylesheet" href="{{ ASSETS_ROOT }}/css/tabler.css">
+    
+    {% block stylesheets %}{% endblock %}
+    
+    <style>
+        /* HTMX Loading Indicator */
+        #nprogress .bar {
+            background: var(--tblr-primary) !important;
+            height: 3px !important;
+        }
+        #nprogress .spinner {
+            display: none !important;
+        }
+        /* Transição suave do conteúdo */
+        #main-content {
+            transition: opacity 0.15s ease-in-out;
+        }
+        #main-content.htmx-request {
+            opacity: 0.5;
+        }
+    </style>
+    
+    <!-- Theme Script (prevents flash) -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('tabler-theme');
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
+    <style>
+        /* Esconde o body até o tema ser aplicado */
+        html:not([data-bs-theme]) body { visibility: hidden; }
+    </style>
+</head>
+
+<body class="layout-fluid">
+    <div class="page">
+        
+        <!-- Sidebar -->
+        {% include 'includes/sidebar.html' %}
+        
+        <!-- Navbar Overlay (Mobile) -->
+        <div class="navbar-overlay" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"></div>
+        
+        <div class="page-wrapper">
+            
+            <!-- Top Navbar -->
+            {% include 'includes/navigation.html' %}
+            
+            <!-- Page Content -->
+            <div class="page-body">
+                <div class="container-xl" id="main-content">
+                    
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    <div class="d-flex">
+                                        <div>
+                                            {% if category == 'success' %}
+                                            <i class="ti ti-check icon alert-icon"></i>
+                                            {% elif category == 'error' or category == 'danger' %}
+                                            <i class="ti ti-alert-circle icon alert-icon"></i>
+                                            {% elif category == 'warning' %}
+                                            <i class="ti ti-alert-triangle icon alert-icon"></i>
+                                            {% else %}
+                                            <i class="ti ti-info-circle icon alert-icon"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>{{ message }}</div>
+                                    </div>
+                                    <a class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></a>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {% block content %}{% endblock %}
+                    
+                    <!-- Page Title Data (para HTMX) -->
+                    <div id="page-title-data" data-title="{% block page_title %}{% endblock %}" style="display:none;"></div>
+                    
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            {% include 'includes/footer.html' %}
+            
+        </div>
+    </div>
+
+    <!-- Tabler Core JS (CDN) - já inclui Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+    
+    <!-- HTMX para navegação dinâmica -->
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.10"></script>
+    
+    <!-- NProgress -->
+    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+    
+    <!-- Vendor JS via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    
+    <!-- HTMX Configuration -->
+    <script>
+        // Configura HTMX
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            // Adiciona CSRF token em todas as requisições
+            evt.detail.headers['X-CSRFToken'] = '{{ csrf_token() }}';
+        });
+        
+        // Loading indicator com NProgress
+        NProgress.configure({ showSpinner: false, minimum: 0.1 });
+        
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            NProgress.start();
+        });
+        
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            NProgress.done();
+        });
+        
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            NProgress.done();
+        });
+        
+        // Atualiza a classe 'active' na sidebar após navegação HTMX
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            // Obtém o path atual
+            var path = window.location.pathname;
+            
+            // Remove 'active' de todos os items
+            document.querySelectorAll('#sidebar-menu .nav-item').forEach(function(item) {
+                item.classList.remove('active');
+            });
+            
+            // Adiciona 'active' ao item correspondente
+            document.querySelectorAll('#sidebar-menu .nav-link').forEach(function(link) {
+                if (link.getAttribute('href') === path) {
+                    link.closest('.nav-item').classList.add('active');
+                    
+                    // Se está dentro de um dropdown, ativa o pai também
+                    var parentDropdown = link.closest('.nav-item.dropdown');
+                    if (parentDropdown) {
+                        parentDropdown.classList.add('active');
+                    }
+                }
+            });
+            
+            // Re-inicializa tooltips após swap
+            if (window.bootstrap) {
+                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+                    new bootstrap.Tooltip(el);
+                });
+            }
+            
+            // Atualiza título da página
+            var titleEl = document.querySelector('#page-title-data');
+            if (titleEl && titleEl.dataset.title) {
+                document.title = titleEl.dataset.title + ' | {{ system.name }}';
+            }
+            
+            // Scroll para o topo do conteúdo
+            document.getElementById('main-content').scrollTop = 0;
+            window.scrollTo(0, 0);
+        });
+        
+        // Trata erros de autenticação
+        document.body.addEventListener('htmx:beforeOnLoad', function(evt) {
+            if (evt.detail.xhr.status === 401 || evt.detail.xhr.status === 403) {
+                // Redireciona para login se não autenticado
+                window.location.href = '{{ url_for("authentication_blueprint.login") }}';
+            }
+        });
+    </script>
+    
+    <!-- Custom Tabler JS -->
+    <script src="{{ ASSETS_ROOT }}/js/tabler.js"></script>
+    
+    <!-- Sistema de Notificações -->
+    <script src="{{ ASSETS_ROOT }}/js/notifications.js"></script>
+    
+    {% block javascripts %}{% endblock %}
+
+</body>
+</html>

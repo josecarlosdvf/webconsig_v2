@@ -1,0 +1,309 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">RH / Equipes</div>
+        <div class="d-flex align-items-center">
+            <h2 class="page-title">
+                {{ team.name }}
+            </h2>
+            <div class="ms-auto btn-list">
+                {% if user_has_permission('hr.edit') or current_user.is_admin %}
+                <a href="{{ url_for('hr_blueprint.team_edit', team_id=team.id) }}" class="btn btn-primary">
+                    <i class="ti ti-edit me-1"></i> Editar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Card Principal -->
+                <div class="card mb-3">
+                    <div class="card-body text-center py-4">
+                        <span class="avatar avatar-xl mb-3 bg-{{ 'azure' if team.team_type == 'team' else 'purple' }}-lt">
+                            <i class="ti ti-{{ 'users' if team.team_type == 'team' else 'building' }} icon-lg text-{{ 'azure' if team.team_type == 'team' else 'purple' }}"></i>
+                        </span>
+                        <h3 class="mb-0">{{ team.name }}</h3>
+                        <p class="text-muted mb-3">
+                            <span class="badge bg-{{ 'azure' if team.team_type == 'team' else 'purple' }}-lt">
+                                {{ 'Equipe Interna' if team.team_type == 'team' else 'Corban' }}
+                            </span>
+                        </p>
+                        
+                        {% if team.is_active %}
+                        <span class="badge bg-success-lt">
+                            <i class="ti ti-check me-1"></i> Ativa
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger-lt">
+                            <i class="ti ti-x me-1"></i> Inativa
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-body border-top">
+                        {% if team.code %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-5 text-muted">Código</div>
+                            <div class="col-7">{{ team.code }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-5 text-muted">Membros</div>
+                            <div class="col-7">{{ team.members|length }}</div>
+                        </div>
+                        {% if team.leader %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-5 text-muted">Líder</div>
+                            <div class="col-7">
+                                <a href="{{ url_for('hr_blueprint.employee_view', employee_id=team.leader.id) }}">{{ team.leader.full_name }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if team.parent %}
+                        <div class="row g-2">
+                            <div class="col-5 text-muted">Equipe Superior</div>
+                            <div class="col-7">
+                                <a href="{{ url_for('hr_blueprint.team_view', team_id=team.parent.id) }}">{{ team.parent.name }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Contato -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-phone me-2"></i> Contato
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {% if team.email or team.phone or team.whatsapp %}
+                        {% if team.email %}
+                        <div class="mb-2">
+                            <i class="ti ti-mail me-2 text-muted"></i>
+                            <a href="mailto:{{ team.email }}">{{ team.email }}</a>
+                        </div>
+                        {% endif %}
+                        {% if team.phone %}
+                        <div class="mb-2">
+                            <i class="ti ti-phone me-2 text-muted"></i>
+                            <a href="tel:{{ team.phone }}">{{ team.phone }}</a>
+                        </div>
+                        {% endif %}
+                        {% if team.whatsapp %}
+                        <div>
+                            <i class="ti ti-brand-whatsapp me-2 text-muted"></i>
+                            <a href="https://wa.me/55{{ team.whatsapp|replace('(', '')|replace(')', '')|replace(' ', '')|replace('-', '') }}" target="_blank">{{ team.whatsapp }}</a>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <p class="text-muted mb-0">Nenhum contato informado</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Dados do Corban -->
+                {% if team.team_type == 'corban' %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-building me-2"></i> Dados do Corban
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {% if team.cnpj %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-4 text-muted">CNPJ</div>
+                            <div class="col-8">{{ team.cnpj }}</div>
+                        </div>
+                        {% endif %}
+                        {% if team.company_name %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-4 text-muted">Razão Social</div>
+                            <div class="col-8">{{ team.company_name }}</div>
+                        </div>
+                        {% endif %}
+                        {% if team.state_registration %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-4 text-muted">IE</div>
+                            <div class="col-8">{{ team.state_registration }}</div>
+                        </div>
+                        {% endif %}
+                        {% if team.commission_rate %}
+                        <div class="row g-2">
+                            <div class="col-4 text-muted">Comissão</div>
+                            <div class="col-8">{{ "%.2f"|format(team.commission_rate) }}%</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Conteúdo Principal -->
+            <div class="col-lg-8">
+                <!-- Descrição -->
+                {% if team.description %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-info-circle me-2"></i> Descrição
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ team.description }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Endereço -->
+                {% if team.street %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-map-pin me-2"></i> Endereço
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">
+                            {{ team.street }}{% if team.number %}, {{ team.number }}{% endif %}
+                            {% if team.complement %} - {{ team.complement }}{% endif %}<br>
+                            {% if team.neighborhood %}{{ team.neighborhood }} - {% endif %}
+                            {{ team.city }}/{{ team.state }}<br>
+                            CEP: {{ team.zip_code }}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Membros -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex">
+                        <h3 class="card-title">
+                            <i class="ti ti-users me-2"></i> Membros da Equipe
+                        </h3>
+                        <span class="badge bg-primary ms-auto">{{ team.members|length }}</span>
+                    </div>
+                    {% if team.members %}
+                    <div class="list-group list-group-flush">
+                        {% for member in team.members %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar" style="background-image: url({{ member.photo_url or url_for('static', filename='assets/img/team/profile-picture-3.jpg') }})"></span>
+                                </div>
+                                <div class="col">
+                                    <a href="{{ url_for('hr_blueprint.employee_view', employee_id=member.id) }}" class="text-reset">
+                                        {{ member.full_name }}
+                                    </a>
+                                    {% if member.id == team.leader_id %}
+                                    <span class="badge bg-yellow-lt ms-2">Líder</span>
+                                    {% endif %}
+                                    <div class="text-muted small">{{ member.position or 'Cargo não definido' }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    {% if member.is_active %}
+                                    <span class="badge bg-success-lt">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger-lt">Inativo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="card-body text-center text-muted py-4">
+                        <i class="ti ti-users icon icon-lg mb-2"></i>
+                        <p class="mb-0">Nenhum membro nesta equipe</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Sub-equipes -->
+                {% if team.children %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex">
+                        <h3 class="card-title">
+                            <i class="ti ti-hierarchy me-2"></i> Sub-equipes
+                        </h3>
+                        <span class="badge bg-primary ms-auto">{{ team.children|length }}</span>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for child in team.children %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar bg-{{ 'azure' if child.team_type == 'team' else 'purple' }}-lt">
+                                        <i class="ti ti-{{ 'users' if child.team_type == 'team' else 'building' }}"></i>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <a href="{{ url_for('hr_blueprint.team_view', team_id=child.id) }}" class="text-reset">
+                                        {{ child.name }}
+                                    </a>
+                                    <div class="text-muted small">{{ child.members|length }} membro(s)</div>
+                                </div>
+                                <div class="col-auto">
+                                    {% if child.is_active %}
+                                    <span class="badge bg-success-lt">Ativa</span>
+                                    {% else %}
+                                    <span class="badge bg-danger-lt">Inativa</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Observações -->
+                {% if team.notes %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-notes me-2"></i> Observações
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ team.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Metadados -->
+                <div class="card">
+                    <div class="card-body text-muted small">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <i class="ti ti-calendar-plus me-1"></i>
+                                Cadastrada em {{ team.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                                {% if team.created_by %}por {{ team.created_by.username }}{% endif %}
+                            </div>
+                            {% if team.updated_at and team.updated_at != team.created_at %}
+                            <div class="col-md-6 text-md-end">
+                                <i class="ti ti-calendar-event me-1"></i>
+                                Atualizada em {{ team.updated_at.strftime('%d/%m/%Y às %H:%M') }}
+                                {% if team.updated_by %}por {{ team.updated_by.username }}{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

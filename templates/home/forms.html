@@ -1,0 +1,164 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Formulários{% endblock %}
+
+{% block content %}
+
+<div class="py-4">
+    <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+        <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('home_blueprint.dashboard') }}">
+                    <i class="fas fa-home"></i>
+                </a>
+            </li>
+            <li class="breadcrumb-item"><a href="#">Componentes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Formulários</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+        <div>
+            <h2 class="h4">Formulários</h2>
+            <p class="mb-0">Exemplos de campos de formulário disponíveis</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow components-section">
+            <div class="card-body">
+                
+                <div class="row mb-4">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Campos de Texto</h2>
+                        <div class="mb-3">
+                            <label for="exampleInputText" class="form-label">Campo de texto</label>
+                            <input type="text" class="form-control" id="exampleInputText" placeholder="Digite aqui...">
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleInputEmail" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="exampleInputEmail" placeholder="nome@exemplo.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleInputPassword" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="exampleInputPassword" placeholder="Senha">
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleInputDisabled" class="form-label">Campo desabilitado</label>
+                            <input type="text" class="form-control" id="exampleInputDisabled" placeholder="Campo desabilitado" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Área de Texto e Select</h2>
+                        <div class="mb-3">
+                            <label for="exampleTextarea" class="form-label">Área de texto</label>
+                            <textarea class="form-control" id="exampleTextarea" rows="4" placeholder="Digite sua mensagem..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleSelect" class="form-label">Selecione uma opção</label>
+                            <select class="form-select" id="exampleSelect">
+                                <option selected>Selecione...</option>
+                                <option value="1">Opção 1</option>
+                                <option value="2">Opção 2</option>
+                                <option value="3">Opção 3</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exampleSelectMultiple" class="form-label">Seleção múltipla</label>
+                            <select class="form-select" id="exampleSelectMultiple" multiple>
+                                <option value="1">Opção 1</option>
+                                <option value="2">Opção 2</option>
+                                <option value="3">Opção 3</option>
+                                <option value="4">Opção 4</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Checkboxes e Radios</h2>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" value="" id="checkDefault">
+                            <label class="form-check-label" for="checkDefault">Checkbox padrão</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" value="" id="checkChecked" checked>
+                            <label class="form-check-label" for="checkChecked">Checkbox marcado</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" value="" id="checkDisabled" disabled>
+                            <label class="form-check-label" for="checkDisabled">Checkbox desabilitado</label>
+                        </div>
+                        <hr>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="radioExample" id="radio1" value="option1" checked>
+                            <label class="form-check-label" for="radio1">Opção 1</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="radioExample" id="radio2" value="option2">
+                            <label class="form-check-label" for="radio2">Opção 2</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Switches</h2>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="switchDefault">
+                            <label class="form-check-label" for="switchDefault">Switch padrão</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="switchChecked" checked>
+                            <label class="form-check-label" for="switchChecked">Switch ativado</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="switchDisabled" disabled>
+                            <label class="form-check-label" for="switchDisabled">Switch desabilitado</label>
+                        </div>
+                        <hr>
+                        <h2 class="h5 mb-3">Range</h2>
+                        <label for="customRange" class="form-label">Valor do range</label>
+                        <input type="range" class="form-range" id="customRange">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Campos com Validação</h2>
+                        <div class="mb-3">
+                            <label for="validInput" class="form-label">Campo válido</label>
+                            <input type="text" class="form-control is-valid" id="validInput" value="Válido">
+                            <div class="valid-feedback">Muito bem!</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="invalidInput" class="form-label">Campo inválido</label>
+                            <input type="text" class="form-control is-invalid" id="invalidInput" value="Inválido">
+                            <div class="invalid-feedback">Por favor, corrija este campo.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <h2 class="h5 mb-3">Input Groups</h2>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" placeholder="Usuário">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" placeholder="0,00">
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="Pesquisar...">
+                            <button class="btn btn-primary" type="button"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

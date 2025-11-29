@@ -1,0 +1,62 @@
+{% extends "settings/index.html" %}
+
+{% block settings_content %}
+<div class="card border-0 shadow mb-4">
+    <div class="card-header border-bottom">
+        <h3 class="h5 mb-0"><i class="fas fa-shield-alt me-2"></i> Segurança</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <h5 class="mb-3">Sessão e Autenticação</h5>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="session_timeout">Tempo de Sessão (segundos)</label>
+                    {{ form.session_timeout(class="form-control", type="number", min="300", max="86400") }}
+                    <small class="text-muted">Tempo de inatividade até a sessão expirar</small>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="max_login_attempts">Tentativas de Login</label>
+                    {{ form.max_login_attempts(class="form-control", type="number", min="1", max="10") }}
+                    <small class="text-muted">Máximo de tentativas antes de bloquear</small>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="password_min_length">Tamanho Mínimo da Senha</label>
+                    {{ form.password_min_length(class="form-control", type="number", min="6", max="20") }}
+                    <small class="text-muted">Número mínimo de caracteres</small>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <h5 class="mb-3">Modo Manutenção</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        {{ form.maintenance_mode(class="form-check-input") }}
+                        <label class="form-check-label" for="maintenance_mode">Ativar Modo Manutenção</label>
+                    </div>
+                    <small class="text-muted">Bloqueia o acesso de usuários comuns ao sistema</small>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Atenção:</strong> O modo manutenção bloqueia o acesso de todos os usuários, exceto administradores.
+            </div>
+            
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i> Salvar Configurações
+                </button>
+                <a href="{{ url_for('settings_blueprint.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Voltar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

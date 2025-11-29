@@ -1,0 +1,166 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ 'Novo Grupo' if is_new else 'Editar ' + group.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <a href="{{ url_for('admin_blueprint.groups_list') }}" class="btn btn-ghost-secondary me-3">
+                    <i class="ti ti-arrow-left"></i>
+                </a>
+            </div>
+            <div class="col">
+                <div class="page-pretitle">Administração / Grupos</div>
+                <h2 class="page-title">{{ 'Novo Grupo' if is_new else 'Editar Grupo' }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <form method="post" class="card">
+            {{ form.hidden_tag() }}
+            
+            <div class="card-header">
+                <h3 class="card-title">
+                    {% if is_new %}
+                    <i class="ti ti-users-group me-2"></i> Dados do Novo Grupo
+                    {% else %}
+                    <i class="ti ti-edit me-2"></i> Editar: {{ group.name }}
+                    {% endif %}
+                </h3>
+            </div>
+            
+            <div class="card-body">
+                <div class="row">
+                    <!-- Informações Básicas -->
+                    <div class="col-lg-4">
+                        <h4 class="mb-3">Informações do Grupo</h4>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">Nome do Grupo</label>
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% for error in form.name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            {{ form.description(class="form-control", rows="3") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-check">
+                                {{ form.is_active(class="form-check-input") }}
+                                <span class="form-check-label">Grupo Ativo</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Permissões -->
+                    <div class="col-lg-8">
+                        <h4 class="mb-3">Permissões</h4>
+                        <p class="text-muted">Selecione as permissões que os membros deste grupo terão:</p>
+                        
+                        <div class="row">
+                            {% for module, perms in permissions_grouped.items() %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header py-2">
+                                        <h4 class="card-title mb-0 text-capitalize">
+                                            <i class="ti ti-folder me-2"></i>
+                                            {{ module }}
+                                        </h4>
+                                        <div class="card-actions">
+                                            <a href="#" class="btn btn-link btn-sm" 
+                                               onclick="event.preventDefault(); toggleModulePerms('{{ module }}', true)">
+                                                Todos
+                                            </a>
+                                            |
+                                            <a href="#" class="btn btn-link btn-sm" 
+                                               onclick="event.preventDefault(); toggleModulePerms('{{ module }}', false)">
+                                                Nenhum
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        {% for perm in perms %}
+                                        <label class="form-check mb-1">
+                                            <input type="checkbox" 
+                                                   class="form-check-input perm-checkbox perm-{{ module }}" 
+                                                   name="permissions" 
+                                                   value="{{ perm.id }}"
+                                                   {% if perm.id in (form.permissions.data or []) %}checked{% endif %}>
+                                            <span class="form-check-label">
+                                                {{ perm.name }}
+                                                {% if perm.description %}
+                                                <i class="ti ti-info-circle text-muted ms-1" 
+                                                   data-bs-toggle="tooltip" 
+                                                   title="{{ perm.description }}"></i>
+                                                {% endif %}
+                                            </span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if not permissions_grouped %}
+                        <div class="alert alert-info">
+                            <i class="ti ti-info-circle me-2"></i>
+                            Nenhuma permissão cadastrada no sistema. 
+                            <a href="#" onclick="confirmInitPerms(); return false;">
+                                Clique aqui para inicializar
+                            </a>.
+                        </div>
+                        <script>
+                        function confirmInitPerms() {
+                            Notify.confirm('Inicializar Permissões', 'Inicializar permissões padrão?', 'Sim', 'Cancelar')
+                            .then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = '{{ url_for("admin_blueprint.init_permissions") }}';
+                                }
+                            });
+                        }
+                        </script>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer text-end">
+                <a href="{{ url_for('admin_blueprint.groups_list') }}" class="btn btn-ghost-secondary me-2">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-device-floppy me-2"></i>
+                    {{ 'Criar Grupo' if is_new else 'Salvar Alterações' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleModulePerms(module, checked) {
+    document.querySelectorAll('.perm-' + module).forEach(function(cb) {
+        cb.checked = checked;
+    });
+}
+
+// Inicializa tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

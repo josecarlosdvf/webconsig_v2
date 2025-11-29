@@ -1,0 +1,289 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Editar Imagem{% endblock %}
+
+{% block styles %}
+<style>
+    .image-editor {
+        background: #1e1e2e;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .image-container {
+        position: relative;
+        max-height: 500px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .image-container img {
+        max-width: 100%;
+        max-height: 500px;
+        object-fit: contain;
+    }
+    .editor-toolbar {
+        background: #2d2d3a;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 15px;
+    }
+    .editor-btn {
+        background: transparent;
+        border: 1px solid #4a4a5a;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 6px;
+        margin: 0 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .editor-btn:hover {
+        background: #4a4a5a;
+    }
+    .editor-btn.active {
+        background: #206bc4;
+        border-color: #206bc4;
+    }
+    .crop-overlay {
+        position: absolute;
+        border: 2px dashed #fff;
+        background: rgba(255,255,255,0.1);
+        cursor: move;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">Arquivos</div>
+        <div class="d-flex align-items-center">
+            <h2 class="page-title">
+                Editar Imagem
+            </h2>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="image-editor">
+                            <div class="image-container" id="imageContainer">
+                                <img src="{{ url_for('files_blueprint.view', file_id=file.id) }}" id="editImage" alt="{{ file.original_filename }}">
+                            </div>
+                            
+                            <div class="editor-toolbar d-flex justify-content-center flex-wrap">
+                                <!-- Rotação -->
+                                <div class="btn-group me-3 mb-2">
+                                    <button type="button" class="editor-btn" id="rotateLeft" title="Girar 90° anti-horário">
+                                        <i class="ti ti-rotate-2"></i>
+                                    </button>
+                                    <button type="button" class="editor-btn" id="rotateRight" title="Girar 90° horário">
+                                        <i class="ti ti-rotate-clockwise-2"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Flip -->
+                                <div class="btn-group me-3 mb-2">
+                                    <button type="button" class="editor-btn" id="flipH" title="Espelhar horizontal">
+                                        <i class="ti ti-flip-horizontal"></i>
+                                    </button>
+                                    <button type="button" class="editor-btn" id="flipV" title="Espelhar vertical">
+                                        <i class="ti ti-flip-vertical"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Corte -->
+                                <div class="btn-group me-3 mb-2">
+                                    <button type="button" class="editor-btn" id="cropBtn" title="Recortar">
+                                        <i class="ti ti-crop"></i> Recortar
+                                    </button>
+                                </div>
+                                
+                                <!-- Reset -->
+                                <button type="button" class="editor-btn" id="resetBtn" title="Resetar">
+                                    <i class="ti ti-refresh"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3">
+                <!-- Info do Arquivo -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Informações</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <span class="text-muted d-block small">Nome</span>
+                            <strong>{{ file.original_filename }}</strong>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted d-block small">Tamanho Original</span>
+                            <span>{{ file.size_formatted }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted d-block small">Tipo</span>
+                            <span>{{ file.mime_type }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block small">Dimensões</span>
+                            <span id="dimensions">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Corte Predefinido -->
+                <div class="card mb-3" id="cropOptions" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Opções de Corte</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Proporção</label>
+                            <select class="form-select" id="aspectRatio">
+                                <option value="free">Livre</option>
+                                <option value="1:1">1:1 (Quadrado)</option>
+                                <option value="4:3">4:3</option>
+                                <option value="16:9">16:9</option>
+                                <option value="3:4">3:4</option>
+                                <option value="9:16">9:16</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100" id="applyCrop">
+                            <i class="ti ti-check me-1"></i> Aplicar Corte
+                        </button>
+                        <button type="button" class="btn btn-ghost-secondary w-100 mt-2" id="cancelCrop">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Ações -->
+                <div class="card">
+                    <div class="card-body">
+                        <form id="saveForm" action="{{ url_for('files_blueprint.save_edited_image', id=file.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="transformations" id="transformations" value="{}">
+                            
+                            <div class="mb-3">
+                                <label class="form-check">
+                                    <input type="radio" name="save_mode" value="overwrite" class="form-check-input" checked>
+                                    <span class="form-check-label">Substituir original</span>
+                                </label>
+                                <label class="form-check">
+                                    <input type="radio" name="save_mode" value="copy" class="form-check-input">
+                                    <span class="form-check-label">Salvar como cópia</span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                                <i class="ti ti-device-floppy me-1"></i> Salvar
+                            </button>
+                        </form>
+                        
+                        <a href="{{ url_for('files_blueprint.index') }}" class="btn btn-ghost-secondary w-100">
+                            <i class="ti ti-arrow-left me-1"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const img = document.getElementById('editImage');
+    const container = document.getElementById('imageContainer');
+    const cropOptions = document.getElementById('cropOptions');
+    
+    let transformations = {
+        rotate: 0,
+        flipH: false,
+        flipV: false,
+        crop: null
+    };
+    
+    // Atualizar dimensões
+    img.onload = function() {
+        document.getElementById('dimensions').textContent = img.naturalWidth + ' x ' + img.naturalHeight + ' px';
+    };
+    
+    function applyTransformations() {
+        let transform = '';
+        
+        if (transformations.rotate !== 0) {
+            transform += `rotate(${transformations.rotate}deg) `;
+        }
+        if (transformations.flipH) {
+            transform += 'scaleX(-1) ';
+        }
+        if (transformations.flipV) {
+            transform += 'scaleY(-1) ';
+        }
+        
+        img.style.transform = transform;
+        document.getElementById('transformations').value = JSON.stringify(transformations);
+    }
+    
+    // Rotação
+    document.getElementById('rotateLeft').addEventListener('click', function() {
+        transformations.rotate = (transformations.rotate - 90) % 360;
+        applyTransformations();
+    });
+    
+    document.getElementById('rotateRight').addEventListener('click', function() {
+        transformations.rotate = (transformations.rotate + 90) % 360;
+        applyTransformations();
+    });
+    
+    // Flip
+    document.getElementById('flipH').addEventListener('click', function() {
+        transformations.flipH = !transformations.flipH;
+        this.classList.toggle('active');
+        applyTransformations();
+    });
+    
+    document.getElementById('flipV').addEventListener('click', function() {
+        transformations.flipV = !transformations.flipV;
+        this.classList.toggle('active');
+        applyTransformations();
+    });
+    
+    // Corte
+    document.getElementById('cropBtn').addEventListener('click', function() {
+        cropOptions.style.display = 'block';
+        this.classList.add('active');
+        // TODO: Implementar interface de corte
+    });
+    
+    document.getElementById('cancelCrop').addEventListener('click', function() {
+        cropOptions.style.display = 'none';
+        document.getElementById('cropBtn').classList.remove('active');
+        transformations.crop = null;
+    });
+    
+    // Reset
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        transformations = {
+            rotate: 0,
+            flipH: false,
+            flipV: false,
+            crop: null
+        };
+        document.querySelectorAll('.editor-btn.active').forEach(btn => btn.classList.remove('active'));
+        cropOptions.style.display = 'none';
+        applyTransformations();
+    });
+});
+</script>
+{% endblock %}

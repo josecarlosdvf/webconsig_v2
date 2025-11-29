@@ -1,0 +1,228 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Mensagens WhatsApp{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">Mensageria</div>
+        <div class="d-flex align-items-center">
+            <h2 class="page-title">
+                <i class="ti ti-messages me-2"></i>
+                Mensagens
+            </h2>
+            <div class="ms-auto btn-list">
+                <a href="{{ url_for('messaging_blueprint.send_message') }}" class="btn btn-primary">
+                    <i class="ti ti-send me-1"></i> Nova Mensagem
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Histórico de Mensagens</h3>
+                <div class="card-actions">
+                    <form class="d-flex gap-2">
+                        <select name="instance" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">Todas as conexões</option>
+                            {% for inst in instances %}
+                            <option value="{{ inst.id }}" {{ 'selected' if request.args.get('instance') == inst.id|string }}>
+                                {{ inst.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <select name="status" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">Todos os status</option>
+                            <option value="sent" {{ 'selected' if request.args.get('status') == 'sent' }}>Enviadas</option>
+                            <option value="delivered" {{ 'selected' if request.args.get('status') == 'delivered' }}>Entregues</option>
+                            <option value="read" {{ 'selected' if request.args.get('status') == 'read' }}>Lidas</option>
+                            <option value="failed" {{ 'selected' if request.args.get('status') == 'failed' }}>Falhas</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="ti ti-filter"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Destinatário</th>
+                            <th>Mensagem</th>
+                            <th>Conexão</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for msg in messages_list %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar avatar-sm bg-green-lt me-2">
+                                        <i class="ti ti-user"></i>
+                                    </span>
+                                    <div>
+                                        <div class="font-weight-medium">{{ msg.recipient_name or 'Desconhecido' }}</div>
+                                        <div class="text-muted small">{{ msg.recipient_phone }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-truncate d-inline-block" style="max-width: 250px;">
+                                    {% if msg.message_type == 'text' %}
+                                    {{ msg.body|truncate(50) }}
+                                    {% elif msg.message_type == 'image' %}
+                                    <i class="ti ti-photo me-1"></i> Imagem
+                                    {% elif msg.message_type == 'document' %}
+                                    <i class="ti ti-file me-1"></i> Documento
+                                    {% elif msg.message_type == 'audio' %}
+                                    <i class="ti ti-music me-1"></i> Áudio
+                                    {% elif msg.message_type == 'video' %}
+                                    <i class="ti ti-video me-1"></i> Vídeo
+                                    {% else %}
+                                    {{ msg.body|truncate(50) }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-blue-lt">{{ msg.instance.name if msg.instance else 'N/A' }}</span>
+                            </td>
+                            <td>
+                                {% if msg.status == 'sent' %}
+                                <span class="badge bg-primary">
+                                    <i class="ti ti-check me-1"></i> Enviada
+                                </span>
+                                {% elif msg.status == 'delivered' %}
+                                <span class="badge bg-info">
+                                    <i class="ti ti-checks me-1"></i> Entregue
+                                </span>
+                                {% elif msg.status == 'read' %}
+                                <span class="badge bg-success">
+                                    <i class="ti ti-checks me-1"></i> Lida
+                                </span>
+                                {% elif msg.status == 'failed' %}
+                                <span class="badge bg-danger">
+                                    <i class="ti ti-x me-1"></i> Falha
+                                </span>
+                                {% elif msg.status == 'pending' %}
+                                <span class="badge bg-warning">
+                                    <i class="ti ti-clock me-1"></i> Pendente
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ msg.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span title="{{ msg.created_at.strftime('%d/%m/%Y %H:%M:%S') }}">
+                                    {{ msg.created_at.strftime('%d/%m %H:%M') }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-list flex-nowrap">
+                                    <a href="{{ url_for('messaging_blueprint.message_view', message_id=msg.id) }}" 
+                                       class="btn btn-icon btn-ghost-secondary btn-sm" title="Visualizar">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                    {% if msg.status == 'failed' %}
+                                    <a href="#" class="btn btn-icon btn-ghost-primary btn-sm" 
+                                       title="Reenviar" onclick="resendMessage('{{ msg.id }}')">
+                                        <i class="ti ti-refresh"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="mb-3">
+                                    <span class="avatar avatar-xl bg-secondary-lt">
+                                        <i class="ti ti-inbox icon-lg"></i>
+                                    </span>
+                                </div>
+                                <h3>Nenhuma mensagem encontrada</h3>
+                                <p class="text-muted">Comece enviando sua primeira mensagem</p>
+                                <a href="{{ url_for('messaging_blueprint.send_message') }}" class="btn btn-primary">
+                                    <i class="ti ti-send me-1"></i> Enviar Mensagem
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if messages_list and messages_list|length >= 20 %}
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">
+                    Mostrando <span>{{ messages_list|length }}</span> mensagens
+                </p>
+                <ul class="pagination m-0 ms-auto">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">
+                            <i class="ti ti-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">
+                            <i class="ti ti-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+function resendMessage(id) {
+    Notify.confirm('Reenviar Mensagem', 'Deseja reenviar esta mensagem?', 'Sim, reenviar', 'Cancelar')
+    .then((result) => {
+        if (!result.isConfirmed) return;
+        
+        fetch('/mensagens/mensagens/' + id + '/reenviar', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Notify.success('Mensagem reenviada com sucesso!');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                Notify.error(data.message || 'Erro ao reenviar');
+            }
+        })
+        .catch(error => {
+            Notify.error('Erro: ' + error.message);
+        });
+    });
+}
+</script>
+{% endblock %}

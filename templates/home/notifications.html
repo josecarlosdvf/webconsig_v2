@@ -1,0 +1,162 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Notificações{% endblock %}
+
+{% block content %}
+
+<div class="py-4">
+    <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+        <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('home_blueprint.dashboard') }}">
+                    <i class="fas fa-home"></i>
+                </a>
+            </li>
+            <li class="breadcrumb-item"><a href="#">Componentes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Notificações</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+        <div>
+            <h2 class="h4">Notificações</h2>
+            <p class="mb-0">Exemplos de alertas e notificações disponíveis</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow components-section">
+            <div class="card-body">
+                
+                <h2 class="h5 mb-4">Alertas</h2>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-primary" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Informação!</strong> Esta é uma mensagem de alerta primário.
+                        </div>
+                        
+                        <div class="alert alert-secondary" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Secundário!</strong> Esta é uma mensagem de alerta secundário.
+                        </div>
+                        
+                        <div class="alert alert-success" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Sucesso!</strong> Operação realizada com sucesso.
+                        </div>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Info!</strong> Aqui está uma informação importante.
+                        </div>
+                        
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Atenção!</strong> Verifique os dados antes de continuar.
+                        </div>
+                        
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>Erro!</strong> Ocorreu um erro ao processar sua solicitação.
+                        </div>
+                        
+                        <div class="alert alert-light" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Claro!</strong> Esta é uma mensagem de alerta claro.
+                        </div>
+                        
+                        <div class="alert alert-dark" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Escuro!</strong> Esta é uma mensagem de alerta escuro.
+                        </div>
+                    </div>
+                </div>
+                
+                <h2 class="h5 mb-4">Alertas com Fechamento</h2>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Sucesso!</strong> Você pode fechar este alerta clicando no X.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>
+                        
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Atenção!</strong> Este alerta também pode ser fechado.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>
+                        
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>Erro!</strong> Clique no X para fechar este alerta.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <h2 class="h5 mb-4">Alertas com Conteúdo Adicional</h2>
+                
+                <div class="row mb-4">
+                    <div class="col-12 col-md-6">
+                        <div class="alert alert-success" role="alert">
+                            <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i> Operação Concluída!</h4>
+                            <p>Sua solicitação foi processada com sucesso. Você pode verificar o status no painel de controle.</p>
+                            <hr>
+                            <p class="mb-0">Em caso de dúvidas, entre em contato com o suporte.</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="alert alert-danger" role="alert">
+                            <h4 class="alert-heading"><i class="fas fa-times-circle me-2"></i> Erro no Processamento</h4>
+                            <p>Não foi possível concluir sua solicitação. Por favor, verifique os dados e tente novamente.</p>
+                            <hr>
+                            <p class="mb-0">Se o problema persistir, contate o administrador do sistema.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h2 class="h5 mb-4">Toasts</h2>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-primary mb-3" id="showToastBtn">
+                            <i class="fas fa-bell me-2"></i> Mostrar Toast
+                        </button>
+                        
+                        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                            <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-header">
+                                    <i class="fas fa-bell text-primary me-2"></i>
+                                    <strong class="me-auto">Notificação</strong>
+                                    <small>Agora</small>
+                                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button>
+                                </div>
+                                <div class="toast-body">
+                                    Esta é uma notificação toast de exemplo.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('showToastBtn').addEventListener('click', function() {
+    var toastEl = document.getElementById('liveToast');
+    var toast = new bootstrap.Toast(toastEl);
+    toast.show();
+});
+</script>
+{% endblock %}

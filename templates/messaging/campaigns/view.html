@@ -1,0 +1,412 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ campaign.name }} - Campanha{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">Mensageria / Campanhas</div>
+        <div class="d-flex align-items-center">
+            <h2 class="page-title">
+                <i class="ti ti-speakerphone me-2"></i>
+                {{ campaign.name }}
+            </h2>
+            <div class="ms-auto btn-list">
+                {% if campaign.status == 'draft' %}
+                <a href="{{ url_for('messaging_blueprint.campaign_edit', campaign_id=campaign.id) }}" class="btn btn-outline-primary">
+                    <i class="ti ti-pencil me-1"></i> Editar
+                </a>
+                <button type="button" class="btn btn-success" onclick="startCampaign()">
+                    <i class="ti ti-player-play me-1"></i> Iniciar
+                </button>
+                {% elif campaign.status == 'running' %}
+                <button type="button" class="btn btn-warning" onclick="pauseCampaign()">
+                    <i class="ti ti-player-pause me-1"></i> Pausar
+                </button>
+                {% elif campaign.status == 'paused' %}
+                <button type="button" class="btn btn-success" onclick="resumeCampaign()">
+                    <i class="ti ti-player-play me-1"></i> Continuar
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Status Card -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="avatar avatar-xl bg-purple-lt">
+                                    <i class="ti ti-speakerphone icon-lg"></i>
+                                </span>
+                            </div>
+                            <div class="col">
+                                <h3 class="mb-0">{{ campaign.name }}</h3>
+                                {% if campaign.description %}
+                                <div class="text-muted">{{ campaign.description }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-auto">
+                                {% if campaign.status == 'draft' %}
+                                <span class="badge bg-secondary fs-5 px-3 py-2">
+                                    <i class="ti ti-pencil me-1"></i> Rascunho
+                                </span>
+                                {% elif campaign.status == 'scheduled' %}
+                                <span class="badge bg-warning fs-5 px-3 py-2">
+                                    <i class="ti ti-clock me-1"></i> Agendada
+                                </span>
+                                {% elif campaign.status == 'running' %}
+                                <span class="badge bg-primary fs-5 px-3 py-2">
+                                    <i class="ti ti-player-play me-1"></i> Executando
+                                </span>
+                                {% elif campaign.status == 'paused' %}
+                                <span class="badge bg-info fs-5 px-3 py-2">
+                                    <i class="ti ti-player-pause me-1"></i> Pausada
+                                </span>
+                                {% elif campaign.status == 'completed' %}
+                                <span class="badge bg-success fs-5 px-3 py-2">
+                                    <i class="ti ti-check me-1"></i> Concluída
+                                </span>
+                                {% elif campaign.status == 'cancelled' %}
+                                <span class="badge bg-danger fs-5 px-3 py-2">
+                                    <i class="ti ti-x me-1"></i> Cancelada
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progresso -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-chart-bar me-2"></i> Progresso
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {% set total = campaign.total_recipients or 1 %}
+                        {% set sent = campaign.sent_count or 0 %}
+                        {% set delivered = campaign.delivered_count or 0 %}
+                        {% set read = campaign.read_count or 0 %}
+                        {% set failed = campaign.failed_count or 0 %}
+                        {% set percent = ((sent / total) * 100)|int %}
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Progresso Geral</span>
+                                <span>{{ percent }}%</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-success" style="width: {{ (delivered / total * 100)|int }}%" 
+                                     title="Entregues: {{ delivered }}">
+                                </div>
+                                <div class="progress-bar bg-primary" style="width: {{ ((sent - delivered) / total * 100)|int }}%" 
+                                     title="Enviadas: {{ sent - delivered }}">
+                                </div>
+                                <div class="progress-bar bg-danger" style="width: {{ (failed / total * 100)|int }}%" 
+                                     title="Falhas: {{ failed }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col">
+                                <div class="h2 mb-0">{{ total }}</div>
+                                <div class="text-muted small">Total</div>
+                            </div>
+                            <div class="col">
+                                <div class="h2 mb-0 text-primary">{{ sent }}</div>
+                                <div class="text-muted small">Enviadas</div>
+                            </div>
+                            <div class="col">
+                                <div class="h2 mb-0 text-info">{{ delivered }}</div>
+                                <div class="text-muted small">Entregues</div>
+                            </div>
+                            <div class="col">
+                                <div class="h2 mb-0 text-success">{{ read }}</div>
+                                <div class="text-muted small">Lidas</div>
+                            </div>
+                            <div class="col">
+                                <div class="h2 mb-0 text-danger">{{ failed }}</div>
+                                <div class="text-muted small">Falhas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mensagem -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-message me-2"></i> Mensagem
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="bg-success-lt rounded p-3">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ campaign.message_body }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lista de Destinatários -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-users me-2"></i> Destinatários
+                        </h3>
+                        <div class="card-actions">
+                            <select class="form-select form-select-sm" style="width: auto;" id="filterStatus">
+                                <option value="">Todos</option>
+                                <option value="pending">Pendentes</option>
+                                <option value="sent">Enviadas</option>
+                                <option value="delivered">Entregues</option>
+                                <option value="read">Lidas</option>
+                                <option value="failed">Falhas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Destinatário</th>
+                                    <th>Status</th>
+                                    <th>Enviado em</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for recipient in campaign.recipients[:50] %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="avatar avatar-sm bg-green-lt me-2">
+                                                <i class="ti ti-user"></i>
+                                            </span>
+                                            <div>
+                                                <div class="font-weight-medium">{{ recipient.name or 'Sem nome' }}</div>
+                                                <div class="text-muted small">{{ recipient.phone }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if recipient.status == 'pending' %}
+                                        <span class="badge bg-secondary">Pendente</span>
+                                        {% elif recipient.status == 'sent' %}
+                                        <span class="badge bg-primary">Enviada</span>
+                                        {% elif recipient.status == 'delivered' %}
+                                        <span class="badge bg-info">Entregue</span>
+                                        {% elif recipient.status == 'read' %}
+                                        <span class="badge bg-success">Lida</span>
+                                        {% elif recipient.status == 'failed' %}
+                                        <span class="badge bg-danger" title="{{ recipient.error_message }}">
+                                            Falha
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if recipient.sent_at %}
+                                        {{ recipient.sent_at.strftime('%d/%m %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        Nenhum destinatário
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if campaign.recipients|length > 50 %}
+                    <div class="card-footer text-muted">
+                        Mostrando 50 de {{ campaign.recipients|length }} destinatários
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Informações -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-info-circle me-2"></i> Informações
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-5">Conexão:</dt>
+                            <dd class="col-7">
+                                {% if campaign.instance %}
+                                <a href="{{ url_for('messaging_blueprint.instance_view', instance_id=campaign.instance.id) }}">
+                                    {{ campaign.instance.name }}
+                                </a>
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </dd>
+                            
+                            {% if campaign.template %}
+                            <dt class="col-5">Template:</dt>
+                            <dd class="col-7">
+                                <a href="{{ url_for('messaging_blueprint.template_view', template_id=campaign.template.id) }}">
+                                    {{ campaign.template.name }}
+                                </a>
+                            </dd>
+                            {% endif %}
+                            
+                            <dt class="col-5">Intervalo:</dt>
+                            <dd class="col-7">{{ campaign.send_interval or 5 }}s</dd>
+                            
+                            <dt class="col-5">Criado em:</dt>
+                            <dd class="col-7">{{ campaign.created_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+                            
+                            {% if campaign.scheduled_at %}
+                            <dt class="col-5">Agendado para:</dt>
+                            <dd class="col-7">{{ campaign.scheduled_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+                            {% endif %}
+                            
+                            {% if campaign.started_at %}
+                            <dt class="col-5">Iniciado em:</dt>
+                            <dd class="col-7">{{ campaign.started_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+                            {% endif %}
+                            
+                            {% if campaign.completed_at %}
+                            <dt class="col-5">Concluído em:</dt>
+                            <dd class="col-7">{{ campaign.completed_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </div>
+                
+                <!-- Ações -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-bolt me-2"></i> Ações
+                        </h3>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% if campaign.status == 'draft' %}
+                        <a href="{{ url_for('messaging_blueprint.campaign_edit', campaign_id=campaign.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <i class="ti ti-pencil me-2"></i> Editar
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action text-success" onclick="startCampaign()">
+                            <i class="ti ti-player-play me-2"></i> Iniciar Campanha
+                        </a>
+                        {% elif campaign.status == 'running' %}
+                        <a href="#" class="list-group-item list-group-item-action text-warning" onclick="pauseCampaign()">
+                            <i class="ti ti-player-pause me-2"></i> Pausar
+                        </a>
+                        {% elif campaign.status == 'paused' %}
+                        <a href="#" class="list-group-item list-group-item-action text-success" onclick="resumeCampaign()">
+                            <i class="ti ti-player-play me-2"></i> Continuar
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('messaging_blueprint.campaign_create') }}" 
+                           class="list-group-item list-group-item-action">
+                            <i class="ti ti-copy me-2"></i> Duplicar Campanha
+                        </a>
+                        
+                        {% if campaign.status in ['draft', 'scheduled'] %}
+                        <a href="#" class="list-group-item list-group-item-action text-danger" onclick="confirmDelete()">
+                            <i class="ti ti-trash me-2"></i> Excluir
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Exclusão -->
+<div class="modal modal-blur fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-status bg-danger"></div>
+            <div class="modal-body text-center py-4">
+                <i class="ti ti-alert-triangle icon icon-lg text-danger mb-3"></i>
+                <h3>Confirmar Exclusão</h3>
+                <p class="text-muted">Tem certeza que deseja excluir esta campanha?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('messaging_blueprint.campaign_delete', campaign_id=campaign.id) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="ti ti-trash me-1"></i> Excluir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+function startCampaign() {
+    Notify.confirm('Iniciar Campanha', 'Tem certeza que deseja iniciar esta campanha?', 'Sim, iniciar', 'Cancelar')
+    .then((result) => {
+        if (result.isConfirmed) {
+            campaignAction('iniciar');
+        }
+    });
+}
+
+function pauseCampaign() {
+    campaignAction('pausar');
+}
+
+function resumeCampaign() {
+    campaignAction('continuar');
+}
+
+function campaignAction(action) {
+    fetch('{{ url_for("messaging_blueprint.campaign_view", campaign_id=campaign.id) }}/' + action, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Notify.success('Ação executada com sucesso!');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            Notify.error(data.message || 'Erro ao executar ação');
+        }
+    })
+    .catch(error => {
+        Notify.error('Erro: ' + error.message);
+    });
+}
+
+function confirmDelete() {
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Auto-refresh se campanha estiver executando
+{% if campaign.status == 'running' %}
+setInterval(function() {
+    location.reload();
+}, 10000);
+{% endif %}
+</script>
+{% endblock %}

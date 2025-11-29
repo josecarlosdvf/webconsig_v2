@@ -222,7 +222,7 @@ def tipos_arquivo():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    categories = FileCategory.query.order_by(FileCategory.display_order).all()
+    categories = FileCategory.query_active().order_by(FileCategory.display_order).all()
     
     return render_template(
         'settings/tipos_arquivo.html',
@@ -240,7 +240,7 @@ def tipo_arquivo_criar():
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    code = request.form.get('code', '').lower().replace(' ', '_')
+    code = request.form.get('code', '').upper().replace(' ', '_')
     name = request.form.get('name')
     
     if not name or not code:
@@ -282,7 +282,7 @@ def tipo_arquivo_editar(id):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    category = FileCategory.query.get_or_404(id)
+    category = FileCategory.query_active().get_or_404(id)
     
     category.name = request.form.get('name', category.name)
     category.description = request.form.get('description')
@@ -309,13 +309,10 @@ def tipo_arquivo_excluir(id):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    category = FileCategory.query.get_or_404(id)
+    category = FileCategory.query_active().get_or_404(id)
     
-    # Soft delete se existir, caso contrário remove
-    if hasattr(category, 'soft_delete'):
-        category.soft_delete(current_user.id)
-    else:
-        db.session.delete(category)
+    # Sempre usa soft delete para consistência
+    category.soft_delete(current_user.id)
     
     db.session.commit()
     

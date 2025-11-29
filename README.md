@@ -206,6 +206,53 @@ flask db migrate   # Gerar migração
 flask db upgrade   # Aplicar migração
 ```
 
+## 🧪 Testes Automatizados
+
+O projeto inclui uma suite de testes automatizados usando pytest. Isso elimina a necessidade de testes manuais com confirmações repetitivas.
+
+### Executar testes
+
+```bash
+# Executar todos os testes
+python run_tests.py
+
+# Modo verbose (detalhado)
+python run_tests.py -v
+
+# Com relatório de cobertura de código
+python run_tests.py --cov
+
+# Apenas testes específicos (ex: autenticação)
+python run_tests.py -k auth
+
+# Parar no primeiro erro
+python run_tests.py -x
+```
+
+### Usando pytest diretamente
+
+```bash
+# Todos os testes
+pytest tests/ -v
+
+# Com cobertura
+pytest tests/ -v --cov=apps --cov-report=term-missing
+
+# Testes específicos
+pytest tests/test_authentication.py -v
+pytest tests/test_routes.py -v
+```
+
+### Estrutura de testes
+
+```
+tests/
+├── __init__.py
+├── conftest.py              # Fixtures e configurações
+├── test_authentication.py   # Testes de login/logout/registro
+└── test_routes.py           # Testes de rotas
+```
+
 ## 📄 Licença
 
 MIT License - Livre para uso comercial e pessoal.

@@ -67,8 +67,8 @@ def register_error_handlers(app: Flask) -> None:
     def handle_exception(e):
         """Log de exceções não tratadas"""
         log_error(f'Exceção não tratada: {str(e)}', exc_info=True)
-        # Re-raise para que o Flask trate o erro
-        raise e
+        # Re-raise para que o Flask trate o erro (preserva traceback)
+        raise
 
 
 def log_debug(message: str, extra: Optional[dict] = None) -> None:

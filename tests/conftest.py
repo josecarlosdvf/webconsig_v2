@@ -48,8 +48,9 @@ def app():
     Cria instância da aplicação Flask configurada para testes.
     Usa escopo 'session' para reutilizar entre todos os testes.
     """
-    # Usa configuração de Debug como base
-    config = config_dict['Debug']
+    # Usa configuração de Debug como base (ou outra via variável de ambiente)
+    config_name = os.environ.get('FLASK_CONFIG', 'Debug')
+    config = config_dict.get(config_name, config_dict['Debug'])
     
     # Sobrescreve configurações para teste
     config.TESTING = True

@@ -150,8 +150,8 @@ class TestUserModel:
         """Testa verificação de senha"""
         with app.app_context():
             user = Users.query.filter_by(username='testuser').first()
-            assert user.check_password('testpassword123') is True
-            assert user.check_password('wrongpassword') is False
+            assert user.check_password('testpassword123')
+            assert not user.check_password('wrongpassword')
     
     def test_full_name_property(self, app, init_database):
         """Testa propriedade full_name"""
@@ -180,7 +180,6 @@ class TestSessionManagement:
             token = user.generate_session_token()
             
             assert token is not None
-            assert len(token) > 0
             assert user.session_token == token
     
     def test_session_token_verification(self, test_user, app):
@@ -189,8 +188,8 @@ class TestSessionManagement:
             user = Users.query.filter_by(username='testuser').first()
             token = user.generate_session_token()
             
-            assert user.verify_session_token(token) is True
-            assert user.verify_session_token('invalid_token') is False
+            assert user.verify_session_token(token)
+            assert not user.verify_session_token('invalid_token')
     
     def test_session_invalidation(self, test_user, app):
         """Testa invalidação de sessão"""

@@ -120,6 +120,29 @@ class FileCategory(db.Model, BaseModel):
         comment='Ordem de exibição na lista'
     )
     
+    # Modelo de referência para validação visual
+    reference_model_path = db.Column(
+        db.String(500), 
+        nullable=True,
+        comment='Caminho do arquivo modelo para comparação visual'
+    )
+    reference_model_embedding = db.Column(
+        db.LargeBinary, 
+        nullable=True,
+        comment='Embedding do modelo de referência (serializado)'
+    )
+    similarity_threshold = db.Column(
+        db.Float, 
+        nullable=True,
+        default=0.75,
+        comment='Limiar de similaridade para considerar documento compatível (0.0-1.0)'
+    )
+    enable_visual_validation = db.Column(
+        db.Boolean, 
+        default=False,
+        comment='Habilitar validação visual contra modelo de referência'
+    )
+    
     # Relacionamentos
     files = db.relationship('File', backref='category', lazy='dynamic')
     
@@ -189,6 +212,20 @@ class FileCategory(db.Model, BaseModel):
             return False, f'Arquivo muito grande. Máximo: {self.max_size_mb}MB'
         
         return True, None
+    
+    @property
+    def has_reference_model(self):
+        """Verifica se há modelo de referência configurado"""
+        return bool(self.reference_model_path and self.enable_visual_validation)
+    
+    @property
+    def reference_model_full_path(self):
+        """Retorna caminho completo do modelo de referência"""
+        if not self.reference_model_path:
+            return None
+        from flask import current_app
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        return os.path.join(upload_folder, self.reference_model_path)
     
     @classmethod
     def get_by_code(cls, code):
@@ -321,6 +358,18 @@ class File(db.Model, BaseModel):
         db.Text, 
         nullable=True,
         comment='Observações da validação'
+    )
+    
+    # Validação visual (similaridade com modelo)
+    visual_similarity_score = db.Column(
+        db.Float,
+        nullable=True,
+        comment='Pontuação de similaridade com modelo de referência (0.0-1.0)'
+    )
+    visual_validation_passed = db.Column(
+        db.Boolean,
+        nullable=True,
+        comment='Se passou na validação visual contra modelo'
     )
     
     # Hash para detecção de duplicatas

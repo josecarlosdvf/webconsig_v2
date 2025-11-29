@@ -295,9 +295,81 @@ def tipo_arquivo_editar(id):
     category.entity_types = request.form.get('entity_types', category.entity_types)
     category.display_order = int(request.form.get('display_order', category.display_order))
     
+    # Validação visual
+    category.enable_visual_validation = 'enable_visual_validation' in request.form
+    threshold = request.form.get('similarity_threshold')
+    if threshold:
+        try:
+            # Converte de percentual para decimal (75 -> 0.75)
+            threshold_value = float(threshold) / 100.0
+            category.similarity_threshold = max(0.5, min(1.0, threshold_value))
+        except ValueError:
+            pass
+    
     db.session.commit()
     
     flash(f'Tipo de arquivo "{category.name}" atualizado com sucesso!', 'success')
+    return redirect(url_for('settings_blueprint.tipos_arquivo'))
+
+
+@blueprint.route('/tipos-arquivo/<int:id>/modelo-referencia', methods=['POST'])
+@login_required
+def tipo_arquivo_upload_modelo(id):
+    """Upload do modelo de referência para validação visual"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    category = FileCategory.query_active().get_or_404(id)
+    
+    if 'reference_model' not in request.files:
+        flash('Nenhum arquivo selecionado.', 'warning')
+        return redirect(url_for('settings_blueprint.tipos_arquivo'))
+    
+    file = request.files['reference_model']
+    if not file or not file.filename:
+        flash('Nenhum arquivo selecionado.', 'warning')
+        return redirect(url_for('settings_blueprint.tipos_arquivo'))
+    
+    # Valida extensão
+    allowed_ext = ['jpg', 'jpeg', 'png', 'pdf', 'gif', 'webp']
+    ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    if ext not in allowed_ext:
+        flash(f'Tipo de arquivo não suportado. Use: {", ".join(allowed_ext)}', 'danger')
+        return redirect(url_for('settings_blueprint.tipos_arquivo'))
+    
+    try:
+        from apps.files.services import DocumentSimilarityService
+        
+        path = DocumentSimilarityService.save_reference_model(category, file)
+        category.enable_visual_validation = True
+        db.session.commit()
+        
+        flash(f'Modelo de referência salvo com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao salvar modelo: {str(e)}', 'danger')
+    
+    return redirect(url_for('settings_blueprint.tipos_arquivo'))
+
+
+@blueprint.route('/tipos-arquivo/<int:id>/modelo-referencia/remover', methods=['POST'])
+@login_required
+def tipo_arquivo_remover_modelo(id):
+    """Remove modelo de referência"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    category = FileCategory.query_active().get_or_404(id)
+    
+    try:
+        from apps.files.services import DocumentSimilarityService
+        
+        DocumentSimilarityService.remove_reference_model(category)
+        flash('Modelo de referência removido com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao remover modelo: {str(e)}', 'danger')
+    
     return redirect(url_for('settings_blueprint.tipos_arquivo'))
 
 

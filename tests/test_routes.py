@@ -64,6 +64,65 @@ class TestAdminRoutes:
         """Admin autenticado acessa grupos"""
         response = admin_client.get('/admin/grupos')
         assert response.status_code in [200, 302, 403]
+    
+    def test_admin_permissions_route(self, admin_client):
+        """Admin autenticado acessa permissões"""
+        response = admin_client.get('/admin/permissoes')
+        assert response.status_code in [200, 302, 403]
+    
+    def test_admin_audit_route(self, admin_client):
+        """Admin autenticado acessa auditoria"""
+        response = admin_client.get('/admin/auditoria')
+        assert response.status_code in [200, 302, 403]
+    
+    def test_admin_login_history_route(self, admin_client):
+        """Admin autenticado acessa histórico de login"""
+        response = admin_client.get('/admin/logins')
+        assert response.status_code in [200, 302, 403]
+
+
+class TestSettingsRoutes:
+    """Testes de rotas de configurações"""
+    
+    def test_settings_index_requires_admin(self, client, init_database):
+        """Configurações requerem autenticação"""
+        response = client.get('/admin/settings/', follow_redirects=False)
+        assert response.status_code in [302, 301]
+    
+    def test_settings_index_with_admin(self, admin_client):
+        """Admin acessa configurações"""
+        response = admin_client.get('/admin/settings/')
+        assert response.status_code in [200, 302]
+    
+    def test_settings_sistema(self, admin_client):
+        """Testa configurações de sistema"""
+        response = admin_client.get('/admin/settings/sistema')
+        assert response.status_code in [200, 302]
+    
+    def test_settings_empresa(self, admin_client):
+        """Testa configurações de empresa"""
+        response = admin_client.get('/admin/settings/empresa')
+        assert response.status_code in [200, 302]
+    
+    def test_settings_aparencia(self, admin_client):
+        """Testa configurações de aparência"""
+        response = admin_client.get('/admin/settings/aparencia')
+        assert response.status_code in [200, 302]
+    
+    def test_settings_localizacao(self, admin_client):
+        """Testa configurações de localização"""
+        response = admin_client.get('/admin/settings/localizacao')
+        assert response.status_code in [200, 302]
+    
+    def test_settings_seguranca(self, admin_client):
+        """Testa configurações de segurança"""
+        response = admin_client.get('/admin/settings/seguranca')
+        assert response.status_code in [200, 302]
+    
+    def test_settings_tipos_arquivo(self, admin_client):
+        """Testa configuração de tipos de arquivo"""
+        response = admin_client.get('/admin/settings/tipos-arquivo')
+        assert response.status_code in [200, 302]
 
 
 class TestHRRoutes:
@@ -78,6 +137,11 @@ class TestHRRoutes:
         """Usuário autenticado acessa funcionários"""
         response = authenticated_client.get('/rh/funcionarios')
         assert response.status_code in [200, 302, 403]
+    
+    def test_teams_route(self, authenticated_client):
+        """Usuário autenticado acessa equipes"""
+        response = authenticated_client.get('/rh/equipes')
+        assert response.status_code in [200, 302, 403]
 
 
 class TestFilesRoutes:
@@ -88,6 +152,11 @@ class TestFilesRoutes:
         response = client.get('/files', follow_redirects=False)
         # 308 = Permanent Redirect (trailing slash redirect)
         assert response.status_code in [302, 301, 200, 308]
+    
+    def test_files_categories_route(self, admin_client):
+        """Admin acessa categorias de arquivos"""
+        response = admin_client.get('/files/categories/manage')
+        assert response.status_code in [200, 302, 403]
 
 
 class TestMessagingRoutes:
@@ -98,6 +167,31 @@ class TestMessagingRoutes:
         response = client.get('/mensagens', follow_redirects=False)
         # 308 = Permanent Redirect (trailing slash redirect)
         assert response.status_code in [302, 301, 200, 308]
+    
+    def test_messages_send_route(self, authenticated_client):
+        """Usuário autenticado acessa envio de mensagens"""
+        response = authenticated_client.get('/mensagens/enviar')
+        assert response.status_code in [200, 302, 403]
+    
+    def test_messages_history_route(self, authenticated_client):
+        """Usuário autenticado acessa histórico de mensagens"""
+        response = authenticated_client.get('/mensagens/historico')
+        assert response.status_code in [200, 302, 403]
+    
+    def test_messages_contacts_route(self, authenticated_client):
+        """Usuário autenticado acessa contatos"""
+        response = authenticated_client.get('/mensagens/contatos')
+        assert response.status_code in [200, 302, 403]
+    
+    def test_messages_templates_route(self, authenticated_client):
+        """Usuário autenticado acessa templates"""
+        response = authenticated_client.get('/mensagens/templates')
+        assert response.status_code in [200, 302, 403]
+    
+    def test_messages_connections_route(self, authenticated_client):
+        """Usuário autenticado acessa conexões"""
+        response = authenticated_client.get('/mensagens/conexoes')
+        assert response.status_code in [200, 302, 403]
 
 
 class TestErrorHandlers:

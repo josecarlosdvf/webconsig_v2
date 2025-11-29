@@ -13,6 +13,7 @@ from apps.settings.forms import (
     AppearanceForm, LocalizationForm, SecurityForm
 )
 from apps import db
+from apps.files.models import FileCategory
 
 
 @blueprint.route('/')
@@ -207,3 +208,116 @@ def seguranca():
         title='Segurança',
         category='seguranca'
     )
+
+
+# =============================================================================
+# TIPOS DE ARQUIVO
+# =============================================================================
+
+@blueprint.route('/tipos-arquivo')
+@login_required
+def tipos_arquivo():
+    """Configuração de tipos de arquivo permitidos"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    categories = FileCategory.query.order_by(FileCategory.display_order).all()
+    
+    return render_template(
+        'settings/tipos_arquivo.html',
+        segment='settings',
+        categories=categories,
+        title='Tipos de Arquivo'
+    )
+
+
+@blueprint.route('/tipos-arquivo/criar', methods=['POST'])
+@login_required
+def tipo_arquivo_criar():
+    """Criar novo tipo de arquivo"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    code = request.form.get('code', '').lower().replace(' ', '_')
+    name = request.form.get('name')
+    
+    if not name or not code:
+        flash('Nome e código são obrigatórios.', 'danger')
+        return redirect(url_for('settings_blueprint.tipos_arquivo'))
+    
+    # Verifica se já existe
+    existing = FileCategory.query.filter_by(code=code).first()
+    if existing:
+        flash('Já existe um tipo de arquivo com este código.', 'danger')
+        return redirect(url_for('settings_blueprint.tipos_arquivo'))
+    
+    category = FileCategory(
+        code=code,
+        name=name,
+        description=request.form.get('description'),
+        allowed_extensions=request.form.get('allowed_extensions', 'jpg,jpeg,png,pdf'),
+        max_size_mb=float(request.form.get('max_size_mb', 5)),
+        is_required='is_required' in request.form,
+        requires_validation='requires_validation' in request.form,
+        allow_multiple='allow_multiple' in request.form,
+        is_active='is_active' in request.form,
+        entity_types=request.form.get('entity_types', 'employee'),
+        display_order=int(request.form.get('display_order', 0))
+    )
+    
+    db.session.add(category)
+    db.session.commit()
+    
+    flash(f'Tipo de arquivo "{name}" criado com sucesso!', 'success')
+    return redirect(url_for('settings_blueprint.tipos_arquivo'))
+
+
+@blueprint.route('/tipos-arquivo/<int:id>/editar', methods=['POST'])
+@login_required
+def tipo_arquivo_editar(id):
+    """Editar tipo de arquivo"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    category = FileCategory.query.get_or_404(id)
+    
+    category.name = request.form.get('name', category.name)
+    category.description = request.form.get('description')
+    category.allowed_extensions = request.form.get('allowed_extensions', category.allowed_extensions)
+    category.max_size_mb = float(request.form.get('max_size_mb', category.max_size_mb))
+    category.is_required = 'is_required' in request.form
+    category.requires_validation = 'requires_validation' in request.form
+    category.allow_multiple = 'allow_multiple' in request.form
+    category.is_active = 'is_active' in request.form
+    category.entity_types = request.form.get('entity_types', category.entity_types)
+    category.display_order = int(request.form.get('display_order', category.display_order))
+    
+    db.session.commit()
+    
+    flash(f'Tipo de arquivo "{category.name}" atualizado com sucesso!', 'success')
+    return redirect(url_for('settings_blueprint.tipos_arquivo'))
+
+
+@blueprint.route('/tipos-arquivo/<int:id>/excluir', methods=['POST'])
+@login_required
+def tipo_arquivo_excluir(id):
+    """Excluir tipo de arquivo"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    category = FileCategory.query.get_or_404(id)
+    
+    # Soft delete se existir, caso contrário remove
+    if hasattr(category, 'soft_delete'):
+        category.soft_delete(current_user.id)
+    else:
+        db.session.delete(category)
+    
+    db.session.commit()
+    
+    flash(f'Tipo de arquivo excluído com sucesso!', 'success')
+    return redirect(url_for('settings_blueprint.tipos_arquivo'))

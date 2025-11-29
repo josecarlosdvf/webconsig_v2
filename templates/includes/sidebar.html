@@ -56,61 +56,6 @@
                     </a>
                 </li>
                 
-                <!-- Section: Componentes -->
-                <li class="nav-item">
-                    <span class="nav-label">Componentes</span>
-                </li>
-                
-                <!-- Botões -->
-                <li class="nav-item {% if 'buttons' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='buttons') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-click"></i>
-                        </span>
-                        <span class="nav-link-title">Botões</span>
-                    </a>
-                </li>
-                
-                <!-- Formulários -->
-                <li class="nav-item {% if 'forms' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='forms') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-forms"></i>
-                        </span>
-                        <span class="nav-link-title">Formulários</span>
-                    </a>
-                </li>
-                
-                <!-- Modais -->
-                <li class="nav-item {% if 'modals' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='modals') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-app-window"></i>
-                        </span>
-                        <span class="nav-link-title">Modais</span>
-                    </a>
-                </li>
-                
-                <!-- Notificações -->
-                <li class="nav-item {% if 'notifications' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='notifications') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-bell"></i>
-                        </span>
-                        <span class="nav-link-title">Notificações</span>
-                    </a>
-                </li>
-                
-                <!-- Tabelas -->
-                <li class="nav-item {% if 'tables' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='tables') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-table"></i>
-                        </span>
-                        <span class="nav-link-title">Tabelas</span>
-                    </a>
-                </li>
-                
                 <!-- Section: Gestão -->
                 {% if user_has_permission('hr.view') or user_has_permission('files.view') or current_user.is_admin %}
                 <li class="nav-item">
@@ -273,6 +218,10 @@
                         </a>
                         <a class="dropdown-item" href="{{ url_for('settings_blueprint.seguranca') }}">
                             Segurança
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('settings_blueprint.tipos_arquivo') }}">
+                            <i class="ti ti-file-type-doc me-2"></i> Tipos de Arquivo
                         </a>
                     </div>
                 </li>

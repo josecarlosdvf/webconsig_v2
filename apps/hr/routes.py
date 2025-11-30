@@ -47,6 +47,10 @@ def team_create():
     """Criar nova equipe/corban"""
     form = TeamForm()
     
+    # Define cor automática para nova equipe
+    if request.method == 'GET':
+        form.color.data = Team.get_next_color()
+    
     if form.validate_on_submit():
         team = Team()
         form.populate_obj(team)

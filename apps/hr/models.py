@@ -268,6 +268,11 @@ class Team(db.Model, BaseModel):
         ).count()
     
     @property
+    def team_type(self):
+        """Alias para compatibilidade com templates"""
+        return self.type
+    
+    @property
     def is_team(self):
         return self.type == TeamType.TEAM
     
@@ -292,6 +297,29 @@ class Team(db.Model, BaseModel):
     def get_corbans(cls):
         """Retorna apenas corbans"""
         return cls.get_active(TeamType.CORBAN)
+    
+    @classmethod
+    def get_next_color(cls):
+        """Gera uma cor diferente das existentes"""
+        import random
+        # Cores base para equipes (harmoniosas)
+        base_colors = [
+            '#206bc4', '#4299e1', '#0ca678', '#2fb344', '#ae3ec9',
+            '#d63939', '#f76707', '#fab005', '#74b816', '#17a2b8',
+            '#6f42c1', '#e83e8c', '#fd7e14', '#20c997', '#6610f2',
+            '#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8'
+        ]
+        
+        # Busca cores já usadas
+        used_colors = [t.color for t in cls.query_active().all() if t.color]
+        
+        # Encontra uma cor não usada
+        for color in base_colors:
+            if color not in used_colors:
+                return color
+        
+        # Se todas as cores base foram usadas, gera uma aleatória
+        return '#{:06x}'.format(random.randint(0, 0xFFFFFF))
 
 
 # =============================================================================

@@ -1,6 +1,32 @@
 {% extends "layouts/base.html" %}
 {% block title %}Usuários{% endblock %}
 
+{% block styles %}
+<style>
+/* Fix z-index dropdown para aparecer acima da tabela */
+.table-responsive {
+    overflow: visible !important;
+}
+.dropdown-menu {
+    z-index: 1050 !important;
+}
+
+/* Toggle switch estilizado */
+.form-switch-custom {
+    padding-left: 2.5em;
+}
+.form-switch-custom .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    cursor: pointer;
+}
+.form-switch-custom .form-check-input:checked {
+    background-color: #2fb344;
+    border-color: #2fb344;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header d-print-none">
     <div class="container-xl">
@@ -9,9 +35,12 @@
                 <div class="page-pretitle">Administração</div>
                 <h2 class="page-title">Usuários</h2>
             </div>
-            <div class="col-auto ms-auto d-print-none">
+            <div class="col-auto ms-auto d-print-none btn-list">
+                <a href="{{ url_for('admin_blueprint.terms_settings') }}" class="btn btn-outline-secondary" title="Termos de Uso">
+                    <i class="ti ti-file-text me-2"></i> Termos de Uso
+                </a>
                 {% if perm.can('users.invite') %}
-                <a href="{{ url_for('admin_blueprint.invitations_create') }}" class="btn btn-success me-2">
+                <a href="{{ url_for('admin_blueprint.invitations_create') }}" class="btn btn-success">
                     <i class="ti ti-mail-forward me-2"></i> Enviar Convite
                 </a>
                 {% endif %}
@@ -62,11 +91,11 @@
                     <thead>
                         <tr>
                             <th>Usuário</th>
-                            <th>E-mail</th>
+                            <th>Funcionário</th>
                             <th>Grupos</th>
-                            <th>Status</th>
+                            <th class="text-center">Ativo</th>
                             <th>Último Login</th>
-                            <th class="w-1"></th>
+                            <th class="w-1">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,75 +111,100 @@
                                         <div class="font-weight-medium">
                                             {{ user.full_name }}
                                             {% if user.is_admin %}
-                                            <span class="badge bg-red ms-2">Admin</span>
+                                            <span class="badge bg-red ms-1">Admin</span>
+                                            {% endif %}
+                                            {% if user.is_locked %}
+                                            <span class="badge bg-orange ms-1">Bloqueado</span>
                                             {% endif %}
                                         </div>
-                                        <div class="text-muted">@{{ user.username }}</div>
+                                        <div class="text-muted small">@{{ user.username }} • {{ user.email }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-muted">{{ user.email }}</td>
                             <td>
-                                {% for group in user.user_groups[:3] %}
-                                <span class="badge bg-blue-lt">{{ group.name }}</span>
-                                {% endfor %}
-                                {% if user.user_groups|length > 3 %}
-                                <span class="badge bg-secondary">+{{ user.user_groups|length - 3 }}</span>
+                                {% if user.employee %}
+                                <a href="{{ url_for('hr_blueprint.employee_view', employee_id=user.employee.id) }}" class="text-reset">
+                                    <i class="ti ti-id-badge me-1"></i>{{ user.employee.name }}
+                                </a>
+                                {% if user.employee.team %}
+                                <div class="text-muted small">{{ user.employee.team.name }}</div>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
-                                {% if user.is_locked %}
-                                <span class="badge bg-red">Bloqueado</span>
-                                {% elif user.is_active %}
+                                {% for group in user.user_groups[:2] %}
+                                <span class="badge bg-blue-lt">{{ group.name }}</span>
+                                {% endfor %}
+                                {% if user.user_groups|length > 2 %}
+                                <span class="badge bg-secondary" title="{{ user.user_groups[2:]|map(attribute='name')|join(', ') }}">
+                                    +{{ user.user_groups|length - 2 }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if user.id != current_user.id and perm.can('users.edit') %}
+                                <label class="form-check form-switch form-switch-custom mb-0 d-inline-block">
+                                    <input type="checkbox" class="form-check-input" 
+                                           {% if user.is_active %}checked{% endif %}
+                                           onchange="toggleActiveInline({{ user.id }}, this.checked)"
+                                           {% if user.is_locked %}disabled{% endif %}>
+                                </label>
+                                {% else %}
+                                {% if user.is_active %}
                                 <span class="badge bg-green">Ativo</span>
                                 {% else %}
                                 <span class="badge bg-secondary">Inativo</span>
                                 {% endif %}
+                                {% endif %}
                             </td>
                             <td class="text-muted">
                                 {% if user.last_login %}
-                                {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                                <span title="{{ user.last_login.strftime('%d/%m/%Y às %H:%M:%S') }}">
+                                    {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
                                 {% else %}
-                                -
+                                <span class="text-warning" title="Nunca acessou">Nunca</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                                        Ações
+                                <div class="btn-list flex-nowrap">
+                                    {% if perm.can('users.invite') and not user.last_login %}
+                                    <button class="btn btn-sm btn-icon btn-ghost-success" 
+                                            onclick="sendInvite({{ user.id }}, '{{ user.email }}')"
+                                            title="Enviar convite por e-mail">
+                                        <i class="ti ti-mail-forward"></i>
                                     </button>
-                                    <div class="dropdown-menu dropdown-menu-end">
-                                        <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_view', user_id=user.id) }}">
-                                            <i class="ti ti-eye me-2"></i> Visualizar
-                                        </a>
-                                        {% if perm.can('users.edit') %}
-                                        <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_edit', user_id=user.id) }}">
-                                            <i class="ti ti-edit me-2"></i> Editar
-                                        </a>
-                                        {% endif %}
-                                        {% if perm.can('users.unlock') and user.is_locked %}
-                                        <a class="dropdown-item" href="#" 
-                                           onclick="event.preventDefault(); unlockUser({{ user.id }})">
-                                            <i class="ti ti-lock-open me-2"></i> Desbloquear
-                                        </a>
-                                        {% endif %}
-                                        {% if perm.can('users.edit') and user.id != current_user.id %}
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="#" 
-                                           onclick="event.preventDefault(); toggleActive({{ user.id }}, {{ 'true' if not user.is_active else 'false' }})">
-                                            {% if user.is_active %}
-                                            <i class="ti ti-ban me-2"></i> Desativar
-                                            {% else %}
-                                            <i class="ti ti-check me-2"></i> Ativar
+                                    {% endif %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-icon btn-ghost-secondary" data-bs-toggle="dropdown">
+                                            <i class="ti ti-dots-vertical"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_view', user_id=user.id) }}">
+                                                <i class="ti ti-eye me-2"></i> Visualizar
+                                            </a>
+                                            {% if perm.can('users.edit') %}
+                                            <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_edit', user_id=user.id) }}">
+                                                <i class="ti ti-edit me-2"></i> Editar
+                                            </a>
                                             {% endif %}
-                                        </a>
-                                        {% endif %}
-                                        {% if perm.can('users.delete') and user.id != current_user.id %}
-                                        <a class="dropdown-item text-danger" href="#"
-                                           onclick="event.preventDefault(); deleteUser({{ user.id }}, '{{ user.username }}')">
-                                            <i class="ti ti-trash me-2"></i> Excluir
-                                        </a>
-                                        {% endif %}
+                                            {% if perm.can('users.unlock') and user.is_locked %}
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-warning" href="#" 
+                                               onclick="event.preventDefault(); unlockUser({{ user.id }})">
+                                                <i class="ti ti-lock-open me-2"></i> Desbloquear
+                                            </a>
+                                            {% endif %}
+                                            {% if perm.can('users.delete') and user.id != current_user.id %}
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="#"
+                                               onclick="event.preventDefault(); deleteUser({{ user.id }}, '{{ user.username }}')">
+                                                <i class="ti ti-trash me-2"></i> Excluir
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -219,6 +273,10 @@
 <form id="delete-form" method="post" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
+
+<form id="invite-form" method="post" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
 {% endblock %}
 
 {% block scripts %}
@@ -239,6 +297,40 @@ function unlockUser(userId) {
             form.action = '/admin/usuarios/' + userId + '/desbloquear';
             form.submit();
         }
+    });
+}
+
+function toggleActiveInline(userId, activate) {
+    fetch('/admin/usuarios/' + userId + '/toggle-active', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ active: activate })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Toast de sucesso
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message || (activate ? 'Usuário ativado' : 'Usuário desativado'),
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        } else {
+            // Reverte o toggle
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        location.reload();
     });
 }
 
@@ -277,6 +369,50 @@ function deleteUser(userId, username) {
             var form = document.getElementById('delete-form');
             form.action = '/admin/usuarios/' + userId + '/excluir';
             form.submit();
+        }
+    });
+}
+
+function sendInvite(userId, email) {
+    Swal.fire({
+        title: 'Enviar convite?',
+        html: 'Um e-mail de convite será enviado para:<br><strong>' + email + '</strong>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2fb344',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sim, enviar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/admin/usuarios/' + userId + '/send-invite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: data.success ? 'success' : 'error',
+                    title: data.message,
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            })
+            .catch(error => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Erro ao enviar convite',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            });
         }
     });
 }

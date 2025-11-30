@@ -503,6 +503,130 @@ def users_toggle_active(user_id):
     return redirect(url_for('admin_blueprint.users_view', user_id=user.id))
 
 
+@blueprint.route('/usuarios/<int:user_id>/toggle-active', methods=['POST'])
+@login_required
+@permission_required('users.edit')
+def users_toggle_active_json(user_id):
+    """Ativar/Desativar usuário via JSON (para toggle inline)"""
+    
+    user = Users.find_by_id(user_id)
+    if not user:
+        return jsonify({'success': False, 'message': 'Usuário não encontrado.'}), 404
+    
+    if user.id == current_user.id:
+        return jsonify({'success': False, 'message': 'Você não pode desativar sua própria conta.'}), 400
+    
+    try:
+        data = request.get_json() or {}
+        user.is_active = data.get('active', not user.is_active)
+        db.session.commit()
+        
+        msg = 'ativado' if user.is_active else 'desativado'
+        
+        AuditLog.log(
+            action=f'user.{"activated" if user.is_active else "deactivated"}',
+            table_name='user',
+            record_id=user.id,
+            description=f'Usuário {user.username} {msg}',
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Usuário {msg} com sucesso!',
+            'is_active': user.is_active
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@blueprint.route('/usuarios/<int:user_id>/send-invite', methods=['POST'])
+@login_required
+@permission_required('users.invite')
+def users_send_invite(user_id):
+    """Enviar convite por e-mail para usuário que nunca logou"""
+    
+    user = Users.find_by_id(user_id)
+    if not user:
+        return jsonify({'success': False, 'message': 'Usuário não encontrado.'}), 404
+    
+    if user.last_login:
+        return jsonify({'success': False, 'message': 'Usuário já acessou o sistema.'}), 400
+    
+    try:
+        # Cria token de reset de senha para o primeiro acesso
+        token = user.generate_password_reset_token()
+        db.session.commit()
+        
+        # TODO: Implementar envio de e-mail real
+        # Por enquanto, simula o envio
+        # from apps.messaging.services import send_email
+        # send_email(
+        #     to=user.email,
+        #     subject='Convite para acessar o sistema',
+        #     template='emails/invite.html',
+        #     user=user,
+        #     token=token
+        # )
+        
+        AuditLog.log(
+            action='user.invite_sent',
+            table_name='user',
+            record_id=user.id,
+            description=f'Convite enviado para {user.email}',
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Convite enviado para {user.email}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@blueprint.route('/termos-de-uso', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def terms_settings():
+    """Configurações de termos de uso e consentimento"""
+    from apps.settings.models import SystemSetting
+    
+    if request.method == 'POST':
+        try:
+            SystemSetting.set('terms_of_use', request.form.get('terms_of_use', ''))
+            SystemSetting.set('privacy_policy', request.form.get('privacy_policy', ''))
+            SystemSetting.set('terms_version', request.form.get('terms_version', '1.0'))
+            SystemSetting.set('require_terms_acceptance', 
+                              'true' if request.form.get('require_terms_acceptance') else 'false')
+            
+            AuditLog.log(
+                action='settings.terms_updated',
+                table_name='system_settings',
+                description='Termos de uso atualizados',
+                user_id=current_user.id
+            )
+            
+            flash('Termos de uso atualizados com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar: {str(e)}', 'danger')
+    
+    # Carrega configurações atuais
+    settings = {
+        'terms_of_use': SystemSetting.get('terms_of_use', ''),
+        'privacy_policy': SystemSetting.get('privacy_policy', ''),
+        'terms_version': SystemSetting.get('terms_version', '1.0'),
+        'require_terms_acceptance': SystemSetting.get('require_terms_acceptance', 'false') == 'true'
+    }
+    
+    return render_template('admin/terms/settings.html', settings=settings)
+
+
 # =============================================================================
 # CONVITES
 # =============================================================================

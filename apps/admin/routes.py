@@ -101,7 +101,10 @@ def users_list():
         query = query.filter(Users.is_admin == (form.is_admin.data == '1'))
     
     if form.group_id.data:
-        query = query.join(UserGroupMembership).filter(
+        query = query.join(
+            UserGroupMembership, 
+            Users.id == UserGroupMembership.user_id
+        ).filter(
             UserGroupMembership.group_id == form.group_id.data,
             UserGroupMembership.deleted_at.is_(None)
         )
@@ -796,8 +799,11 @@ def groups_view(group_id):
         flash('Grupo não encontrado.', 'warning')
         return redirect(url_for('admin_blueprint.groups_list'))
     
-    # Membros do grupo
-    members = Users.query_active().join(UserGroupMembership).filter(
+    # Membros do grupo - especificando explicitamente a condição de join
+    members = Users.query_active().join(
+        UserGroupMembership, 
+        Users.id == UserGroupMembership.user_id
+    ).filter(
         UserGroupMembership.group_id == group.id,
         UserGroupMembership.deleted_at.is_(None)
     ).order_by(Users.username).all()

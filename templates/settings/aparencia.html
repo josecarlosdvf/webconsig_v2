@@ -1,27 +1,184 @@
 {% extends "settings/index.html" %}
 
 {% block settings_content %}
-<div class="card border-0 shadow mb-4">
-    <div class="card-header border-bottom">
-        <h3 class="h5 mb-0"><i class="fas fa-palette me-2"></i> Aparência</h3>
+<form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    
+    <!-- Logos do Sistema -->
+    <div class="card border-0 shadow mb-4">
+        <div class="card-header border-bottom">
+            <h3 class="h5 mb-0"><i class="fas fa-images me-2"></i> Logos e Imagens</h3>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <!-- Logo do Sistema -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="image-upload-card">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-desktop me-1"></i> Logo do Sistema
+                        </label>
+                        <p class="text-muted small mb-2">Exibido no menu lateral e cabeçalho</p>
+                        
+                        <div class="image-preview-container mb-2" id="logo-preview-container">
+                            {% if current_images.logo_url %}
+                            <img src="{{ current_images.logo_url }}" alt="Logo atual" class="image-preview" id="logo-preview">
+                            {% else %}
+                            <div class="image-placeholder" id="logo-placeholder">
+                                <i class="fas fa-image fa-2x text-muted"></i>
+                                <span class="text-muted small d-block mt-1">Nenhuma imagem</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <label class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-upload me-1"></i> Selecionar Imagem
+                                {{ form.logo_file(class="d-none", onchange="previewImage(this, 'logo-preview', 'logo-preview-container', 'logo-placeholder')") }}
+                            </label>
+                        </div>
+                        {{ form.logo_url(type="hidden") }}
+                    </div>
+                </div>
+                
+                <!-- Logo da Empresa -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="image-upload-card">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-building me-1"></i> Logo da Empresa
+                        </label>
+                        <p class="text-muted small mb-2">Usado em documentos e relatórios</p>
+                        
+                        <div class="image-preview-container mb-2" id="logo-empresa-preview-container">
+                            {% if current_images.logo_empresa_url %}
+                            <img src="{{ current_images.logo_empresa_url }}" alt="Logo empresa" class="image-preview" id="logo-empresa-preview">
+                            {% else %}
+                            <div class="image-placeholder" id="logo-empresa-placeholder">
+                                <i class="fas fa-building fa-2x text-muted"></i>
+                                <span class="text-muted small d-block mt-1">Nenhuma imagem</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <label class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-upload me-1"></i> Selecionar Imagem
+                                {{ form.logo_empresa_file(class="d-none", onchange="previewImage(this, 'logo-empresa-preview', 'logo-empresa-preview-container', 'logo-empresa-placeholder')") }}
+                            </label>
+                        </div>
+                        {{ form.logo_empresa_url(type="hidden") }}
+                    </div>
+                </div>
+                
+                <!-- Logo do Login -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="image-upload-card">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-sign-in-alt me-1"></i> Logo do Login
+                        </label>
+                        <p class="text-muted small mb-2">Exibido na tela de login</p>
+                        
+                        <div class="image-preview-container mb-2" id="logo-login-preview-container">
+                            {% if current_images.logo_login_url %}
+                            <img src="{{ current_images.logo_login_url }}" alt="Logo login" class="image-preview" id="logo-login-preview">
+                            {% else %}
+                            <div class="image-placeholder" id="logo-login-placeholder">
+                                <i class="fas fa-sign-in-alt fa-2x text-muted"></i>
+                                <span class="text-muted small d-block mt-1">Nenhuma imagem</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <label class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-upload me-1"></i> Selecionar Imagem
+                                {{ form.logo_login_file(class="d-none", onchange="previewImage(this, 'logo-login-preview', 'logo-login-preview-container', 'logo-login-placeholder')") }}
+                            </label>
+                        </div>
+                        {{ form.logo_login_url(type="hidden") }}
+                    </div>
+                </div>
+                
+                <!-- Logo Tema Escuro -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="image-upload-card">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-moon me-1"></i> Logo (Tema Escuro)
+                        </label>
+                        <p class="text-muted small mb-2">Versão clara para fundos escuros</p>
+                        
+                        <div class="image-preview-container dark-bg mb-2" id="logo-dark-preview-container">
+                            {% if current_images.logo_dark_url %}
+                            <img src="{{ current_images.logo_dark_url }}" alt="Logo dark" class="image-preview" id="logo-dark-preview">
+                            {% else %}
+                            <div class="image-placeholder" id="logo-dark-placeholder">
+                                <i class="fas fa-moon fa-2x text-light"></i>
+                                <span class="text-light small d-block mt-1">Nenhuma imagem</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <label class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-upload me-1"></i> Selecionar Imagem
+                                {{ form.logo_dark_file(class="d-none", onchange="previewImage(this, 'logo-dark-preview', 'logo-dark-preview-container', 'logo-dark-placeholder')") }}
+                            </label>
+                        </div>
+                        {{ form.logo_dark_url(type="hidden") }}
+                    </div>
+                </div>
+                
+                <!-- Favicon -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="image-upload-card">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-star me-1"></i> Favicon
+                        </label>
+                        <p class="text-muted small mb-2">Ícone na aba do navegador</p>
+                        
+                        <div class="image-preview-container favicon-container mb-2" id="favicon-preview-container">
+                            {% if current_images.favicon_url %}
+                            <img src="{{ current_images.favicon_url }}" alt="Favicon" class="favicon-preview" id="favicon-preview">
+                            {% else %}
+                            <div class="image-placeholder" id="favicon-placeholder">
+                                <i class="fas fa-star fa-2x text-muted"></i>
+                                <span class="text-muted small d-block mt-1">Nenhum ícone</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <label class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-upload me-1"></i> Selecionar Ícone
+                                {{ form.favicon_file(class="d-none", onchange="previewImage(this, 'favicon-preview', 'favicon-preview-container', 'favicon-placeholder')") }}
+                            </label>
+                        </div>
+                        <small class="text-muted">Formatos: .ico, .png, .svg</small>
+                        {{ form.favicon_url(type="hidden") }}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST">
-            {{ form.hidden_tag() }}
-            
+    
+    <!-- Cores do Sistema -->
+    <div class="card border-0 shadow mb-4">
+        <div class="card-header border-bottom">
+            <h3 class="h5 mb-0"><i class="fas fa-palette me-2"></i> Cores do Sistema</h3>
+        </div>
+        <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" for="primary_color">Cor Primária</label>
+                    <label class="form-label fw-semibold">Cor Primária</label>
                     <div class="input-group">
                         <input type="color" class="form-control form-control-color" id="primary_color_picker" 
                                value="{{ form.primary_color.data or '#1F2937' }}"
                                onchange="document.getElementById('primary_color').value = this.value">
                         {{ form.primary_color(class="form-control", placeholder="#1F2937") }}
                     </div>
-                    <small class="text-muted">Cor principal do sistema (botões, links)</small>
+                    <small class="text-muted">Cor principal do sistema (botões, links, destaque)</small>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" for="secondary_color">Cor Secundária</label>
+                    <label class="form-label fw-semibold">Cor Secundária</label>
                     <div class="input-group">
                         <input type="color" class="form-control form-control-color" id="secondary_color_picker" 
                                value="{{ form.secondary_color.data or '#374151' }}"
@@ -32,36 +189,144 @@
                 </div>
             </div>
             
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="logo_url">URL do Logo</label>
-                    {{ form.logo_url(class="form-control", placeholder="/static/assets/img/logo.png") }}
-                    <small class="text-muted">Caminho ou URL para o logo do sistema</small>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="logo_dark_url">URL do Logo (Tema Escuro)</label>
-                    {{ form.logo_dark_url(class="form-control", placeholder="/static/assets/img/logo-dark.png") }}
-                    <small class="text-muted">Logo para o tema escuro</small>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-12 mb-3">
-                    <label class="form-label" for="favicon_url">URL do Favicon</label>
-                    {{ form.favicon_url(class="form-control", placeholder="/static/assets/img/favicon.ico") }}
-                    <small class="text-muted">Caminho ou URL para o favicon</small>
+            <!-- Preview de Cores -->
+            <div class="mt-3">
+                <label class="form-label fw-semibold">Preview</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn" id="preview-primary" style="background-color: {{ form.primary_color.data or '#1F2937' }}; color: white;">
+                        Botão Primário
+                    </button>
+                    <button type="button" class="btn" id="preview-secondary" style="background-color: {{ form.secondary_color.data or '#374151' }}; color: white;">
+                        Botão Secundário
+                    </button>
+                    <span class="badge fs-6" id="preview-badge" style="background-color: {{ form.primary_color.data or '#1F2937' }};">
+                        Badge
+                    </span>
                 </div>
             </div>
-            
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-2"></i> Salvar Configurações
-                </button>
-                <a href="{{ url_for('settings_blueprint.index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> Voltar
-                </a>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+    
+    <!-- Botões de Ação -->
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> Salvar Configurações
+        </button>
+        <a href="{{ url_for('settings_blueprint.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Voltar
+        </a>
+    </div>
+</form>
+
+<style>
+.image-upload-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+}
+
+.image-preview-container {
+    width: 100%;
+    height: 120px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    overflow: hidden;
+}
+
+.image-preview-container.dark-bg {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+.image-preview-container.favicon-container {
+    height: 80px;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.favicon-preview {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.image-placeholder {
+    text-align: center;
+    padding: 1rem;
+}
+
+.form-control-color {
+    width: 50px;
+    padding: 0.25rem;
+}
+</style>
+
+<script>
+function previewImage(input, previewId, containerId, placeholderId) {
+    const container = document.getElementById(containerId);
+    const placeholder = document.getElementById(placeholderId);
+    let preview = document.getElementById(previewId);
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            // Remover placeholder se existir
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+            
+            // Criar ou atualizar preview
+            if (!preview) {
+                preview = document.createElement('img');
+                preview.id = previewId;
+                preview.className = previewId.includes('favicon') ? 'favicon-preview' : 'image-preview';
+                container.appendChild(preview);
+            }
+            
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Atualizar preview de cores
+document.getElementById('primary_color_picker').addEventListener('input', function() {
+    document.getElementById('primary_color').value = this.value;
+    document.getElementById('preview-primary').style.backgroundColor = this.value;
+    document.getElementById('preview-badge').style.backgroundColor = this.value;
+});
+
+document.getElementById('secondary_color_picker').addEventListener('input', function() {
+    document.getElementById('secondary_color').value = this.value;
+    document.getElementById('preview-secondary').style.backgroundColor = this.value;
+});
+
+// Sincronizar input de texto com color picker
+document.getElementById('primary_color').addEventListener('input', function() {
+    if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+        document.getElementById('primary_color_picker').value = this.value;
+        document.getElementById('preview-primary').style.backgroundColor = this.value;
+        document.getElementById('preview-badge').style.backgroundColor = this.value;
+    }
+});
+
+document.getElementById('secondary_color').addEventListener('input', function() {
+    if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+        document.getElementById('secondary_color_picker').value = this.value;
+        document.getElementById('preview-secondary').style.backgroundColor = this.value;
+    }
+});
+</script>
 {% endblock %}

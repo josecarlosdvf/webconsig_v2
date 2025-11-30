@@ -123,8 +123,8 @@ class PropostaForm(FlaskForm):
     )
     cliente_nome_completo = StringField(
         'Nome Completo',
-        validators=[DataRequired(), Length(max=200)],
-        render_kw={'placeholder': 'Nome do cliente', 'id': 'cliente_nome_completo'}
+        validators=[Optional(), Length(max=200)],
+        render_kw={'placeholder': 'Nome do cliente', 'id': 'cliente_nome_completo', 'readonly': True}
     )
     telefone = StringField(
         'Telefone',

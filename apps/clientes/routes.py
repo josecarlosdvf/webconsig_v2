@@ -227,6 +227,12 @@ def cliente_create():
             db.session.commit()
             
             flash('Cliente criado com sucesso!', 'success')
+            
+            # Verifica se deve redirecionar para propostas
+            redirect_proposta = request.args.get('redirect_proposta')
+            if redirect_proposta:
+                return redirect(url_for('propostas_blueprint.proposta_create', cpf=cpf))
+            
             return redirect(url_for('clientes_blueprint.cliente_view', cpf=cpf))
             
         except Exception as e:

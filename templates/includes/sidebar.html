@@ -7,9 +7,9 @@
         </button>
         
         <h1 class="navbar-brand navbar-brand-autodark">
-            <a href="{{ url_for('home_blueprint.dashboard') }}" class="d-flex align-items-center">
+            <a href="{{ url_for('home_blueprint.dashboard') }}" class="d-flex flex-column align-items-center">
                 <img src="{{ system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image">
-                <span class="ms-2">{{ system.name }}</span>
+                <span class="mt-1">{{ system.name }}</span>
             </a>
         </h1>
         
@@ -254,9 +254,6 @@
                         <span class="nav-link-title">Configurações</span>
                     </a>
                     <div class="dropdown-menu {% if 'settings' in segment %}show{% endif %}">
-                        <a class="dropdown-item" href="{{ url_for('settings_blueprint.index') }}">
-                            Visão Geral
-                        </a>
                         <a class="dropdown-item" href="{{ url_for('settings_blueprint.sistema') }}">
                             Sistema
                         </a>
@@ -272,9 +269,8 @@
                         <a class="dropdown-item" href="{{ url_for('settings_blueprint.seguranca') }}">
                             Segurança
                         </a>
-                        <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="{{ url_for('settings_blueprint.tipos_arquivo') }}">
-                            <i class="ti ti-file-type-doc me-2"></i> Tipos de Arquivo
+                            Tipos de Arquivo
                         </a>
                     </div>
                 </li>

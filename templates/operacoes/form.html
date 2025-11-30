@@ -1,0 +1,228 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} | {{ system.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">
+            <a href="{{ url_for('operacoes_blueprint.operacoes_list') }}">Operações</a>
+        </div>
+        <h2 class="page-title">
+            <i class="ti ti-file-invoice me-2"></i>
+            {{ title }}
+        </h2>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <form method="POST" class="card">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="ti ti-user me-2"></i> Dados do Cliente
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label required">CPF</label>
+                        <input type="text" name="cliente_cpf" class="form-control cpf-mask" 
+                               value="{{ form.cliente_cpf.data or '' }}" 
+                               placeholder="000.000.000-00" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label required">Nome Completo</label>
+                        <input type="text" name="cliente_nome_completo" class="form-control" 
+                               value="{{ form.cliente_nome_completo.data or '' }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Telefone</label>
+                        <input type="text" name="telefone" class="form-control phone-mask" 
+                               value="{{ form.telefone.data or '' }}" 
+                               placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" name="email" class="form-control" 
+                               value="{{ form.email.data or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Responsável</label>
+                        <input type="text" name="responsavel_usuario" class="form-control" 
+                               value="{{ form.responsavel_usuario.data or current_user.username }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ponto de Venda</label>
+                        <input type="text" name="responsavel_ponto" class="form-control" 
+                               value="{{ form.responsavel_ponto.data or '' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="ti ti-file-description me-2"></i> Dados do Contrato
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Tabela</label>
+                        <select name="tabela_id" class="form-select">
+                            {% for value, label in form.tabela_id.choices %}
+                            <option value="{{ value }}" {% if form.tabela_id.data == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label required">Tipo</label>
+                        <select name="tipo" class="form-select" required>
+                            {% for value, label in form.tipo.choices %}
+                            <option value="{{ value }}" {% if form.tipo.data == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label required">Status</label>
+                        <select name="status" class="form-select" required>
+                            {% for value, label in form.status.choices %}
+                            <option value="{{ value }}" {% if form.status.data == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data da Operação</label>
+                        <input type="date" name="data_operacao" class="form-control" 
+                               value="{{ form.data_operacao.data.strftime('%Y-%m-%d') if form.data_operacao.data else '' }}">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Órgão</label>
+                        <input type="text" name="orgao" class="form-control" 
+                               value="{{ form.orgao.data or '' }}" placeholder="INSS, Exército...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Banco</label>
+                        <input type="text" name="banco" class="form-control" 
+                               value="{{ form.banco.data or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Matrícula</label>
+                        <input type="text" name="matricula" class="form-control" 
+                               value="{{ form.matricula.data or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Prazo (meses)</label>
+                        <input type="number" name="prazo" class="form-control" 
+                               value="{{ form.prazo.data or '' }}" min="1" max="999">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="ti ti-currency-real me-2"></i> Valores
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Valor Parcela</label>
+                        <input type="number" name="valor_parcela" class="form-control" 
+                               value="{{ form.valor_parcela.data or '' }}" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Valor AF</label>
+                        <input type="number" name="valor_af" class="form-control" 
+                               value="{{ form.valor_af.data or '' }}" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Valor Líquido</label>
+                        <input type="number" name="valor_liquido" class="form-control" 
+                               value="{{ form.valor_liquido.data or '' }}" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Saldo</label>
+                        <input type="number" name="saldo" class="form-control" 
+                               value="{{ form.saldo.data or '' }}" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Margem</label>
+                        <input type="number" name="margem" class="form-control" 
+                               value="{{ form.margem.data or '' }}" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Taxa (%)</label>
+                        <input type="number" name="taxa" class="form-control" 
+                               value="{{ form.taxa.data or '' }}" step="0.01">
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">Código Único</label>
+                        <input type="text" name="codigo_unico" class="form-control" 
+                               value="{{ form.codigo_unico.data or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Origem</label>
+                        <input type="text" name="origem" class="form-control" 
+                               value="{{ form.origem.data or '' }}" placeholder="Loja, Online...">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">&nbsp;</div>
+                        <label class="form-check">
+                            <input type="checkbox" name="quitacao" class="form-check-input" 
+                                   {% if form.quitacao.data %}checked{% endif %}>
+                            <span class="form-check-label">Operação de Quitação</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="ti ti-notes me-2"></i> Observações
+                </h3>
+            </div>
+            <div class="card-body">
+                <textarea name="obs" class="form-control" rows="3" placeholder="Observações...">{{ form.obs.data or '' }}</textarea>
+            </div>
+            
+            <div class="card-footer text-end">
+                <a href="{{ url_for('operacoes_blueprint.operacoes_list') }}" class="btn btn-ghost-secondary me-2">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-device-floppy me-1"></i> Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscaras de input
+document.querySelectorAll('.cpf-mask').forEach(function(el) {
+    el.addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = v;
+    });
+});
+
+document.querySelectorAll('.phone-mask').forEach(function(el) {
+    el.addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '');
+        v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+        v = v.replace(/(\d)(\d{4})$/, '$1-$2');
+        e.target.value = v;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,526 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Operação #{{ operacao.id }} | {{ system.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <div class="page-pretitle">
+                    <a href="{{ url_for('operacoes_blueprint.operacoes_list') }}">Operações</a>
+                </div>
+                <h2 class="page-title">
+                    <i class="ti ti-file-invoice me-2"></i>
+                    Operação #{{ operacao.id }}
+                </h2>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <a href="{{ url_for('operacoes_blueprint.operacao_edit', operacao_id=operacao.id) }}" class="btn btn-primary">
+                        <i class="ti ti-edit me-1"></i> Editar
+                    </a>
+                    {% if not operacao.averbado and operacao.status not in ['cancelada', 'recusada'] %}
+                    <a href="{{ url_for('operacoes_blueprint.operacao_averbar', operacao_id=operacao.id) }}" class="btn btn-success">
+                        <i class="ti ti-check me-1"></i> Averbar
+                    </a>
+                    {% endif %}
+                    {% if operacao.status != 'cancelada' %}
+                    <a href="{{ url_for('operacoes_blueprint.operacao_cancelar', operacao_id=operacao.id) }}" class="btn btn-outline-danger">
+                        <i class="ti ti-x me-1"></i> Cancelar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Status e Resumo -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-auto">
+                                <span class="avatar avatar-lg bg-primary-lt">
+                                    <i class="ti ti-file-invoice"></i>
+                                </span>
+                            </div>
+                            <div class="col">
+                                <h3 class="mb-1">{{ operacao.cliente_nome_completo }}</h3>
+                                <div class="text-muted">
+                                    CPF: {{ operacao.cpf_formatted }} 
+                                    {% if operacao.telefone %} | Tel: {{ operacao.telefone_formatted }}{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge {{ operacao.status_badge_class }} fs-5">{{ operacao.status_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dados do Contrato -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-file-description me-2"></i> Dados do Contrato
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="datagrid">
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Tipo</div>
+                                <div class="datagrid-content">
+                                    <span class="badge bg-azure-lt">{{ operacao.tipo_display }}</span>
+                                    {% if operacao.quitacao %}
+                                    <span class="badge bg-warning-lt ms-1">Quitação</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Data</div>
+                                <div class="datagrid-content">{{ operacao.data_operacao.strftime('%d/%m/%Y') if operacao.data_operacao else '-' }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Órgão</div>
+                                <div class="datagrid-content">{{ operacao.orgao or '-' }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Banco</div>
+                                <div class="datagrid-content">{{ operacao.banco or '-' }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Matrícula</div>
+                                <div class="datagrid-content">{{ operacao.matricula or '-' }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Prazo</div>
+                                <div class="datagrid-content">{{ operacao.prazo }} meses</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Taxa</div>
+                                <div class="datagrid-content">{{ "%.2f"|format(operacao.taxa) if operacao.taxa else '-' }}%</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Código Único</div>
+                                <div class="datagrid-content">{{ operacao.codigo_unico or '-' }}</div>
+                            </div>
+                            {% if operacao.tabela %}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Tabela</div>
+                                <div class="datagrid-content">
+                                    <a href="{{ url_for('operacoes_blueprint.tabela_view', tabela_id=operacao.tabela.id) }}">
+                                        {{ operacao.tabela.nome }}
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Valores -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-currency-real me-2"></i> Valores
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="datagrid">
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Valor Parcela</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.valor_parcela or 0) }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Valor AF</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.valor_af or 0) }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Valor Líquido</div>
+                                <div class="datagrid-content text-success fw-bold">R$ {{ "%.2f"|format(operacao.valor_liquido or 0) }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Saldo</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.saldo or 0) }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Margem</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.margem or 0) }}</div>
+                            </div>
+                        </div>
+                        
+                        {% if operacao.averbado %}
+                        <div class="mt-3 p-3 bg-success-lt rounded">
+                            <div class="d-flex align-items-center">
+                                <i class="ti ti-check icon text-success me-2"></i>
+                                <div>
+                                    <strong>Averbada</strong><br>
+                                    <small>{{ operacao.data_averbacao.strftime('%d/%m/%Y %H:%M') if operacao.data_averbacao else '' }} - {{ operacao.usuario_averbacao }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if operacao.status == 'cancelada' %}
+                        <div class="mt-3 p-3 bg-danger-lt rounded">
+                            <div class="d-flex align-items-center">
+                                <i class="ti ti-x icon text-danger me-2"></i>
+                                <div>
+                                    <strong>Cancelada</strong><br>
+                                    <small>{{ operacao.data_cancelamento.strftime('%d/%m/%Y %H:%M') if operacao.data_cancelamento else '' }}</small><br>
+                                    <small>Motivo: {{ operacao.motivo_cancelamento }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RPCs -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-arrows-exchange me-2"></i> RPCs ({{ operacao.rpcs_count }})
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('operacoes_blueprint.rpc_create', operacao_id=operacao.id) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus me-1"></i> Novo RPC
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if operacao.rpcs.count() > 0 %}
+                        <div class="list-group list-group-flush">
+                            {% for rpc in operacao.rpcs %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="avatar bg-azure-lt">
+                                            <i class="ti ti-arrows-exchange"></i>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <strong>{{ rpc.tipo_display }}</strong> - {{ rpc.banco or 'Banco não informado' }}
+                                            </div>
+                                            <span class="badge {{ rpc.status_badge_class }}">{{ rpc.status_display }}</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            Parcela: R$ {{ "%.2f"|format(rpc.valor_parcela or 0) }} | 
+                                            Restantes: {{ rpc.restantes or '-' }} | 
+                                            Saldo: R$ {{ "%.2f"|format(rpc.saldo_devedor or 0) }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-ghost-secondary btn-icon btn-sm" data-bs-toggle="dropdown">
+                                                <i class="ti ti-dots-vertical"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.rpc_edit', rpc_id=rpc.id) }}">
+                                                    <i class="ti ti-edit me-2"></i> Editar
+                                                </a>
+                                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#uploadRpcModal{{ rpc.id }}">
+                                                    <i class="ti ti-upload me-2"></i> Upload Boleto
+                                                </button>
+                                                <div class="dropdown-divider"></div>
+                                                <form action="{{ url_for('operacoes_blueprint.rpc_delete', rpc_id=rpc.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Excluir este RPC?')">
+                                                        <i class="ti ti-trash me-2"></i> Excluir
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="ti ti-arrows-exchange icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum RPC cadastrado</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Boletos -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-file-dollar me-2"></i> Boletos ({{ operacao.boletos_count }})
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('operacoes_blueprint.boleto_create', operacao_id=operacao.id) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus me-1"></i> Novo Boleto
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if operacao.boletos.count() > 0 %}
+                        <div class="list-group list-group-flush">
+                            {% for boleto in operacao.boletos %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="avatar {% if boleto.deposito_confirmado %}bg-success-lt{% else %}bg-warning-lt{% endif %}">
+                                            <i class="ti ti-file-dollar"></i>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <strong>{{ boleto.valor_formatted }}</strong>
+                                                {% if boleto.banco %} - {{ boleto.banco }}{% endif %}
+                                            </div>
+                                            <div>
+                                                {% if boleto.deposito_confirmado %}
+                                                <span class="badge bg-success-lt">Confirmado</span>
+                                                {% else %}
+                                                <span class="badge bg-warning-lt">Pendente</span>
+                                                {% endif %}
+                                                {% if boleto.deposito_comissao_paga %}
+                                                <span class="badge bg-info-lt ms-1">Comissão Paga</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="text-muted small">
+                                            Data: {{ boleto.data.strftime('%d/%m/%Y') if boleto.data else '-' }} | 
+                                            Comissões: R$ {{ "%.2f"|format(boleto.total_comissoes) }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-ghost-secondary btn-icon btn-sm" data-bs-toggle="dropdown">
+                                                <i class="ti ti-dots-vertical"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.boleto_edit', boleto_id=boleto.id) }}">
+                                                    <i class="ti ti-edit me-2"></i> Editar
+                                                </a>
+                                                {% if not boleto.deposito_confirmado %}
+                                                <form action="{{ url_for('operacoes_blueprint.boleto_confirmar', boleto_id=boleto.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="ti ti-check me-2"></i> Confirmar Depósito
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                                {% if not boleto.deposito_comissao_paga %}
+                                                <form action="{{ url_for('operacoes_blueprint.boleto_pagar_comissao', boleto_id=boleto.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="ti ti-coin me-2"></i> Pagar Comissão
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                                <div class="dropdown-divider"></div>
+                                                <form action="{{ url_for('operacoes_blueprint.boleto_delete', boleto_id=boleto.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Excluir este boleto?')">
+                                                        <i class="ti ti-trash me-2"></i> Excluir
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="ti ti-file-dollar icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum boleto cadastrado</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Documentos -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-files me-2"></i> Documentos
+                        </h3>
+                        <div class="card-actions">
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <i class="ti ti-upload me-1"></i> Upload
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if missing_files %}
+                        <div class="alert alert-warning mb-3">
+                            <i class="ti ti-alert-triangle me-2"></i>
+                            <strong>Documentos pendentes:</strong>
+                            {% for cat in missing_files %}
+                            <span class="badge bg-warning-lt ms-1">{{ cat.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if files %}
+                        <div class="row g-3">
+                            {% for file in files %}
+                            <div class="col-md-4">
+                                <div class="card card-sm">
+                                    <div class="card-body d-flex align-items-center">
+                                        <span class="avatar me-3 {% if file.is_image %}bg-purple-lt{% else %}bg-blue-lt{% endif %}">
+                                            <i class="ti ti-{% if file.is_image %}photo{% else %}file{% endif %}"></i>
+                                        </span>
+                                        <div class="flex-fill">
+                                            <div class="font-weight-medium text-truncate" title="{{ file.original_name }}">
+                                                {{ file.original_name|truncate(25) }}
+                                            </div>
+                                            <div class="text-muted small">
+                                                {{ file.category.name if file.category else 'Sem categoria' }} - {{ file.size_formatted }}
+                                            </div>
+                                        </div>
+                                        <div class="ms-2">
+                                            <a href="{{ url_for('files_blueprint.download', file_id=file.id) }}" class="btn btn-ghost-secondary btn-icon btn-sm">
+                                                <i class="ti ti-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="ti ti-files icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum documento anexado</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Observações -->
+            {% if operacao.obs %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-notes me-2"></i> Observações
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ operacao.obs }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Responsável e Metadados -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row text-muted small">
+                            <div class="col-md-3">
+                                <strong>Responsável:</strong> {{ operacao.responsavel_usuario or '-' }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Ponto:</strong> {{ operacao.responsavel_ponto or '-' }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Origem:</strong> {{ operacao.origem or '-' }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Criado em:</strong> {{ operacao.created_at.strftime('%d/%m/%Y %H:%M') if operacao.created_at else '-' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Upload -->
+<div class="modal modal-blur fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('operacoes_blueprint.operacao_upload_document', operacao_id=operacao.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload de Documento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Categoria</label>
+                        <select name="category" class="form-select">
+                            {% for cat in categories %}
+                            <option value="{{ cat.code }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Arquivo</label>
+                        <input type="file" name="file" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição (opcional)</label>
+                        <input type="text" name="description" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modals Upload RPC -->
+{% for rpc in operacao.rpcs %}
+<div class="modal modal-blur fade" id="uploadRpcModal{{ rpc.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('operacoes_blueprint.rpc_upload_boleto', rpc_id=rpc.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Boleto RPC</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Arquivo do Boleto</label>
+                        <input type="file" name="file" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

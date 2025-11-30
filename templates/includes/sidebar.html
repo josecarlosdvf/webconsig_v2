@@ -134,6 +134,30 @@
                 </li>
                 {% endif %}
                 
+                <!-- Operações / Contratos -->
+                {% if user_has_permission('operacoes.view') or current_user.is_admin %}
+                <li class="nav-item dropdown {% if 'operacoes' in segment %}active{% endif %}">
+                    <a class="nav-link dropdown-toggle" href="#navbar-operacoes" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{% if 'operacoes' in segment %}true{% else %}false{% endif %}">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <i class="ti ti-file-invoice"></i>
+                        </span>
+                        <span class="nav-link-title">Operações</span>
+                    </a>
+                    <div class="dropdown-menu {% if 'operacoes' in segment %}show{% endif %}">
+                        <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.operacoes_list') }}">
+                            <i class="ti ti-list me-2"></i> Lista de Operações
+                        </a>
+                        <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.operacao_create') }}">
+                            <i class="ti ti-plus me-2"></i> Nova Operação
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.tabelas_list') }}">
+                            <i class="ti ti-table me-2"></i> Tabelas de Empréstimo
+                        </a>
+                    </div>
+                </li>
+                {% endif %}
+                
                 <!-- Mensageria WhatsApp -->
                 {% if user_has_permission('messaging.view') or current_user.is_admin %}
                 <li class="nav-item dropdown {% if 'mensagens' in segment or 'messaging' in segment %}active{% endif %}">

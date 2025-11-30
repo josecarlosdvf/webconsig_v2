@@ -5,14 +5,14 @@
 {% block content %}
 <div class="page-header d-print-none">
     <div class="container-xl">
-        <div class="page-pretitle">Operações</div>
+        <div class="page-pretitle">Propostas</div>
         <div class="d-flex align-items-center">
             <h2 class="page-title">
                 <i class="ti ti-table me-2"></i>
                 Tabelas de Empréstimo
             </h2>
             <div class="ms-auto">
-                <a href="{{ url_for('operacoes_blueprint.tabela_create') }}" class="btn btn-primary">
+                <a href="{{ url_for('propostas_blueprint.tabela_create') }}" class="btn btn-primary">
                     <i class="ti ti-plus me-1"></i> Nova Tabela
                 </a>
             </div>
@@ -25,7 +25,7 @@
         <!-- Filtros -->
         <div class="card mb-3">
             <div class="card-body">
-                <form method="GET" action="{{ url_for('operacoes_blueprint.tabelas_list') }}">
+                <form method="GET" action="{{ url_for('propostas_blueprint.tabelas_list') }}">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Buscar</label>
@@ -56,7 +56,7 @@
                             <button type="submit" class="btn btn-primary me-2">
                                 <i class="ti ti-search"></i>
                             </button>
-                            <a href="{{ url_for('operacoes_blueprint.tabelas_list') }}" class="btn btn-outline-secondary">
+                            <a href="{{ url_for('propostas_blueprint.tabelas_list') }}" class="btn btn-outline-secondary">
                                 <i class="ti ti-x"></i>
                             </a>
                         </div>
@@ -86,7 +86,7 @@
                         {% for tabela in tabelas %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('operacoes_blueprint.tabela_view', tabela_id=tabela.id) }}">
+                                <a href="{{ url_for('propostas_blueprint.tabela_view', tabela_id=tabela.id) }}">
                                     <strong>{{ tabela.nome }}</strong>
                                 </a>
                             </td>
@@ -111,13 +111,13 @@
                                         <i class="ti ti-dots-vertical"></i>
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-end">
-                                        <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.tabela_view', tabela_id=tabela.id) }}">
+                                        <a class="dropdown-item" href="{{ url_for('propostas_blueprint.tabela_view', tabela_id=tabela.id) }}">
                                             <i class="ti ti-eye me-2"></i> Visualizar
                                         </a>
-                                        <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.tabela_edit', tabela_id=tabela.id) }}">
+                                        <a class="dropdown-item" href="{{ url_for('propostas_blueprint.tabela_edit', tabela_id=tabela.id) }}">
                                             <i class="ti ti-edit me-2"></i> Editar
                                         </a>
-                                        <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.tabela_fatores', tabela_id=tabela.id) }}">
+                                        <a class="dropdown-item" href="{{ url_for('propostas_blueprint.tabela_fatores', tabela_id=tabela.id) }}">
                                             <i class="ti ti-calendar me-2"></i> Fatores Diários
                                         </a>
                                         <div class="dropdown-divider"></div>
@@ -149,21 +149,21 @@
                 </p>
                 <ul class="pagination m-0 ms-auto">
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('operacoes_blueprint.tabelas_list', page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}">
+                        <a class="page-link" href="{{ url_for('propostas_blueprint.tabelas_list', page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}">
                             <i class="ti ti-chevron-left"></i>
                         </a>
                     </li>
                     {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
                         {% if page_num %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('operacoes_blueprint.tabelas_list', page=page_num, **request.args) }}">{{ page_num }}</a>
+                            <a class="page-link" href="{{ url_for('propostas_blueprint.tabelas_list', page=page_num, **request.args) }}">{{ page_num }}</a>
                         </li>
                         {% else %}
                         <li class="page-item disabled"><span class="page-link">...</span></li>
                         {% endif %}
                     {% endfor %}
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('operacoes_blueprint.tabelas_list', page=pagination.next_num, **request.args) if pagination.has_next else '#' }}">
+                        <a class="page-link" href="{{ url_for('propostas_blueprint.tabelas_list', page=pagination.next_num, **request.args) if pagination.has_next else '#' }}">
                             <i class="ti ti-chevron-right"></i>
                         </a>
                     </li>
@@ -188,7 +188,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form action="{{ url_for('operacoes_blueprint.tabela_delete', tabela_id=tabela.id) }}" method="POST" class="d-inline">
+                <form action="{{ url_for('propostas_blueprint.tabela_delete', tabela_id=tabela.id) }}" method="POST" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">
                         <i class="ti ti-trash me-1"></i> Excluir

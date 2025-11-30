@@ -122,22 +122,25 @@ def test_user(app, init_database):
 @pytest.fixture(scope='function')
 def admin_user(app, init_database):
     """
-    Cria um usuário administrador de teste.
+    Cria ou obtém um usuário administrador de teste.
     """
     with app.app_context():
-        admin = Users(
-            username='admin',
-            email='admin@example.com',
-            password='admin123',
-            first_name='Admin',
-            last_name='User',
-            is_active=True,
-            is_admin=True
-        )
-        db.session.add(admin)
-        db.session.commit()
-        
+        # Tenta obter o admin existente primeiro
         admin = Users.query.filter_by(username='admin').first()
+        if not admin:
+            admin = Users(
+                username='admin',
+                email='admin@example.com',
+                password='admin123',
+                first_name='Admin',
+                last_name='User',
+                is_active=True,
+                is_admin=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            admin = Users.query.filter_by(username='admin').first()
+        
         yield admin
 
 

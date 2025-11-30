@@ -8,7 +8,7 @@
         <div class="row align-items-center">
             <div class="col-auto">
                 <div class="page-pretitle">
-                    <a href="{{ url_for('operacoes_blueprint.tabelas_list') }}">Tabelas</a>
+                    <a href="{{ url_for('propostas_blueprint.tabelas_list') }}">Tabelas</a>
                 </div>
                 <h2 class="page-title">
                     <i class="ti ti-table me-2"></i>
@@ -17,10 +17,10 @@
             </div>
             <div class="col-auto ms-auto">
                 <div class="btn-list">
-                    <a href="{{ url_for('operacoes_blueprint.tabela_edit', tabela_id=tabela.id) }}" class="btn btn-primary">
+                    <a href="{{ url_for('propostas_blueprint.tabela_edit', tabela_id=tabela.id) }}" class="btn btn-primary">
                         <i class="ti ti-edit me-1"></i> Editar
                     </a>
-                    <a href="{{ url_for('operacoes_blueprint.tabela_fatores', tabela_id=tabela.id) }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('propostas_blueprint.tabela_fatores', tabela_id=tabela.id) }}" class="btn btn-outline-primary">
                         <i class="ti ti-calendar me-1"></i> Fatores Diários
                     </a>
                 </div>
@@ -97,7 +97,7 @@
                                 <div class="datagrid-content">{{ tabela.idade_max or '-' }} anos</div>
                             </div>
                             <div class="datagrid-item">
-                                <div class="datagrid-title">Operações</div>
+                                <div class="datagrid-title">Propostas</div>
                                 <div class="datagrid-content">{{ tabela.operacoes_count }}</div>
                             </div>
                         </div>
@@ -145,7 +145,7 @@
                     <div class="card-header">
                         <h3 class="card-title">Fatores Diários</h3>
                         <div class="card-actions">
-                            <a href="{{ url_for('operacoes_blueprint.tabela_fatores', tabela_id=tabela.id) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('propostas_blueprint.tabela_fatores', tabela_id=tabela.id) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="ti ti-edit me-1"></i> Editar
                             </a>
                         </div>

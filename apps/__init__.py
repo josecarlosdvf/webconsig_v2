@@ -39,7 +39,7 @@ def register_blueprints(app):
         'files',
         'messaging',
         'clientes',
-        'operacoes',
+        'propostas',
     )
     
     for module_name in blueprints:

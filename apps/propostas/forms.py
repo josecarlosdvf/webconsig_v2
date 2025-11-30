@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-Formulários de Operações/Contratos
+Formulários de Propostas/Contratos
 """
 
 from flask_wtf import FlaskForm
@@ -10,8 +10,8 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Optional, Length, NumberRange
 
-from apps.operacoes.models import (
-    TipoOperacao, StatusOperacao, TipoTabela, TipoRPC, StatusRPC
+from apps.propostas.models import (
+    TipoProposta, PropostaStatus, TipoTabela, TipoRPC, StatusRPC
 )
 
 
@@ -112,29 +112,29 @@ class TabelaSearchForm(FlaskForm):
     )
 
 
-class OperacaoForm(FlaskForm):
-    """Formulário de operação/contrato"""
+class PropostaForm(FlaskForm):
+    """Formulário de proposta/contrato"""
     
     # Cliente
     cliente_cpf = StringField(
         'CPF',
         validators=[DataRequired(), Length(max=14)],
-        render_kw={'placeholder': '000.000.000-00', 'class': 'cpf-mask'}
+        render_kw={'placeholder': '000.000.000-00', 'class': 'cpf-mask', 'id': 'cliente_cpf'}
     )
     cliente_nome_completo = StringField(
         'Nome Completo',
         validators=[DataRequired(), Length(max=200)],
-        render_kw={'placeholder': 'Nome do cliente'}
+        render_kw={'placeholder': 'Nome do cliente', 'id': 'cliente_nome_completo'}
     )
     telefone = StringField(
         'Telefone',
         validators=[Optional(), Length(max=20)],
-        render_kw={'placeholder': '(00) 00000-0000', 'class': 'phone-mask'}
+        render_kw={'placeholder': '(00) 00000-0000', 'class': 'phone-mask', 'id': 'cliente_telefone'}
     )
     email = StringField(
         'E-mail',
         validators=[Optional(), Length(max=200)],
-        render_kw={'placeholder': 'email@exemplo.com'}
+        render_kw={'placeholder': 'email@exemplo.com', 'id': 'cliente_email'}
     )
     
     # Responsável
@@ -169,13 +169,13 @@ class OperacaoForm(FlaskForm):
     
     tipo = SelectField(
         'Tipo',
-        choices=TipoOperacao.CHOICES,
+        choices=TipoProposta.CHOICES,
         validators=[DataRequired()]
     )
-    quitacao = BooleanField('Operação de Quitação', default=False)
+    quitacao = BooleanField('Proposta de Quitação', default=False)
     
-    data_operacao = DateField(
-        'Data da Operação',
+    data_proposta = DateField(
+        'Data da Proposta',
         validators=[Optional()],
         format='%Y-%m-%d'
     )
@@ -233,7 +233,7 @@ class OperacaoForm(FlaskForm):
     # Status
     status = SelectField(
         'Status',
-        choices=StatusOperacao.CHOICES,
+        choices=PropostaStatus.CHOICES_ATIVOS,
         validators=[DataRequired()]
     )
     
@@ -245,8 +245,8 @@ class OperacaoForm(FlaskForm):
     )
 
 
-class OperacaoSearchForm(FlaskForm):
-    """Formulário de busca de operações"""
+class PropostaSearchForm(FlaskForm):
+    """Formulário de busca de propostas"""
     
     search = StringField(
         'Buscar',
@@ -254,12 +254,12 @@ class OperacaoSearchForm(FlaskForm):
     )
     status = SelectField(
         'Status',
-        choices=[('', 'Todos')] + StatusOperacao.CHOICES,
+        choices=[('', 'Todos')] + PropostaStatus.CHOICES_ATIVOS,
         validators=[Optional()]
     )
     tipo = SelectField(
         'Tipo',
-        choices=[('', 'Todos')] + TipoOperacao.CHOICES,
+        choices=[('', 'Todos')] + TipoProposta.CHOICES,
         validators=[Optional()]
     )
     banco = StringField(

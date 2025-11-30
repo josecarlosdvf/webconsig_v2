@@ -6,7 +6,7 @@
 <div class="page-header d-print-none">
     <div class="container-xl">
         <div class="page-pretitle">
-            <a href="{{ url_for('operacoes_blueprint.operacoes_list') }}">Operações</a>
+            <a href="{{ url_for('propostas_blueprint.propostas_list') }}">Propostas</a>
         </div>
         <h2 class="page-title">
             <i class="ti ti-file-invoice me-2"></i>
@@ -29,24 +29,30 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label required">CPF</label>
-                        <input type="text" name="cliente_cpf" class="form-control cpf-mask" 
-                               value="{{ form.cliente_cpf.data or '' }}" 
-                               placeholder="000.000.000-00" required>
+                        <div class="input-group">
+                            <input type="text" name="cliente_cpf" id="cliente_cpf" class="form-control cpf-mask" 
+                                   value="{{ form.cliente_cpf.data or '' }}" 
+                                   placeholder="000.000.000-00" required>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-buscar-cliente" title="Buscar cliente">
+                                <i class="ti ti-search"></i>
+                            </button>
+                        </div>
+                        <div id="cliente-feedback" class="small mt-1"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label required">Nome Completo</label>
-                        <input type="text" name="cliente_nome_completo" class="form-control" 
+                        <input type="text" name="cliente_nome_completo" id="cliente_nome_completo" class="form-control" 
                                value="{{ form.cliente_nome_completo.data or '' }}" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Telefone</label>
-                        <input type="text" name="telefone" class="form-control phone-mask" 
+                        <input type="text" name="telefone" id="cliente_telefone" class="form-control phone-mask" 
                                value="{{ form.telefone.data or '' }}" 
                                placeholder="(00) 00000-0000">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">E-mail</label>
-                        <input type="email" name="email" class="form-control" 
+                        <input type="email" name="email" id="cliente_email" class="form-control" 
                                value="{{ form.email.data or '' }}">
                     </div>
                     <div class="col-md-4">
@@ -71,11 +77,18 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">Tabela</label>
-                        <select name="tabela_id" class="form-select">
-                            {% for value, label in form.tabela_id.choices %}
-                            <option value="{{ value }}" {% if form.tabela_id.data == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="input-group">
+                            <select name="tabela_id" class="form-select">
+                                {% for value, label in form.tabela_id.choices %}
+                                <option value="{{ value }}" {% if form.tabela_id.data == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if is_admin %}
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalNovaTabela" title="Nova Tabela">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label required">Tipo</label>
@@ -94,14 +107,14 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Data da Operação</label>
-                        <input type="date" name="data_operacao" class="form-control" 
-                               value="{{ form.data_operacao.data.strftime('%Y-%m-%d') if form.data_operacao.data else '' }}">
+                        <label class="form-label">Data da Proposta</label>
+                        <input type="date" name="data_proposta" class="form-control" 
+                               value="{{ form.data_proposta.data.strftime('%Y-%m-%d') if form.data_proposta.data else '' }}">
                     </div>
                     
                     <div class="col-md-3">
                         <label class="form-label">Órgão</label>
-                        <input type="text" name="orgao" class="form-control" 
+                        <input type="text" name="orgao" id="cliente_orgao" class="form-control" 
                                value="{{ form.orgao.data or '' }}" placeholder="INSS, Exército...">
                     </div>
                     <div class="col-md-3">
@@ -111,7 +124,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Matrícula</label>
-                        <input type="text" name="matricula" class="form-control" 
+                        <input type="text" name="matricula" id="cliente_matricula" class="form-control" 
                                value="{{ form.matricula.data or '' }}">
                     </div>
                     <div class="col-md-3">
@@ -175,7 +188,7 @@
                         <label class="form-check">
                             <input type="checkbox" name="quitacao" class="form-check-input" 
                                    {% if form.quitacao.data %}checked{% endif %}>
-                            <span class="form-check-label">Operação de Quitação</span>
+                            <span class="form-check-label">Proposta de Quitação</span>
                         </label>
                     </div>
                 </div>
@@ -191,7 +204,7 @@
             </div>
             
             <div class="card-footer text-end">
-                <a href="{{ url_for('operacoes_blueprint.operacoes_list') }}" class="btn btn-ghost-secondary me-2">
+                <a href="{{ url_for('propostas_blueprint.propostas_list') }}" class="btn btn-ghost-secondary me-2">
                     Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -199,6 +212,26 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal de confirmação para criar cliente -->
+<div class="modal fade" id="modalConfirmarCliente" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cliente não encontrado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>O CPF informado não possui cadastro no sistema.</p>
+                <p>Deseja criar um novo cliente?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Não</button>
+                <a href="#" id="btn-criar-cliente" class="btn btn-primary">Sim, criar cliente</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -224,5 +257,68 @@ document.querySelectorAll('.phone-mask').forEach(function(el) {
         e.target.value = v;
     });
 });
+
+// Busca de cliente por CPF
+function buscarCliente() {
+    const cpf = document.getElementById('cliente_cpf').value;
+    const feedback = document.getElementById('cliente-feedback');
+    
+    if (cpf.replace(/\D/g, '').length < 11) {
+        feedback.innerHTML = '<span class="text-muted">Digite o CPF completo</span>';
+        return;
+    }
+    
+    feedback.innerHTML = '<span class="text-info"><i class="ti ti-loader spinner"></i> Buscando...</span>';
+    
+    fetch('{{ url_for("propostas_blueprint.api_buscar_cliente") }}?cpf=' + encodeURIComponent(cpf))
+        .then(response => response.json())
+        .then(data => {
+            if (data.found) {
+                // Preenche os campos com os dados do cliente
+                document.getElementById('cliente_nome_completo').value = data.cliente.nome_completo || '';
+                document.getElementById('cliente_telefone').value = data.cliente.telefone || '';
+                document.getElementById('cliente_email').value = data.cliente.email || '';
+                document.getElementById('cliente_matricula').value = data.cliente.matricula || '';
+                document.getElementById('cliente_orgao').value = data.cliente.orgao || '';
+                
+                feedback.innerHTML = '<span class="text-success"><i class="ti ti-check me-1"></i> Cliente encontrado! <a href="' + data.cliente.view_url + '" target="_blank">Ver cadastro</a></span>';
+            } else {
+                // Mostra modal para criar cliente
+                document.getElementById('btn-criar-cliente').href = data.create_url || '#';
+                
+                // Salva o CPF na URL de criação
+                const createUrl = '{{ url_for("clientes_blueprint.cliente_create") }}?cpf=' + cpf.replace(/\D/g, '') + '&redirect_proposta=1';
+                document.getElementById('btn-criar-cliente').href = createUrl;
+                
+                var modal = new bootstrap.Modal(document.getElementById('modalConfirmarCliente'));
+                modal.show();
+                
+                feedback.innerHTML = '<span class="text-warning"><i class="ti ti-alert-triangle me-1"></i> Cliente não encontrado</span>';
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            feedback.innerHTML = '<span class="text-danger"><i class="ti ti-x me-1"></i> Erro ao buscar cliente</span>';
+        });
+}
+
+// Event listeners
+document.getElementById('btn-buscar-cliente').addEventListener('click', buscarCliente);
+
+document.getElementById('cliente_cpf').addEventListener('blur', function() {
+    if (this.value.replace(/\D/g, '').length === 11) {
+        buscarCliente();
+    }
+});
+
+// Limpar feedback quando CPF muda
+document.getElementById('cliente_cpf').addEventListener('input', function() {
+    document.getElementById('cliente-feedback').innerHTML = '';
+});
+
+// Style para spinner
+const style = document.createElement('style');
+style.textContent = '.spinner { animation: spin 1s linear infinite; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+document.head.appendChild(style);
 </script>
 {% endblock %}

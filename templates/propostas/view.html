@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}Operação #{{ operacao.id }} | {{ system.app_name }}{% endblock %}
+{% block title %}Proposta #{{ proposta.id }} | {{ system.app_name }}{% endblock %}
 
 {% block content %}
 <div class="page-header d-print-none">
@@ -8,25 +8,25 @@
         <div class="row align-items-center">
             <div class="col-auto">
                 <div class="page-pretitle">
-                    <a href="{{ url_for('operacoes_blueprint.operacoes_list') }}">Operações</a>
+                    <a href="{{ url_for('propostas_blueprint.propostas_list') }}">Propostas</a>
                 </div>
                 <h2 class="page-title">
                     <i class="ti ti-file-invoice me-2"></i>
-                    Operação #{{ operacao.id }}
+                    Proposta #{{ proposta.id }}
                 </h2>
             </div>
             <div class="col-auto ms-auto">
                 <div class="btn-list">
-                    <a href="{{ url_for('operacoes_blueprint.operacao_edit', operacao_id=operacao.id) }}" class="btn btn-primary">
+                    <a href="{{ url_for('propostas_blueprint.proposta_edit', proposta_id=proposta.id) }}" class="btn btn-primary">
                         <i class="ti ti-edit me-1"></i> Editar
                     </a>
-                    {% if not operacao.averbado and operacao.status not in ['cancelada', 'recusada'] %}
-                    <a href="{{ url_for('operacoes_blueprint.operacao_averbar', operacao_id=operacao.id) }}" class="btn btn-success">
+                    {% if not proposta.averbado and proposta.status not in ['CANCELADA'] %}
+                    <a href="{{ url_for('propostas_blueprint.proposta_averbar', proposta_id=proposta.id) }}" class="btn btn-success">
                         <i class="ti ti-check me-1"></i> Averbar
                     </a>
                     {% endif %}
-                    {% if operacao.status != 'cancelada' %}
-                    <a href="{{ url_for('operacoes_blueprint.operacao_cancelar', operacao_id=operacao.id) }}" class="btn btn-outline-danger">
+                    {% if proposta.status != 'CANCELADA' %}
+                    <a href="{{ url_for('propostas_blueprint.proposta_cancelar', proposta_id=proposta.id) }}" class="btn btn-outline-danger">
                         <i class="ti ti-x me-1"></i> Cancelar
                     </a>
                     {% endif %}
@@ -50,14 +50,14 @@
                                 </span>
                             </div>
                             <div class="col">
-                                <h3 class="mb-1">{{ operacao.cliente_nome_completo }}</h3>
+                                <h3 class="mb-1">{{ proposta.cliente_nome_completo }}</h3>
                                 <div class="text-muted">
-                                    CPF: {{ operacao.cpf_formatted }} 
-                                    {% if operacao.telefone %} | Tel: {{ operacao.telefone_formatted }}{% endif %}
+                                    CPF: {{ proposta.cpf_formatted }} 
+                                    {% if proposta.telefone %} | Tel: {{ proposta.telefone_formatted }}{% endif %}
                                 </div>
                             </div>
                             <div class="col-auto">
-                                <span class="badge {{ operacao.status_badge_class }} fs-5">{{ operacao.status_display }}</span>
+                                <span class="badge {{ proposta.status_badge_class }} fs-5">{{ proposta.status_display }}</span>
                             </div>
                         </div>
                     </div>
@@ -77,46 +77,46 @@
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Tipo</div>
                                 <div class="datagrid-content">
-                                    <span class="badge bg-azure-lt">{{ operacao.tipo_display }}</span>
-                                    {% if operacao.quitacao %}
+                                    <span class="badge bg-azure-lt">{{ proposta.tipo_display }}</span>
+                                    {% if proposta.quitacao %}
                                     <span class="badge bg-warning-lt ms-1">Quitação</span>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Data</div>
-                                <div class="datagrid-content">{{ operacao.data_operacao.strftime('%d/%m/%Y') if operacao.data_operacao else '-' }}</div>
+                                <div class="datagrid-content">{{ proposta.data_proposta.strftime('%d/%m/%Y') if proposta.data_proposta else '-' }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Órgão</div>
-                                <div class="datagrid-content">{{ operacao.orgao or '-' }}</div>
+                                <div class="datagrid-content">{{ proposta.orgao or '-' }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Banco</div>
-                                <div class="datagrid-content">{{ operacao.banco or '-' }}</div>
+                                <div class="datagrid-content">{{ proposta.banco or '-' }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Matrícula</div>
-                                <div class="datagrid-content">{{ operacao.matricula or '-' }}</div>
+                                <div class="datagrid-content">{{ proposta.matricula or '-' }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Prazo</div>
-                                <div class="datagrid-content">{{ operacao.prazo }} meses</div>
+                                <div class="datagrid-content">{{ proposta.prazo }} meses</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Taxa</div>
-                                <div class="datagrid-content">{{ "%.2f"|format(operacao.taxa) if operacao.taxa else '-' }}%</div>
+                                <div class="datagrid-content">{{ "%.2f"|format(proposta.taxa) if proposta.taxa else '-' }}%</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Código Único</div>
-                                <div class="datagrid-content">{{ operacao.codigo_unico or '-' }}</div>
+                                <div class="datagrid-content">{{ proposta.codigo_unico or '-' }}</div>
                             </div>
-                            {% if operacao.tabela %}
+                            {% if proposta.tabela %}
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Tabela</div>
                                 <div class="datagrid-content">
-                                    <a href="{{ url_for('operacoes_blueprint.tabela_view', tabela_id=operacao.tabela.id) }}">
-                                        {{ operacao.tabela.nome }}
+                                    <a href="{{ url_for('propostas_blueprint.tabela_view', tabela_id=proposta.tabela.id) }}">
+                                        {{ proposta.tabela.nome }}
                                     </a>
                                 </div>
                             </div>
@@ -138,46 +138,46 @@
                         <div class="datagrid">
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Valor Parcela</div>
-                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.valor_parcela or 0) }}</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(proposta.valor_parcela or 0) }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Valor AF</div>
-                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.valor_af or 0) }}</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(proposta.valor_af or 0) }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Valor Líquido</div>
-                                <div class="datagrid-content text-success fw-bold">R$ {{ "%.2f"|format(operacao.valor_liquido or 0) }}</div>
+                                <div class="datagrid-content text-success fw-bold">R$ {{ "%.2f"|format(proposta.valor_liquido or 0) }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Saldo</div>
-                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.saldo or 0) }}</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(proposta.saldo or 0) }}</div>
                             </div>
                             <div class="datagrid-item">
                                 <div class="datagrid-title">Margem</div>
-                                <div class="datagrid-content">R$ {{ "%.2f"|format(operacao.margem or 0) }}</div>
+                                <div class="datagrid-content">R$ {{ "%.2f"|format(proposta.margem or 0) }}</div>
                             </div>
                         </div>
                         
-                        {% if operacao.averbado %}
+                        {% if proposta.averbado %}
                         <div class="mt-3 p-3 bg-success-lt rounded">
                             <div class="d-flex align-items-center">
                                 <i class="ti ti-check icon text-success me-2"></i>
                                 <div>
                                     <strong>Averbada</strong><br>
-                                    <small>{{ operacao.data_averbacao.strftime('%d/%m/%Y %H:%M') if operacao.data_averbacao else '' }} - {{ operacao.usuario_averbacao }}</small>
+                                    <small>{{ proposta.data_averbacao.strftime('%d/%m/%Y %H:%M') if proposta.data_averbacao else '' }} - {{ proposta.usuario_averbacao }}</small>
                                 </div>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if operacao.status == 'cancelada' %}
+                        {% if proposta.status == 'CANCELADA' %}
                         <div class="mt-3 p-3 bg-danger-lt rounded">
                             <div class="d-flex align-items-center">
                                 <i class="ti ti-x icon text-danger me-2"></i>
                                 <div>
                                     <strong>Cancelada</strong><br>
-                                    <small>{{ operacao.data_cancelamento.strftime('%d/%m/%Y %H:%M') if operacao.data_cancelamento else '' }}</small><br>
-                                    <small>Motivo: {{ operacao.motivo_cancelamento }}</small>
+                                    <small>{{ proposta.data_cancelamento.strftime('%d/%m/%Y %H:%M') if proposta.data_cancelamento else '' }}</small><br>
+                                    <small>Motivo: {{ proposta.motivo_cancelamento }}</small>
                                 </div>
                             </div>
                         </div>
@@ -191,18 +191,18 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="ti ti-arrows-exchange me-2"></i> RPCs ({{ operacao.rpcs_count }})
+                            <i class="ti ti-arrows-exchange me-2"></i> RPCs ({{ proposta.rpcs_count }})
                         </h3>
                         <div class="card-actions">
-                            <a href="{{ url_for('operacoes_blueprint.rpc_create', operacao_id=operacao.id) }}" class="btn btn-sm btn-primary">
+                            <a href="{{ url_for('propostas_blueprint.rpc_create', proposta_id=proposta.id) }}" class="btn btn-sm btn-primary">
                                 <i class="ti ti-plus me-1"></i> Novo RPC
                             </a>
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        {% if operacao.rpcs.count() > 0 %}
+                        {% if proposta.rpcs.count() > 0 %}
                         <div class="list-group list-group-flush">
-                            {% for rpc in operacao.rpcs %}
+                            {% for rpc in proposta.rpcs %}
                             <div class="list-group-item">
                                 <div class="row align-items-center">
                                     <div class="col-auto">
@@ -229,14 +229,14 @@
                                                 <i class="ti ti-dots-vertical"></i>
                                             </button>
                                             <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.rpc_edit', rpc_id=rpc.id) }}">
+                                                <a class="dropdown-item" href="{{ url_for('propostas_blueprint.rpc_edit', rpc_id=rpc.id) }}">
                                                     <i class="ti ti-edit me-2"></i> Editar
                                                 </a>
                                                 <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#uploadRpcModal{{ rpc.id }}">
                                                     <i class="ti ti-upload me-2"></i> Upload Boleto
                                                 </button>
                                                 <div class="dropdown-divider"></div>
-                                                <form action="{{ url_for('operacoes_blueprint.rpc_delete', rpc_id=rpc.id) }}" method="POST" class="d-inline">
+                                                <form action="{{ url_for('propostas_blueprint.rpc_delete', rpc_id=rpc.id) }}" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Excluir este RPC?')">
                                                         <i class="ti ti-trash me-2"></i> Excluir
@@ -264,18 +264,18 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="ti ti-file-dollar me-2"></i> Boletos ({{ operacao.boletos_count }})
+                            <i class="ti ti-file-dollar me-2"></i> Boletos ({{ proposta.boletos_count }})
                         </h3>
                         <div class="card-actions">
-                            <a href="{{ url_for('operacoes_blueprint.boleto_create', operacao_id=operacao.id) }}" class="btn btn-sm btn-primary">
+                            <a href="{{ url_for('propostas_blueprint.boleto_create', proposta_id=proposta.id) }}" class="btn btn-sm btn-primary">
                                 <i class="ti ti-plus me-1"></i> Novo Boleto
                             </a>
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        {% if operacao.boletos.count() > 0 %}
+                        {% if proposta.boletos.count() > 0 %}
                         <div class="list-group list-group-flush">
-                            {% for boleto in operacao.boletos %}
+                            {% for boleto in proposta.boletos %}
                             <div class="list-group-item">
                                 <div class="row align-items-center">
                                     <div class="col-auto">
@@ -311,11 +311,11 @@
                                                 <i class="ti ti-dots-vertical"></i>
                                             </button>
                                             <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="{{ url_for('operacoes_blueprint.boleto_edit', boleto_id=boleto.id) }}">
+                                                <a class="dropdown-item" href="{{ url_for('propostas_blueprint.boleto_edit', boleto_id=boleto.id) }}">
                                                     <i class="ti ti-edit me-2"></i> Editar
                                                 </a>
                                                 {% if not boleto.deposito_confirmado %}
-                                                <form action="{{ url_for('operacoes_blueprint.boleto_confirmar', boleto_id=boleto.id) }}" method="POST" class="d-inline">
+                                                <form action="{{ url_for('propostas_blueprint.boleto_confirmar', boleto_id=boleto.id) }}" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="dropdown-item">
                                                         <i class="ti ti-check me-2"></i> Confirmar Depósito
@@ -323,7 +323,7 @@
                                                 </form>
                                                 {% endif %}
                                                 {% if not boleto.deposito_comissao_paga %}
-                                                <form action="{{ url_for('operacoes_blueprint.boleto_pagar_comissao', boleto_id=boleto.id) }}" method="POST" class="d-inline">
+                                                <form action="{{ url_for('propostas_blueprint.boleto_pagar_comissao', boleto_id=boleto.id) }}" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="dropdown-item">
                                                         <i class="ti ti-coin me-2"></i> Pagar Comissão
@@ -331,7 +331,7 @@
                                                 </form>
                                                 {% endif %}
                                                 <div class="dropdown-divider"></div>
-                                                <form action="{{ url_for('operacoes_blueprint.boleto_delete', boleto_id=boleto.id) }}" method="POST" class="d-inline">
+                                                <form action="{{ url_for('propostas_blueprint.boleto_delete', boleto_id=boleto.id) }}" method="POST" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Excluir este boleto?')">
                                                         <i class="ti ti-trash me-2"></i> Excluir
@@ -416,7 +416,7 @@
             </div>
             
             <!-- Observações -->
-            {% if operacao.obs %}
+            {% if proposta.obs %}
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
@@ -425,7 +425,7 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <p class="mb-0">{{ operacao.obs }}</p>
+                        <p class="mb-0">{{ proposta.obs }}</p>
                     </div>
                 </div>
             </div>
@@ -437,16 +437,16 @@
                     <div class="card-body">
                         <div class="row text-muted small">
                             <div class="col-md-3">
-                                <strong>Responsável:</strong> {{ operacao.responsavel_usuario or '-' }}
+                                <strong>Responsável:</strong> {{ proposta.responsavel_usuario or '-' }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Ponto:</strong> {{ operacao.responsavel_ponto or '-' }}
+                                <strong>Ponto:</strong> {{ proposta.responsavel_ponto or '-' }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Origem:</strong> {{ operacao.origem or '-' }}
+                                <strong>Origem:</strong> {{ proposta.origem or '-' }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Criado em:</strong> {{ operacao.created_at.strftime('%d/%m/%Y %H:%M') if operacao.created_at else '-' }}
+                                <strong>Criado em:</strong> {{ proposta.created_at.strftime('%d/%m/%Y %H:%M') if proposta.created_at else '-' }}
                             </div>
                         </div>
                     </div>
@@ -460,7 +460,7 @@
 <div class="modal modal-blur fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form action="{{ url_for('operacoes_blueprint.operacao_upload_document', operacao_id=operacao.id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('propostas_blueprint.proposta_upload_document', proposta_id=proposta.id) }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
                     <h5 class="modal-title">Upload de Documento</h5>
@@ -496,11 +496,11 @@
 </div>
 
 <!-- Modals Upload RPC -->
-{% for rpc in operacao.rpcs %}
+{% for rpc in proposta.rpcs %}
 <div class="modal modal-blur fade" id="uploadRpcModal{{ rpc.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form action="{{ url_for('operacoes_blueprint.rpc_upload_boleto', rpc_id=rpc.id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('propostas_blueprint.rpc_upload_boleto', rpc_id=rpc.id) }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
                     <h5 class="modal-title">Upload Boleto RPC</h5>

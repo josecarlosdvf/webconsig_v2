@@ -6,7 +6,7 @@
 <div class="page-header d-print-none">
     <div class="container-xl">
         <div class="page-pretitle">
-            <a href="{{ url_for('operacoes_blueprint.tabela_view', tabela_id=tabela.id) }}">{{ tabela.nome }}</a>
+            <a href="{{ url_for('propostas_blueprint.tabela_view', tabela_id=tabela.id) }}">{{ tabela.nome }}</a>
         </div>
         <h2 class="page-title">
             <i class="ti ti-calendar me-2"></i>
@@ -41,7 +41,7 @@
             </div>
             
             <div class="card-footer d-flex justify-content-between">
-                <a href="{{ url_for('operacoes_blueprint.tabela_view', tabela_id=tabela.id) }}" class="btn btn-ghost-secondary">
+                <a href="{{ url_for('propostas_blueprint.tabela_view', tabela_id=tabela.id) }}" class="btn btn-ghost-secondary">
                     Cancelar
                 </a>
                 <div>

@@ -111,7 +111,7 @@ class TestPropostaCreation:
             
             assert response.status_code == 200
             
-            # Verifica se proposta foi criada
+            # Verifica se proposta foi criada (CPF é limpo automaticamente na rota)
             proposta = Proposta.query.filter_by(cliente_cpf='12345678900').first()
             if proposta:
                 assert proposta.cliente_nome_completo == 'Cliente Teste'

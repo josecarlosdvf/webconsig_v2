@@ -125,20 +125,25 @@ def admin_user(app, init_database):
     Cria ou obtém um usuário administrador de teste.
     """
     with app.app_context():
-        # Tenta obter o admin existente primeiro
-        admin = Users.query.filter_by(username='admin').first()
-        if not admin:
-            admin = Users(
-                username='admin',
-                email='admin@example.com',
-                password='admin123',
-                first_name='Admin',
-                last_name='User',
-                is_active=True,
-                is_admin=True
-            )
-            db.session.add(admin)
-            db.session.commit()
+        try:
+            # Tenta obter o admin existente primeiro
+            admin = Users.query.filter_by(username='admin').first()
+            if not admin:
+                admin = Users(
+                    username='admin',
+                    email='admin@example.com',
+                    password='admin123',
+                    first_name='Admin',
+                    last_name='User',
+                    is_active=True,
+                    is_admin=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+                admin = Users.query.filter_by(username='admin').first()
+        except Exception:
+            db.session.rollback()
+            # Em caso de erro, tenta obter novamente
             admin = Users.query.filter_by(username='admin').first()
         
         yield admin

@@ -94,6 +94,13 @@ class UserForm(FlaskForm):
         choices=[]
     )
     
+    team_id = SelectField(
+        'Equipe/Corban',
+        coerce=int,
+        validators=[Optional()],
+        choices=[]
+    )
+    
     bio = TextAreaField(
         'Observações',
         validators=[Optional(), Length(max=500)],

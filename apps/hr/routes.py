@@ -47,6 +47,26 @@ def team_create():
     """Criar nova equipe/corban"""
     form = TeamForm()
     
+    # Gera uma cor única que não é usada por nenhuma outra equipe
+    existing_colors = [t.color for t in Team.query_active().filter(Team.color.isnot(None)).all()]
+    default_colors = [
+        '#206bc4', '#4299e1', '#38a169', '#2fb344', '#d69e2e', '#f59f00',
+        '#d63939', '#e53e3e', '#805ad5', '#9f7aea', '#00b5ad', '#319795',
+        '#e91e63', '#ed64a6', '#f56565', '#fc8181', '#667eea', '#7c3aed'
+    ]
+    available_color = '#206bc4'
+    for color in default_colors:
+        if color not in existing_colors:
+            available_color = color
+            break
+    else:
+        # Se todas as cores padrão estão em uso, gera uma aleatória
+        import random
+        available_color = '#%06x' % random.randint(0, 0xFFFFFF)
+    
+    if request.method == 'GET' and not form.color.data:
+        form.color.data = available_color
+    
     if form.validate_on_submit():
         team = Team()
         form.populate_obj(team)

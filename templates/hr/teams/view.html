@@ -29,13 +29,13 @@
                 <!-- Card Principal -->
                 <div class="card mb-3">
                     <div class="card-body text-center py-4">
-                        <span class="avatar avatar-xl mb-3 bg-{{ 'azure' if team.team_type == 'team' else 'purple' }}-lt">
-                            <i class="ti ti-{{ 'users' if team.team_type == 'team' else 'building' }} icon-lg text-{{ 'azure' if team.team_type == 'team' else 'purple' }}"></i>
+                        <span class="avatar avatar-xl mb-3 bg-{{ 'azure' if team.type == 'team' else 'purple' }}-lt">
+                            <i class="ti ti-{{ 'users' if team.type == 'team' else 'building' }} icon-lg text-{{ 'azure' if team.type == 'team' else 'purple' }}"></i>
                         </span>
                         <h3 class="mb-0">{{ team.name }}</h3>
                         <p class="text-muted mb-3">
-                            <span class="badge bg-{{ 'azure' if team.team_type == 'team' else 'purple' }}-lt">
-                                {{ 'Equipe Interna' if team.team_type == 'team' else 'Corban' }}
+                            <span class="badge bg-{{ 'azure' if team.type == 'team' else 'purple' }}-lt">
+                                {{ 'Equipe Interna' if team.type == 'team' else 'Corban' }}
                             </span>
                         </p>
                         
@@ -114,7 +114,7 @@
                 </div>
                 
                 <!-- Dados do Corban -->
-                {% if team.team_type == 'corban' %}
+                {% if team.type == 'corban' %}
                 <div class="card mb-3">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -245,8 +245,8 @@
                         <div class="list-group-item">
                             <div class="row align-items-center">
                                 <div class="col-auto">
-                                    <span class="avatar bg-{{ 'azure' if child.team_type == 'team' else 'purple' }}-lt">
-                                        <i class="ti ti-{{ 'users' if child.team_type == 'team' else 'building' }}"></i>
+                                    <span class="avatar bg-{{ 'azure' if child.type == 'team' else 'purple' }}-lt">
+                                        <i class="ti ti-{{ 'users' if child.type == 'team' else 'building' }}"></i>
                                     </span>
                                 </div>
                                 <div class="col">

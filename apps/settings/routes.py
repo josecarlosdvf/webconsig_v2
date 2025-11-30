@@ -3,7 +3,10 @@
 Rotas de Configurações do Sistema
 """
 
-from flask import render_template, request, redirect, url_for, flash
+import os
+import uuid
+from werkzeug.utils import secure_filename
+from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from apps.settings import blueprint
 from apps.settings.models import SystemSettings
@@ -125,29 +128,81 @@ def aparencia():
     """Configurações de aparência"""
     form = AppearanceForm()
     
+    # Diretório para uploads de branding
+    upload_folder = os.path.join(current_app.static_folder, 'assets', 'img', 'brand')
+    os.makedirs(upload_folder, exist_ok=True)
+    
     if request.method == 'GET':
         form.logo_url.data = SystemSettings.get('logo_url', '')
+        form.logo_empresa_url.data = SystemSettings.get('logo_empresa_url', '')
+        form.logo_login_url.data = SystemSettings.get('logo_login_url', '')
         form.logo_dark_url.data = SystemSettings.get('logo_dark_url', '')
         form.favicon_url.data = SystemSettings.get('favicon_url', '')
         form.primary_color.data = SystemSettings.get('primary_color', '#1F2937')
         form.secondary_color.data = SystemSettings.get('secondary_color', '#6B7280')
     
     if form.validate_on_submit():
-        SystemSettings.set('logo_url', form.logo_url.data)
-        SystemSettings.set('logo_dark_url', form.logo_dark_url.data)
-        SystemSettings.set('favicon_url', form.favicon_url.data)
+        # Processar uploads de imagens
+        uploads = {
+            'logo_file': 'logo_url',
+            'logo_empresa_file': 'logo_empresa_url',
+            'logo_login_file': 'logo_login_url',
+            'logo_dark_file': 'logo_dark_url',
+            'favicon_file': 'favicon_url',
+        }
+        
+        for file_field, url_field in uploads.items():
+            file = getattr(form, file_field).data
+            if file and hasattr(file, 'filename') and file.filename:
+                # Gerar nome único
+                ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+                filename = f"{file_field.replace('_file', '')}_{uuid.uuid4().hex[:8]}{ext}"
+                filepath = os.path.join(upload_folder, filename)
+                
+                # Salvar arquivo
+                file.save(filepath)
+                
+                # Atualizar URL
+                url = f"/static/assets/img/brand/{filename}"
+                setattr(form, url_field, type('obj', (object,), {'data': url})())
+                SystemSettings.set(url_field, url)
+        
+        # Salvar URLs manuais (se não houve upload)
+        if not form.logo_file.data or not hasattr(form.logo_file.data, 'filename') or not form.logo_file.data.filename:
+            SystemSettings.set('logo_url', form.logo_url.data or '')
+        if not form.logo_empresa_file.data or not hasattr(form.logo_empresa_file.data, 'filename') or not form.logo_empresa_file.data.filename:
+            SystemSettings.set('logo_empresa_url', form.logo_empresa_url.data or '')
+        if not form.logo_login_file.data or not hasattr(form.logo_login_file.data, 'filename') or not form.logo_login_file.data.filename:
+            SystemSettings.set('logo_login_url', form.logo_login_url.data or '')
+        if not form.logo_dark_file.data or not hasattr(form.logo_dark_file.data, 'filename') or not form.logo_dark_file.data.filename:
+            SystemSettings.set('logo_dark_url', form.logo_dark_url.data or '')
+        if not form.favicon_file.data or not hasattr(form.favicon_file.data, 'filename') or not form.favicon_file.data.filename:
+            SystemSettings.set('favicon_url', form.favicon_url.data or '')
+        
+        # Salvar cores
         SystemSettings.set('primary_color', form.primary_color.data)
         SystemSettings.set('secondary_color', form.secondary_color.data)
+        
         refresh_settings_cache()
         flash('Configurações de aparência atualizadas com sucesso!', 'success')
         return redirect(url_for('settings_blueprint.aparencia'))
+    
+    # Carregar URLs atuais para preview
+    current_images = {
+        'logo_url': SystemSettings.get('logo_url', ''),
+        'logo_empresa_url': SystemSettings.get('logo_empresa_url', ''),
+        'logo_login_url': SystemSettings.get('logo_login_url', ''),
+        'logo_dark_url': SystemSettings.get('logo_dark_url', ''),
+        'favicon_url': SystemSettings.get('favicon_url', ''),
+    }
     
     return render_template(
         'settings/aparencia.html',
         segment='settings',
         form=form,
         title='Aparência',
-        category='aparencia'
+        category='aparencia',
+        current_images=current_images
     )
 
 

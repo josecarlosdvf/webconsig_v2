@@ -4,6 +4,7 @@ Formulários de Configurações
 """
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, SelectField, BooleanField
 from wtforms.validators import DataRequired, Optional, Length
 
@@ -38,9 +39,31 @@ class DeveloperForm(FlaskForm):
 
 class AppearanceForm(FlaskForm):
     """Formulário de aparência"""
-    logo_url = StringField('Logo', validators=[Optional(), Length(max=500)])
-    logo_dark_url = StringField('Logo (Tema Escuro)', validators=[Optional(), Length(max=500)])
-    favicon_url = StringField('Favicon', validators=[Optional(), Length(max=500)])
+    # Upload de imagens
+    logo_file = FileField('Logo do Sistema', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'svg', 'gif', 'webp'], 'Apenas imagens são permitidas!')
+    ])
+    logo_empresa_file = FileField('Logo da Empresa', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'svg', 'gif', 'webp'], 'Apenas imagens são permitidas!')
+    ])
+    logo_login_file = FileField('Logo do Login', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'svg', 'gif', 'webp'], 'Apenas imagens são permitidas!')
+    ])
+    logo_dark_file = FileField('Logo (Tema Escuro)', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'svg', 'gif', 'webp'], 'Apenas imagens são permitidas!')
+    ])
+    favicon_file = FileField('Favicon', validators=[
+        FileAllowed(['ico', 'png', 'svg'], 'Apenas .ico, .png ou .svg são permitidos!')
+    ])
+    
+    # URLs (hidden, preenchidas após upload)
+    logo_url = StringField('Logo URL', validators=[Optional(), Length(max=500)])
+    logo_empresa_url = StringField('Logo Empresa URL', validators=[Optional(), Length(max=500)])
+    logo_login_url = StringField('Logo Login URL', validators=[Optional(), Length(max=500)])
+    logo_dark_url = StringField('Logo (Tema Escuro) URL', validators=[Optional(), Length(max=500)])
+    favicon_url = StringField('Favicon URL', validators=[Optional(), Length(max=500)])
+    
+    # Cores
     primary_color = StringField('Cor Primária', validators=[Optional(), Length(max=10)])
     secondary_color = StringField('Cor Secundária', validators=[Optional(), Length(max=10)])
 

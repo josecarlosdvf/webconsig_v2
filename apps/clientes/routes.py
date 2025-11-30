@@ -4,6 +4,7 @@ Rotas de Gestão de Clientes
 CRUD completo de Clientes e entidades relacionadas
 """
 
+import hashlib
 from flask import (
     render_template, request, redirect, url_for, 
     flash, jsonify, abort
@@ -24,6 +25,15 @@ from apps.clientes.forms import (
 from apps.database.models import AuditLog
 from apps.files.services import FileService, FileValidationError
 from apps.files.models import FileCategory
+
+
+def cpf_to_entity_id(cpf_clean):
+    """
+    Converts CPF to a deterministic entity_id for file association.
+    Uses SHA256 hash truncated to fit in an integer.
+    """
+    hash_hex = hashlib.sha256(cpf_clean.encode()).hexdigest()[:9]
+    return int(hash_hex, 16) % (10 ** 9)
 
 
 # =============================================================================
@@ -123,9 +133,8 @@ def cliente_view(cpf):
     if not cliente:
         abort(404)
     
-    # Busca arquivos do cliente
-    # Usa hash do CPF como entity_id para compatibilidade com o sistema de arquivos
-    entity_id = hash(cpf_clean) % (10 ** 9)  # Gera um ID numérico único do CPF
+    # Busca arquivos do cliente usando hash determinístico do CPF
+    entity_id = cpf_to_entity_id(cpf_clean)
     files = FileService.get_entity_files('cliente', entity_id)
     missing_files = FileService.get_missing_required('cliente', entity_id)
     
@@ -632,8 +641,8 @@ def documento_upload(cpf):
         return redirect(url_for('clientes_blueprint.cliente_view', cpf=cpf_clean))
     
     try:
-        # Usa hash do CPF como entity_id
-        entity_id = hash(cpf_clean) % (10 ** 9)
+        # Usa hash determinístico do CPF como entity_id
+        entity_id = cpf_to_entity_id(cpf_clean)
         
         file_record = FileService.upload(
             file=file,

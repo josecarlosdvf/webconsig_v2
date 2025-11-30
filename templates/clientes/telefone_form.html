@@ -39,10 +39,10 @@
                                 <label class="form-label">Tipo</label>
                                 <select name="tipo" class="form-select">
                                     <option value="">Selecione...</option>
-                                    <option value="celular">Celular</option>
-                                    <option value="fixo">Fixo</option>
-                                    <option value="comercial">Comercial</option>
-                                    <option value="recado">Recado</option>
+                                    <option value="celular" {% if form.tipo.data == 'celular' %}selected{% endif %}>Celular</option>
+                                    <option value="fixo" {% if form.tipo.data == 'fixo' %}selected{% endif %}>Fixo</option>
+                                    <option value="comercial" {% if form.tipo.data == 'comercial' %}selected{% endif %}>Comercial</option>
+                                    <option value="recado" {% if form.tipo.data == 'recado' %}selected{% endif %}>Recado</option>
                                 </select>
                             </div>
                             

@@ -105,6 +105,18 @@
                 </li>
                 {% endif %}
                 
+                <!-- Clientes -->
+                {% if user_has_permission('clientes.view') or current_user.is_admin %}
+                <li class="nav-item {% if 'clientes' in segment %}active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('clientes_blueprint.clientes_list') }}">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <i class="ti ti-users"></i>
+                        </span>
+                        <span class="nav-link-title">Clientes</span>
+                    </a>
+                </li>
+                {% endif %}
+                
                 <!-- Mensageria WhatsApp -->
                 {% if user_has_permission('messaging.view') or current_user.is_admin %}
                 <li class="nav-item dropdown {% if 'mensagens' in segment or 'messaging' in segment %}active{% endif %}">

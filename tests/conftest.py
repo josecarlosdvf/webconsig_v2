@@ -28,6 +28,11 @@ os.environ['TESTING'] = 'True'
 from apps import create_app, db
 from apps.config import config_dict
 from apps.authentication.models import Users
+# Import all models to ensure they are registered with SQLAlchemy
+from apps.clientes.models import (
+    Cliente, Telefone, Endereco, Email,
+    Identidade, DadosBancarios, Matricula, DataNascimento
+)
 
 
 class TestConfig:

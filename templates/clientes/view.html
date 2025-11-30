@@ -1,0 +1,557 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ cliente.nome_completo }} | {{ system.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">
+                    <a href="{{ url_for('clientes_blueprint.clientes_list') }}">Clientes</a>
+                </div>
+                <h2 class="page-title">
+                    <i class="ti ti-user me-2"></i>
+                    {{ cliente.nome_completo }}
+                </h2>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <a href="{{ url_for('clientes_blueprint.cliente_edit', cpf=cliente.cpf) }}" class="btn btn-primary">
+                        <i class="ti ti-edit me-1"></i> Editar
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-ghost-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            Adicionar
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.telefone_create', cpf=cliente.cpf) }}">
+                                <i class="ti ti-phone me-2"></i> Telefone
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.endereco_create', cpf=cliente.cpf) }}">
+                                <i class="ti ti-map-pin me-2"></i> Endereço
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.email_create', cpf=cliente.cpf) }}">
+                                <i class="ti ti-mail me-2"></i> Email
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.identidade_create', cpf=cliente.cpf) }}">
+                                <i class="ti ti-id me-2"></i> Identidade
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.dados_bancarios_create', cpf=cliente.cpf) }}">
+                                <i class="ti ti-building-bank me-2"></i> Dados Bancários
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.matricula_create', cpf=cliente.cpf) }}">
+                                <i class="ti ti-certificate me-2"></i> Matrícula
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('clientes_blueprint.data_nascimento_edit', cpf=cliente.cpf) }}">
+                                <i class="ti ti-cake me-2"></i> Data de Nascimento
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row g-3">
+            <!-- Dados Básicos -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-user me-2"></i> Dados Básicos
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="datagrid">
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Nome Completo</div>
+                                <div class="datagrid-content">{{ cliente.nome_completo }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">CPF</div>
+                                <div class="datagrid-content"><code>{{ cliente.cpf_formatted }}</code></div>
+                            </div>
+                            {% if cliente.data_nasc %}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Data de Nascimento</div>
+                                <div class="datagrid-content">
+                                    {{ cliente.data_nasc.data_nasc }}
+                                    {% if cliente.data_nasc.idade %}
+                                    ({{ cliente.data_nasc.idade }} anos)
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if cliente.data_nasc.obito %}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Óbito</div>
+                                <div class="datagrid-content">
+                                    <span class="badge bg-red-lt">{{ cliente.data_nasc.obito }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Data de Nascimento</div>
+                                <div class="datagrid-content">
+                                    <a href="{{ url_for('clientes_blueprint.data_nascimento_edit', cpf=cliente.cpf) }}" class="text-muted">
+                                        <i class="ti ti-plus"></i> Adicionar
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telefones -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-phone me-2"></i> Telefones
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('clientes_blueprint.telefone_create', cpf=cliente.cpf) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for telefone in cliente.telefones %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ telefone.telefone_formatted or telefone.telefone }}</strong>
+                                {% if telefone.tipo %}
+                                <span class="badge bg-blue-lt ms-2">{{ telefone.tipo }}</span>
+                                {% endif %}
+                                {% if telefone.status %}
+                                <small class="text-muted d-block">{{ telefone.status }}</small>
+                                {% endif %}
+                            </div>
+                            <form action="{{ url_for('clientes_blueprint.telefone_delete', cpf=cliente.cpf, tel_id=telefone.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-ghost-danger btn-sm" onclick="return confirm('Excluir este telefone?')">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="ti ti-phone-off icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum telefone cadastrado</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emails -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-mail me-2"></i> Emails
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('clientes_blueprint.email_create', cpf=cliente.cpf) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for email in cliente.emails %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ email.email }}</strong>
+                                {% if email.status %}
+                                <span class="badge bg-green-lt ms-2">{{ email.status }}</span>
+                                {% endif %}
+                            </div>
+                            <form action="{{ url_for('clientes_blueprint.email_delete', cpf=cliente.cpf, email_id=email.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-ghost-danger btn-sm" onclick="return confirm('Excluir este email?')">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="ti ti-mail-off icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum email cadastrado</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endereços -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-map-pin me-2"></i> Endereços
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('clientes_blueprint.endereco_create', cpf=cliente.cpf) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for endereco in cliente.enderecos %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ endereco.logradouro }}{% if endereco.numero %}, {{ endereco.numero }}{% endif %}</strong>
+                                    {% if endereco.complemento %}<span class="text-muted"> - {{ endereco.complemento }}</span>{% endif %}
+                                    <div class="text-muted small">
+                                        {{ endereco.bairro }}{% if endereco.cidade %} - {{ endereco.cidade }}{% endif %}{% if endereco.uf %}/{{ endereco.uf }}{% endif %}
+                                        {% if endereco.cep %} - CEP: {{ endereco.cep_formatted }}{% endif %}
+                                    </div>
+                                </div>
+                                <form action="{{ url_for('clientes_blueprint.endereco_delete', cpf=cliente.cpf, end_id=endereco.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-ghost-danger btn-sm" onclick="return confirm('Excluir este endereço?')">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="ti ti-map-pin-off icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum endereço cadastrado</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Identidades -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-id me-2"></i> Identidades
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('clientes_blueprint.identidade_create', cpf=cliente.cpf) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for identidade in cliente.identidades %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>RG: {{ identidade.rg }}</strong>
+                                    {% if identidade.orgao_emissor %}<span class="text-muted"> - {{ identidade.orgao_emissor }}</span>{% endif %}
+                                    <div class="text-muted small">
+                                        {% if identidade.sexo %}Sexo: {{ identidade.sexo }}{% endif %}
+                                        {% if identidade.estado_civil %} | {{ identidade.estado_civil }}{% endif %}
+                                        {% if identidade.profissao %} | {{ identidade.profissao }}{% endif %}
+                                    </div>
+                                    {% if identidade.nome_mae %}
+                                    <div class="text-muted small">Mãe: {{ identidade.nome_mae }}</div>
+                                    {% endif %}
+                                </div>
+                                <form action="{{ url_for('clientes_blueprint.identidade_delete', cpf=cliente.cpf, id_id=identidade.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-ghost-danger btn-sm" onclick="return confirm('Excluir esta identidade?')">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="ti ti-id-off icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhuma identidade cadastrada</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados Bancários -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-building-bank me-2"></i> Dados Bancários
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('clientes_blueprint.dados_bancarios_create', cpf=cliente.cpf) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for dados in cliente.dados_bancarios %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ dados.banco }}</strong>
+                                    {% if dados.numero_banco %}<span class="badge bg-blue-lt ms-2">{{ dados.numero_banco }}</span>{% endif %}
+                                    <div class="text-muted small">
+                                        {% if dados.agencia %}Ag: {{ dados.agencia }}{% endif %}
+                                        {% if dados.conta %} | Conta: {{ dados.conta }}{% endif %}
+                                    </div>
+                                    {% if dados.chave_pix %}
+                                    <div class="text-muted small">PIX: {{ dados.chave_pix }}</div>
+                                    {% endif %}
+                                </div>
+                                <form action="{{ url_for('clientes_blueprint.dados_bancarios_delete', cpf=cliente.cpf, db_id=dados.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-ghost-danger btn-sm" onclick="return confirm('Excluir estes dados bancários?')">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="ti ti-building-bank icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhum dado bancário cadastrado</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matrículas -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-certificate me-2"></i> Matrículas
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('clientes_blueprint.matricula_create', cpf=cliente.cpf) }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for matricula in cliente.matriculas %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ matricula.matricula }}</strong>
+                                    {% if matricula.orgao %}<span class="badge bg-purple-lt ms-2">{{ matricula.orgao }}</span>{% endif %}
+                                    <div class="text-muted small">
+                                        {% if matricula.categoria %}{{ matricula.categoria }}{% endif %}
+                                        {% if matricula.patente %} | {{ matricula.patente }}{% endif %}
+                                    </div>
+                                </div>
+                                <form action="{{ url_for('clientes_blueprint.matricula_delete', cpf=cliente.cpf, mat_id=matricula.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-ghost-danger btn-sm" onclick="return confirm('Excluir esta matrícula?')">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="ti ti-certificate icon icon-lg mb-2"></i>
+                            <p class="mb-0">Nenhuma matrícula cadastrada</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos/Arquivos -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-files me-2"></i> Documentos
+                        </h3>
+                        <div class="card-actions">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <i class="ti ti-upload me-1"></i> Enviar Documento
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if files %}
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Documento</th>
+                                    <th>Categoria</th>
+                                    <th>Tamanho</th>
+                                    <th>Enviado em</th>
+                                    <th>Status</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="avatar avatar-sm me-2 bg-{{ file.extension_color }}-lt">
+                                                <i class="ti ti-{{ file.extension_icon }}"></i>
+                                            </span>
+                                            <div>
+                                                <strong>{{ file.original_name }}</strong>
+                                                {% if file.description %}
+                                                <div class="text-muted small">{{ file.description }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if file.category %}
+                                        <span class="badge bg-blue-lt">{{ file.category.name }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ file.size_formatted }}</td>
+                                    <td>
+                                        {{ file.uploaded_at.strftime('%d/%m/%Y %H:%M') }}
+                                        {% if file.uploaded_by %}
+                                        <div class="text-muted small">por {{ file.uploaded_by.first_name }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if file.validation_status == 'approved' %}
+                                        <span class="badge bg-green-lt">Aprovado</span>
+                                        {% elif file.validation_status == 'rejected' %}
+                                        <span class="badge bg-red-lt">Rejeitado</span>
+                                        {% else %}
+                                        <span class="badge bg-yellow-lt">Pendente</span>
+                                        {% endif %}
+                                        
+                                        {% if file.visual_validation_passed is not none %}
+                                            {% if file.visual_validation_passed %}
+                                            <span class="badge bg-cyan-lt" title="Similaridade: {{ (file.visual_similarity_score or 0) * 100 | int }}%">
+                                                <i class="ti ti-check"></i> Visual OK
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-orange-lt" title="Similaridade: {{ (file.visual_similarity_score or 0) * 100 | int }}%">
+                                                <i class="ti ti-alert-triangle"></i> Divergente
+                                            </span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-list flex-nowrap">
+                                            <a href="{{ url_for('clientes_blueprint.documento_download', cpf=cliente.cpf, file_id=file.id) }}" 
+                                               class="btn btn-ghost-primary btn-sm" title="Download">
+                                                <i class="ti ti-download"></i>
+                                            </a>
+                                            <form action="{{ url_for('clientes_blueprint.documento_delete', cpf=cliente.cpf, file_id=file.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-ghost-danger btn-sm" 
+                                                        onclick="return confirm('Excluir este documento?')" title="Excluir">
+                                                    <i class="ti ti-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="card-body text-center text-muted py-5">
+                        <i class="ti ti-files-off icon icon-lg mb-3"></i>
+                        <p class="mb-0">Nenhum documento enviado</p>
+                        <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="ti ti-upload me-1"></i> Enviar Primeiro Documento
+                        </button>
+                    </div>
+                    {% endif %}
+                    
+                    {% if missing_files %}
+                    <div class="card-footer">
+                        <div class="alert alert-warning mb-0">
+                            <div class="d-flex">
+                                <div>
+                                    <i class="ti ti-alert-triangle me-2"></i>
+                                </div>
+                                <div>
+                                    <h4 class="alert-title">Documentos Pendentes</h4>
+                                    <div class="text-muted">
+                                        Os seguintes documentos obrigatórios ainda não foram enviados:
+                                        <ul class="mb-0 mt-2">
+                                            {% for cat in missing_files %}
+                                            <li>{{ cat.name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Upload de Documento -->
+<div class="modal modal-blur fade" id="uploadModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form action="{{ url_for('clientes_blueprint.documento_upload', cpf=cliente.cpf) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="ti ti-upload me-2"></i> Enviar Documento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Categoria do Documento</label>
+                        <select name="category_code" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.code }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Selecione o tipo de documento que está enviando</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required">Arquivo</label>
+                        <input type="file" name="file" class="form-control" required>
+                        <small class="text-muted">Formatos aceitos: JPG, PNG, PDF (máximo 16MB)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descrição (opcional)</label>
+                        <input type="text" name="description" class="form-control" 
+                               placeholder="Ex: Frente do documento, Comprovante atual...">
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

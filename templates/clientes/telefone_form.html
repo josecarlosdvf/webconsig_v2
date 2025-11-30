@@ -1,0 +1,83 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} | {{ system.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">
+                    <a href="{{ url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf) }}">{{ cliente.nome_completo }}</a>
+                </div>
+                <h2 class="page-title">
+                    <i class="ti ti-phone me-2"></i>
+                    {{ title }}
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <form method="POST" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Telefone</label>
+                                <input type="text" name="telefone" class="form-control" 
+                                       value="{{ form.telefone.data or '' }}"
+                                       placeholder="(00) 00000-0000">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo</label>
+                                <select name="tipo" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="celular">Celular</option>
+                                    <option value="fixo">Fixo</option>
+                                    <option value="comercial">Comercial</option>
+                                    <option value="recado">Recado</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                <input type="text" name="status" class="form-control" 
+                                       value="{{ form.status.data or '' }}"
+                                       placeholder="Ex: Ativo, Inativo">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label">Ranking</label>
+                                <input type="number" name="ranking" class="form-control" 
+                                       value="{{ form.ranking.data or 0 }}">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label">Score</label>
+                                <input type="number" name="score" class="form-control" 
+                                       value="{{ form.score.data or 0 }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer text-end">
+                        <a href="{{ url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf) }}" class="btn btn-ghost-secondary me-2">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i> Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

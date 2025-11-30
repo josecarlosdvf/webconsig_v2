@@ -312,6 +312,7 @@ function unlockUser(userId) {
 }
 
 function toggleActive(userId, activate) {
+    // The backend toggles the state, so we just submit to the toggle endpoint
     var form = document.getElementById('toggle-form');
     form.action = '/admin/usuarios/' + userId + '/ativar';
     form.submit();

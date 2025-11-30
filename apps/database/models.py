@@ -332,6 +332,30 @@ class AuditLog(db.Model):
 # FUNÇÕES AUXILIARES PARA AUDITORIA AUTOMÁTICA
 # =============================================================================
 
+def _serialize_value(value):
+    """
+    Serializa um valor para JSON.
+    
+    Args:
+        value: Valor a ser serializado
+        
+    Returns:
+        Valor JSON serializable
+    """
+    from datetime import date, time
+    from decimal import Decimal
+    
+    if isinstance(value, datetime):
+        return value.isoformat()
+    elif isinstance(value, date):
+        return value.isoformat()
+    elif isinstance(value, time):
+        return value.isoformat()
+    elif isinstance(value, Decimal):
+        return float(value)
+    return value
+
+
 def get_model_changes(instance):
     """
     Obtém as mudanças em um modelo antes do commit.
@@ -357,11 +381,9 @@ def get_model_changes(instance):
             old_val = history.deleted[0] if history.deleted else None
             new_val = history.added[0] if history.added else None
             
-            # Converte datetime para string
-            if isinstance(old_val, datetime):
-                old_val = old_val.isoformat()
-            if isinstance(new_val, datetime):
-                new_val = new_val.isoformat()
+            # Serializa valores para JSON
+            old_val = _serialize_value(old_val)
+            new_val = _serialize_value(new_val)
             
             old_values[key] = old_val
             new_values[key] = new_val
@@ -378,7 +400,7 @@ def get_model_dict(instance, exclude=None):
         exclude: Lista de campos a excluir
     
     Returns:
-        dict: Dicionário com os valores do modelo
+        dict: Dicionário com os valores do modelo (JSON serializable)
     """
     exclude = exclude or ['password', 'session_token', 'password_reset_token']
     result = {}
@@ -393,11 +415,8 @@ def get_model_dict(instance, exclude=None):
         
         value = getattr(instance, key, None)
         
-        # Converte datetime para string
-        if isinstance(value, datetime):
-            value = value.isoformat()
-        
-        result[key] = value
+        # Serializa valores para JSON
+        result[key] = _serialize_value(value)
     
     return result
 
@@ -413,7 +432,7 @@ _flushing_audit_logs = False
 
 
 def _flush_pending_audit_logs():
-    """Grava os logs de auditoria pendentes usando uma nova sessão"""
+    """Grava os logs de auditoria pendentes em uma nova transação"""
     global _pending_audit_logs, _flushing_audit_logs
     
     # Evita recursão
@@ -428,18 +447,32 @@ def _flush_pending_audit_logs():
     _pending_audit_logs = []
     
     try:
+        # Usa begin_nested para criar uma sub-transação se possível
+        # ou inicia uma nova transação
         for log_data in logs_to_write:
-            AuditLog.log(**log_data)
-        # Faz commit dos logs de auditoria
+            log_entry = AuditLog(
+                user_id=log_data.get('user_id'),
+                username=log_data.get('username'),
+                action=log_data.get('action'),
+                table_name=log_data.get('table_name'),
+                record_id=log_data.get('record_id'),
+                old_values=log_data.get('old_values'),
+                new_values=log_data.get('new_values'),
+                description=log_data.get('description'),
+                ip_address=log_data.get('ip_address'),
+                user_agent=log_data.get('user_agent'),
+                endpoint=log_data.get('endpoint'),
+                method=log_data.get('method')
+            )
+            db.session.add(log_entry)
+        
+        # Commit numa nova transação
         db.session.commit()
     except Exception as e:
         # Log silencioso para não interferir na operação principal
         import logging
-        logging.getLogger('app').warning(f'Erro ao gravar audit log: {e}')
-        try:
-            db.session.rollback()
-        except:
-            pass
+        logging.getLogger('app').debug(f'Audit log adiado: {e}')
+        # Não faz rollback - deixa para a próxima transação
     finally:
         _flushing_audit_logs = False
 

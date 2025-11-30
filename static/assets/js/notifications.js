@@ -49,38 +49,52 @@ const Notify = {
     /**
      * Toast de sucesso
      * @param {string} message - Mensagem a exibir
+     * @param {number} duration - Duração em ms (opcional, padrão 4000)
      */
-    success(message) {
-        notyf.success(message);
+    success(message, duration = 4000) {
+        notyf.open({
+            type: 'success',
+            message: message,
+            duration: duration
+        });
     },
 
     /**
      * Toast de erro
      * @param {string} message - Mensagem a exibir
+     * @param {number} duration - Duração em ms (opcional, padrão 6000 para erros)
      */
-    error(message) {
-        notyf.error(message);
+    error(message, duration = 6000) {
+        notyf.open({
+            type: 'error',
+            message: message,
+            duration: duration
+        });
     },
 
     /**
      * Toast de informação
      * @param {string} message - Mensagem a exibir
+     * @param {number} duration - Duração em ms (opcional)
      */
-    info(message) {
+    info(message, duration = 4000) {
         notyf.open({
             type: 'info',
-            message: message
+            message: message,
+            duration: duration
         });
     },
 
     /**
      * Toast de aviso
      * @param {string} message - Mensagem a exibir
+     * @param {number} duration - Duração em ms (opcional)
      */
-    warning(message) {
+    warning(message, duration = 5000) {
         notyf.open({
             type: 'warning',
-            message: message
+            message: message,
+            duration: duration
         });
     },
 

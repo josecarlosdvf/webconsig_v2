@@ -29,7 +29,7 @@
                     Configure os tipos de arquivo que podem ser enviados no sistema e suas regras de validação.
                 </p>
             </div>
-            <div class="table-responsive">
+            <div class="table-responsive" style="overflow: visible;">
                 <table class="table table-vcenter card-table">
                     <thead>
                         <tr>
@@ -92,6 +92,11 @@
                                     <i class="ti ti-files"></i>
                                 </span>
                                 {% endif %}
+                                {% if category.enable_visual_validation %}
+                                <span class="badge bg-green-lt" title="Validação visual ativada">
+                                    <i class="ti ti-eye-check"></i>
+                                </span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if category.is_active %}
@@ -105,9 +110,12 @@
                                     <button class="btn btn-ghost-secondary btn-icon" data-bs-toggle="dropdown">
                                         <i class="ti ti-dots-vertical"></i>
                                     </button>
-                                    <div class="dropdown-menu dropdown-menu-end">
+                                    <div class="dropdown-menu dropdown-menu-end" style="z-index: 1050; position: absolute;">
                                         <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editModal{{ category.id }}">
                                             <i class="ti ti-edit me-2"></i> Editar
+                                        </a>
+                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#referenceModal{{ category.id }}">
+                                            <i class="ti ti-file-search me-2"></i> Modelo de Referência
                                         </a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ category.id }}">
@@ -142,17 +150,21 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <h4>Extensões</h4>
                         <p class="text-muted">Define quais tipos de arquivo podem ser enviados. Separe as extensões por vírgula (ex: jpg, png, pdf).</p>
                     </div>
-                    <div class="col-md-4">
-                        <h4>Validação</h4>
+                    <div class="col-md-3">
+                        <h4>Validação Manual</h4>
                         <p class="text-muted">Quando habilitado, arquivos enviados precisam ser aprovados por um administrador antes de serem aceitos.</p>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <h4>Contexto</h4>
                         <p class="text-muted">Define onde este tipo de arquivo pode ser usado: funcionário, equipe, ou todos os contextos.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4>Validação Visual</h4>
+                        <p class="text-muted">Compara automaticamente o documento enviado com um modelo de referência para verificar se é compatível.</p>
                     </div>
                 </div>
             </div>
@@ -322,6 +334,24 @@
                                 <span class="form-check-label">Ativo</span>
                             </label>
                         </div>
+                        <div class="col-12">
+                            <hr class="my-2">
+                            <h4 class="mb-2">Validação Visual</h4>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-check form-switch">
+                                <input type="checkbox" name="enable_visual_validation" class="form-check-input" {% if category.enable_visual_validation %}checked{% endif %}>
+                                <span class="form-check-label">Habilitar Validação Visual</span>
+                            </label>
+                            <small class="text-muted d-block">Compara arquivos enviados com o modelo de referência</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Limiar de Similaridade (%)</label>
+                            <input type="number" name="similarity_threshold" class="form-control" 
+                                   value="{{ (category.similarity_threshold or 0.75) * 100 | int }}" 
+                                   min="50" max="100" step="5">
+                            <small class="text-muted">Mínimo de similaridade para aceitar documento</small>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -331,6 +361,78 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Reference Model Modals -->
+{% for category in categories %}
+<div class="modal modal-blur fade" id="referenceModal{{ category.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ti ti-file-search me-2"></i>
+                    Modelo de Referência: {{ category.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-4">
+                    O modelo de referência é um arquivo exemplo que será usado para comparar os documentos enviados pelos usuários. 
+                    Quando a validação visual está ativada, o sistema verifica se o documento enviado é similar ao modelo.
+                </p>
+                
+                {% if category.reference_model_path %}
+                <div class="alert alert-success">
+                    <div class="d-flex align-items-center">
+                        <i class="ti ti-file-check icon icon-lg me-3"></i>
+                        <div>
+                            <h4 class="alert-title">Modelo Configurado</h4>
+                            <p class="mb-0">
+                                Arquivo: <code>{{ category.reference_model_path.split('/')[-1] }}</code>
+                                {% if category.enable_visual_validation %}
+                                <span class="badge bg-success ms-2">Validação ativa</span>
+                                {% else %}
+                                <span class="badge bg-warning ms-2">Validação desativada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2 mb-3">
+                    <form action="{{ url_for('settings_blueprint.tipo_arquivo_remover_modelo', id=category.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Remover o modelo de referência?')">
+                            <i class="ti ti-trash me-1"></i> Remover Modelo
+                        </button>
+                    </form>
+                </div>
+                
+                <hr class="my-3">
+                <h4>Substituir Modelo</h4>
+                {% endif %}
+                
+                <form action="{{ url_for('settings_blueprint.tipo_arquivo_upload_modelo', id=category.id) }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Arquivo Modelo</label>
+                        <input type="file" name="reference_model" class="form-control" accept=".jpg,.jpeg,.png,.pdf,.gif,.webp" required>
+                        <small class="text-muted">Aceita: JPG, PNG, PDF, GIF, WEBP (máx. 10MB)</small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="ti ti-info-circle me-2"></i>
+                        <strong>Dica:</strong> Escolha um documento modelo de boa qualidade que represente o padrão esperado. 
+                        O sistema irá comparar a estrutura visual deste documento com os arquivos enviados.
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> 
+                        {% if category.reference_model_path %}Substituir{% else %}Enviar{% endif %} Modelo
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

@@ -89,7 +89,7 @@ class FileService:
         return True, None
     
     @classmethod
-    def upload(cls, file, category_code: str, entity_type: str, entity_id: int,
+    def upload(cls, file, category_code: str, entity_type: str = None, entity_id: int = None,
                uploaded_by_id: int = None, description: str = None) -> File:
         """
         Faz upload de um arquivo.
@@ -97,8 +97,8 @@ class FileService:
         Args:
             file: FileStorage do Werkzeug
             category_code: Código da categoria do arquivo
-            entity_type: Tipo da entidade (employee, team, etc)
-            entity_id: ID da entidade
+            entity_type: Tipo da entidade (employee, team, etc) - opcional
+            entity_id: ID da entidade - opcional
             uploaded_by_id: ID do usuário que fez upload
             description: Descrição opcional
         
@@ -118,8 +118,8 @@ class FileService:
         if not is_valid:
             raise FileValidationError(error)
         
-        # Verifica se categoria permite múltiplos
-        if not category.allow_multiple:
+        # Verifica se categoria permite múltiplos (só se tiver entidade)
+        if entity_type and entity_id and not category.allow_multiple:
             existing = File.get_for_entity(entity_type, entity_id, category_code)
             if existing:
                 # Soft delete do arquivo anterior
@@ -136,14 +136,44 @@ class FileService:
             description=description
         )
         
+        # Validação visual contra modelo de referência
+        if category.has_reference_model:
+            try:
+                validation_result = DocumentSimilarityService.validate_against_reference(
+                    file_record.full_path,
+                    category
+                )
+                
+                # Só salva se a validação foi realmente executada
+                if validation_result['similarity'] is not None:
+                    file_record.visual_similarity_score = validation_result['similarity']
+                    file_record.visual_validation_passed = validation_result['compatible']
+                    
+                    # Adiciona informação na descrição
+                    if validation_result['compatible'] == False:
+                        if file_record.validation_notes:
+                            file_record.validation_notes += f"\n{validation_result['message']}"
+                        else:
+                            file_record.validation_notes = validation_result['message']
+                else:
+                    # Validação não foi possível - deixa campos como None
+                    current_app.logger.info(f'Validação visual não executada: {validation_result["message"]}')
+            except Exception as e:
+                current_app.logger.error(f'Erro na validação visual: {e}', exc_info=True)
+        
         # Log de auditoria
-        AuditLog.log(
-            action='file_upload',
-            table_name='files',
-            record_id=file_record.id,
-            description=f'Upload: {file_record.original_name} ({category.name})',
-            user_id=uploaded_by_id
-        )
+        try:
+            AuditLog.log(
+                action='file_upload',
+                table_name='files',
+                record_id=file_record.id,
+                description=f'Upload: {file_record.original_name} ({category.name})',
+                user_id=uploaded_by_id
+            )
+        except Exception as e:
+            current_app.logger.warning(f'Erro no audit log: {e}')
+        
+        # Commit único no final
         db.session.commit()
         
         return file_record
@@ -162,7 +192,7 @@ class FileService:
         Raises:
             FileNotFoundError: Se arquivo não existir
         """
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -189,7 +219,7 @@ class FileService:
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
             for file_id in file_ids:
                 try:
-                    file_record = File.query_active().get(file_id)
+                    file_record = File.query_active().filter_by(id=file_id).first()
                     if file_record and os.path.exists(file_record.full_path):
                         # Usa nome único no ZIP para evitar conflitos
                         zip_filename = f'{file_record.category.code}_{file_record.original_name}'
@@ -212,7 +242,7 @@ class FileService:
         Returns:
             bool: True se excluído com sucesso
         """
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             return False
         
@@ -324,7 +354,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -348,7 +378,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -375,7 +405,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -403,7 +433,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record or not file_record.is_image:
             raise FileNotFoundError('Imagem não encontrada')
         
@@ -620,3 +650,452 @@ class DocumentValidationService:
             pass
         
         return len(issues) == 0, issues
+
+
+class DocumentSimilarityService:
+    """
+    Serviço de validação de similaridade de documentos.
+    Compara arquivos enviados com modelos de referência usando
+    comparação estrutural/visual.
+    
+    Funciona para qualquer tipo de documento (PDF, imagem) independente
+    de orientação ou resolução.
+    """
+    
+    NORMALIZE_SIZE = (800, 800)  # Tamanho para normalização
+    
+    @staticmethod
+    def file_to_images(file_path: str) -> list:
+        """
+        Converte qualquer arquivo (PDF ou imagem) para lista de imagens PIL.
+        
+        Args:
+            file_path: Caminho do arquivo
+        
+        Returns:
+            list: Lista de imagens PIL
+        """
+        from PIL import Image
+        
+        if file_path.lower().endswith('.pdf'):
+            # Tenta converter PDF para imagem
+            try:
+                from pdf2image import convert_from_path
+                pages = convert_from_path(file_path, dpi=150, first_page=1, last_page=1)
+                return pages
+            except ImportError:
+                current_app.logger.warning('pdf2image não disponível. Instale: pip install pdf2image')
+                # Fallback: tenta ler como imagem mesmo assim
+                try:
+                    return [Image.open(file_path)]
+                except Exception:
+                    return []
+            except Exception as e:
+                current_app.logger.warning(f'Erro ao converter PDF: {e}')
+                return []
+        else:
+            # É uma imagem
+            try:
+                img = Image.open(file_path)
+                return [img]
+            except Exception as e:
+                current_app.logger.warning(f'Erro ao abrir imagem: {e}')
+                return []
+    
+    @classmethod
+    def normalize_image(cls, img) -> 'Image':
+        """
+        Normaliza imagem para comparação (tamanho, modo RGB).
+        
+        Args:
+            img: Imagem PIL
+        
+        Returns:
+            Image: Imagem normalizada
+        """
+        from PIL import Image
+        
+        # Converte para RGB se necessário
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Redimensiona mantendo proporção
+        img.thumbnail(cls.NORMALIZE_SIZE, Image.Resampling.LANCZOS)
+        
+        # Cria imagem de fundo branco e cola a imagem centralizada
+        background = Image.new('RGB', cls.NORMALIZE_SIZE, (255, 255, 255))
+        offset = ((cls.NORMALIZE_SIZE[0] - img.width) // 2,
+                  (cls.NORMALIZE_SIZE[1] - img.height) // 2)
+        background.paste(img, offset)
+        
+        return background
+    
+    @staticmethod
+    def compute_histogram_similarity(img1, img2) -> float:
+        """
+        Calcula similaridade baseada em histogramas de cor.
+        
+        Args:
+            img1, img2: Imagens PIL
+        
+        Returns:
+            float: Similaridade (0.0 a 1.0)
+        """
+        import numpy as np
+        
+        # Calcula histogramas
+        hist1 = img1.histogram()
+        hist2 = img2.histogram()
+        
+        # Normaliza
+        hist1 = np.array(hist1, dtype=np.float64)
+        hist2 = np.array(hist2, dtype=np.float64)
+        
+        hist1 = hist1 / (hist1.sum() + 1e-10)
+        hist2 = hist2 / (hist2.sum() + 1e-10)
+        
+        # Correlação (Bhattacharyya coefficient)
+        similarity = np.sum(np.sqrt(hist1 * hist2))
+        
+        return float(similarity)
+    
+    @staticmethod
+    def compute_structural_similarity(img1, img2) -> float:
+        """
+        Calcula similaridade estrutural (SSIM) entre duas imagens.
+        
+        Args:
+            img1, img2: Imagens PIL
+        
+        Returns:
+            float: SSIM (0.0 a 1.0)
+        """
+        import numpy as np
+        
+        # Converte para arrays numpy em escala de cinza
+        arr1 = np.array(img1.convert('L'), dtype=np.float64)
+        arr2 = np.array(img2.convert('L'), dtype=np.float64)
+        
+        # Garante que têm o mesmo tamanho
+        if arr1.shape != arr2.shape:
+            return 0.0
+        
+        # Parâmetros SSIM
+        C1 = (0.01 * 255) ** 2
+        C2 = (0.03 * 255) ** 2
+        
+        # Médias
+        mu1 = arr1.mean()
+        mu2 = arr2.mean()
+        
+        # Variâncias
+        sigma1_sq = ((arr1 - mu1) ** 2).mean()
+        sigma2_sq = ((arr2 - mu2) ** 2).mean()
+        
+        # Covariância
+        sigma12 = ((arr1 - mu1) * (arr2 - mu2)).mean()
+        
+        # SSIM
+        num = (2 * mu1 * mu2 + C1) * (2 * sigma12 + C2)
+        den = (mu1**2 + mu2**2 + C1) * (sigma1_sq + sigma2_sq + C2)
+        
+        ssim = num / den
+        
+        return float(max(0.0, ssim))
+    
+    @staticmethod
+    def compute_edge_similarity(img1, img2) -> float:
+        """
+        Calcula similaridade baseada em detecção de bordas.
+        Útil para comparar layout/estrutura de documentos.
+        
+        Args:
+            img1, img2: Imagens PIL
+        
+        Returns:
+            float: Similaridade (0.0 a 1.0)
+        """
+        import numpy as np
+        from PIL import ImageFilter
+        
+        # Aplica filtro de detecção de bordas
+        edges1 = img1.convert('L').filter(ImageFilter.FIND_EDGES)
+        edges2 = img2.convert('L').filter(ImageFilter.FIND_EDGES)
+        
+        # Converte para arrays
+        arr1 = np.array(edges1, dtype=np.float64).flatten()
+        arr2 = np.array(edges2, dtype=np.float64).flatten()
+        
+        # Normaliza
+        arr1 = arr1 / (np.linalg.norm(arr1) + 1e-10)
+        arr2 = arr2 / (np.linalg.norm(arr2) + 1e-10)
+        
+        # Similaridade por cosseno
+        similarity = np.dot(arr1, arr2)
+        
+        return float(max(0.0, similarity))
+    
+    @classmethod
+    def compute_embedding(cls, img) -> bytes:
+        """
+        Gera embedding (vetor de características) de uma imagem.
+        Usado para comparação rápida de documentos.
+        
+        Args:
+            img: Imagem PIL normalizada
+        
+        Returns:
+            bytes: Embedding serializado
+        """
+        import numpy as np
+        from PIL import Image, ImageFilter
+        
+        # Reduz para tamanho pequeno para embedding compacto
+        small = img.resize((64, 64), resample=Image.Resampling.NEAREST)
+        gray = small.convert('L')
+        
+        # Extrai características simples:
+        # 1. Histograma
+        hist = np.array(gray.histogram(), dtype=np.float32)
+        hist = hist / (hist.sum() + 1e-10)
+        
+        # 2. Médias por região (divide em 4x4 regiões)
+        arr = np.array(gray, dtype=np.float32).reshape(4, 16, 4, 16)
+        region_means = arr.mean(axis=(1, 3)).flatten() / 255.0
+        
+        # 3. Bordas
+        edges = gray.filter(ImageFilter.FIND_EDGES)
+        edge_arr = np.array(edges, dtype=np.float32).reshape(4, 16, 4, 16)
+        edge_means = edge_arr.mean(axis=(1, 3)).flatten() / 255.0
+        
+        # Combina em vetor
+        embedding = np.concatenate([
+            hist[:64],  # Primeiros 64 bins do histograma
+            region_means,
+            edge_means
+        ])
+        
+        return embedding.tobytes()
+    
+    @classmethod
+    def compare_embeddings(cls, emb1: bytes, emb2: bytes) -> float:
+        """
+        Compara dois embeddings e retorna similaridade.
+        
+        Args:
+            emb1, emb2: Embeddings serializados
+        
+        Returns:
+            float: Similaridade (0.0 a 1.0)
+        """
+        import numpy as np
+        
+        arr1 = np.frombuffer(emb1, dtype=np.float32)
+        arr2 = np.frombuffer(emb2, dtype=np.float32)
+        
+        if len(arr1) != len(arr2):
+            return 0.0
+        
+        # Similaridade por cosseno
+        dot = np.dot(arr1, arr2)
+        norm1 = np.linalg.norm(arr1)
+        norm2 = np.linalg.norm(arr2)
+        
+        if norm1 < 1e-10 or norm2 < 1e-10:
+            return 0.0
+        
+        similarity = dot / (norm1 * norm2)
+        
+        return float(max(0.0, min(1.0, similarity)))
+    
+    @classmethod
+    def validate_against_reference(cls, file_path: str, category: 'FileCategory') -> dict:
+        """
+        Valida um arquivo contra o modelo de referência da categoria.
+        
+        Args:
+            file_path: Caminho do arquivo a validar
+            category: FileCategory com modelo de referência
+        
+        Returns:
+            dict: {
+                'compatible': bool or None (se não foi possível validar),
+                'similarity': float (0.0 a 1.0),
+                'details': dict com métricas detalhadas,
+                'message': str
+            }
+        """
+        result = {
+            'compatible': None,  # None indica que não foi possível validar
+            'similarity': None,  # None indica que não foi calculado
+            'details': {},
+            'message': 'Validação não realizada'
+        }
+        
+        # Verifica se validação visual está habilitada
+        if not category.has_reference_model:
+            result['message'] = 'Validação visual não habilitada para esta categoria'
+            return result
+        
+        # Carrega imagem do arquivo enviado
+        file_images = cls.file_to_images(file_path)
+        if not file_images:
+            result['similarity'] = 0.0
+            result['compatible'] = False
+            result['message'] = 'Não foi possível processar o arquivo enviado'
+            return result
+        
+        # Carrega imagem do modelo de referência
+        ref_path = category.reference_model_full_path
+        if not ref_path or not os.path.exists(ref_path):
+            result['message'] = 'Modelo de referência não encontrado'
+            return result
+        
+        ref_images = cls.file_to_images(ref_path)
+        if not ref_images:
+            result['message'] = 'Não foi possível processar o modelo de referência'
+            return result
+        
+        # Normaliza imagens
+        file_img = cls.normalize_image(file_images[0])
+        ref_img = cls.normalize_image(ref_images[0])
+        
+        # Calcula métricas de similaridade
+        try:
+            hist_sim = cls.compute_histogram_similarity(file_img, ref_img)
+            struct_sim = cls.compute_structural_similarity(file_img, ref_img)
+            edge_sim = cls.compute_edge_similarity(file_img, ref_img)
+            
+            # Se temos embedding salvo, usa para comparação rápida
+            if category.reference_model_embedding:
+                file_emb = cls.compute_embedding(file_img)
+                emb_sim = cls.compare_embeddings(file_emb, category.reference_model_embedding)
+            else:
+                emb_sim = (hist_sim + struct_sim + edge_sim) / 3
+            
+            # Pondera as métricas
+            # Estrutural e bordas são mais importantes para documentos
+            overall_similarity = (
+                0.15 * hist_sim +
+                0.35 * struct_sim +
+                0.35 * edge_sim +
+                0.15 * emb_sim
+            )
+            
+            result['details'] = {
+                'histogram_similarity': round(hist_sim, 3),
+                'structural_similarity': round(struct_sim, 3),
+                'edge_similarity': round(edge_sim, 3),
+                'embedding_similarity': round(emb_sim, 3)
+            }
+            result['similarity'] = round(overall_similarity, 3)
+            
+            # Verifica contra threshold
+            threshold = category.similarity_threshold or 0.75
+            result['compatible'] = overall_similarity >= threshold
+            
+            if result['compatible']:
+                result['message'] = f'Documento compatível com o modelo ({overall_similarity:.0%} de similaridade)'
+            else:
+                result['message'] = f'Documento não compatível com o modelo esperado ({overall_similarity:.0%} de similaridade, mínimo: {threshold:.0%})'
+        
+        except Exception as e:
+            current_app.logger.error(f'Erro na validação visual: {e}', exc_info=True)
+            result['message'] = 'Erro ao processar validação visual'
+            result['details']['error'] = str(e)
+            # Em caso de erro técnico, não bloqueia o upload mas marca como não validado
+            result['compatible'] = None  # Indica que não foi possível validar
+        
+        return result
+    
+    @classmethod
+    def save_reference_model(cls, category: 'FileCategory', file) -> str:
+        """
+        Salva modelo de referência para uma categoria e calcula embedding.
+        
+        Args:
+            category: FileCategory
+            file: FileStorage do Werkzeug
+        
+        Returns:
+            str: Caminho relativo do arquivo salvo
+        
+        Raises:
+            ValueError: Se extensão do arquivo não for permitida
+        """
+        import uuid
+        from werkzeug.utils import secure_filename
+        
+        # Extensões permitidas para modelos de referência
+        ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf', 'gif', 'webp'}
+        
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        
+        # Define caminho e valida extensão
+        original_name = secure_filename(file.filename)
+        extension = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+        
+        if extension not in ALLOWED_EXTENSIONS:
+            raise ValueError(f'Extensão não permitida: {extension}. Use: {", ".join(ALLOWED_EXTENSIONS)}')
+        
+        stored_name = f'ref_model_{uuid.uuid4().hex}.{extension}'
+        relative_path = os.path.join('reference_models', category.code)
+        
+        # Cria diretório se não existir
+        full_dir = os.path.join(upload_folder, relative_path)
+        os.makedirs(full_dir, exist_ok=True)
+        
+        # Salva arquivo
+        full_path = os.path.join(full_dir, stored_name)
+        file.save(full_path)
+        
+        # Calcula embedding
+        images = cls.file_to_images(full_path)
+        if images:
+            normalized = cls.normalize_image(images[0])
+            embedding = cls.compute_embedding(normalized)
+            category.reference_model_embedding = embedding
+        
+        # Atualiza categoria
+        old_ref = category.reference_model_path
+        category.reference_model_path = os.path.join(relative_path, stored_name)
+        
+        # Remove arquivo antigo se existir
+        if old_ref:
+            old_full = os.path.join(upload_folder, old_ref)
+            if os.path.exists(old_full):
+                try:
+                    os.remove(old_full)
+                except Exception:
+                    pass
+        
+        db.session.commit()
+        
+        return category.reference_model_path
+    
+    @classmethod
+    def remove_reference_model(cls, category: 'FileCategory') -> bool:
+        """
+        Remove modelo de referência de uma categoria.
+        
+        Args:
+            category: FileCategory
+        
+        Returns:
+            bool: True se removido com sucesso
+        """
+        if category.reference_model_path:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+            full_path = os.path.join(upload_folder, category.reference_model_path)
+            
+            if os.path.exists(full_path):
+                try:
+                    os.remove(full_path)
+                except Exception as e:
+                    current_app.logger.warning(f'Erro ao remover arquivo: {e}')
+        
+        category.reference_model_path = None
+        category.reference_model_embedding = None
+        db.session.commit()
+        
+        return True

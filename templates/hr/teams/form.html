@@ -40,48 +40,54 @@
                                     {% endif %}
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Código</label>
-                                    {{ form.code(class="form-control", placeholder="EQUIPE01") }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label required">Tipo</label>
-                                    {{ form.team_type(class="form-select") }}
-                                    {% if form.team_type.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.team_type.errors[0] }}</div>
+                                    <label class="form-label">Sigla</label>
+                                    {{ form.acronym(class="form-control", placeholder="EQP") }}
+                                    {% if form.acronym.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.acronym.errors[0] }}</div>
                                     {% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Líder</label>
-                                    {{ form.leader_id(class="form-select") }}
+                                    <label class="form-label required">Tipo</label>
+                                    {{ form.type(class="form-select", id="type") }}
+                                    {% if form.type.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.type.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Vagas</label>
+                                    {{ form.vacancies(class="form-control", placeholder="0") }}
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Descrição</label>
-                                    {{ form.description(class="form-control", rows="3", placeholder="Descrição da equipe...") }}
+                                    <label class="form-label">Localização</label>
+                                    {{ form.location(class="form-control", placeholder="Cidade, Estado ou Endereço") }}
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Dados de Corban (condicional) -->
+                    <!-- Dados de Corban/Empresa (condicional) -->
                     <div class="card mb-3" id="corbanFields" style="display: none;">
                         <div class="card-header">
                             <h3 class="card-title">
-                                <i class="ti ti-building me-2"></i> Dados do Corban
+                                <i class="ti ti-building me-2"></i> Dados da Empresa
                             </h3>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">CNPJ</label>
-                                    {{ form.cnpj(class="form-control", placeholder="00.000.000/0000-00") }}
+                                    {{ form.cnpj(class="form-control", placeholder="00.000.000/0000-00", id="cnpj") }}
+                                    {% if form.cnpj.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.cnpj.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Razão Social</label>
-                                    {{ form.company_name(class="form-control", placeholder="Razão Social") }}
+                                    {{ form.legal_name(class="form-control", placeholder="Razão Social da Empresa") }}
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Inscrição Estadual</label>
-                                    {{ form.state_registration(class="form-control", placeholder="Inscrição Estadual") }}
+                                    <label class="form-label">Nome Fantasia</label>
+                                    {{ form.trade_name(class="form-control", placeholder="Nome Fantasia") }}
                                 </div>
                             </div>
                         </div>
@@ -96,60 +102,47 @@
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="form-label">E-mail</label>
                                     {{ form.email(class="form-control", placeholder="email@exemplo.com") }}
+                                    {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.email.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="form-label">Telefone</label>
-                                    {{ form.phone(class="form-control", placeholder="(00) 0000-0000") }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">WhatsApp</label>
-                                    {{ form.whatsapp(class="form-control", placeholder="(00) 00000-0000") }}
+                                    {{ form.phone(class="form-control", placeholder="(00) 0000-0000", id="phone") }}
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Endereço -->
+                    <!-- Financeiro -->
                     <div class="card mb-3">
                         <div class="card-header">
                             <h3 class="card-title">
-                                <i class="ti ti-map-pin me-2"></i> Endereço
+                                <i class="ti ti-currency-real me-2"></i> Financeiro
                             </h3>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">CEP</label>
-                                    {{ form.zip_code(class="form-control", placeholder="00000-000") }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Rua</label>
-                                    {{ form.street(class="form-control", placeholder="Rua, Avenida...") }}
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Número</label>
-                                    {{ form.number(class="form-control", placeholder="Nº") }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Complemento</label>
-                                    {{ form.complement(class="form-control", placeholder="Apto, Sala...") }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Bairro</label>
-                                    {{ form.neighborhood(class="form-control", placeholder="Bairro") }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Cidade</label>
-                                    {{ form.city(class="form-control", placeholder="Cidade") }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Estado</label>
-                                    {{ form.state(class="form-select") }}
+                                <div class="col-md-12">
+                                    <label class="form-label">Chave PIX</label>
+                                    {{ form.pix(class="form-control", placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória") }}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Observações -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-notes me-2"></i> Observações
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            {{ form.notes(class="form-control", rows="4", placeholder="Observações sobre a equipe...") }}
                         </div>
                     </div>
                 </div>
@@ -159,7 +152,9 @@
                     <!-- Status -->
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h3 class="card-title">Status</h3>
+                            <h3 class="card-title">
+                                <i class="ti ti-toggle-left me-2"></i> Status
+                            </h3>
                         </div>
                         <div class="card-body">
                             <label class="form-check form-switch">
@@ -169,45 +164,47 @@
                         </div>
                     </div>
                     
-                    <!-- Equipe Superior -->
+                    <!-- Aparência -->
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h3 class="card-title">Hierarquia</h3>
+                            <h3 class="card-title">
+                                <i class="ti ti-palette me-2"></i> Aparência
+                            </h3>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <label class="form-label">Equipe Superior</label>
-                                {{ form.parent_id(class="form-select") }}
-                                <small class="text-muted">Deixe em branco se for uma equipe raiz</small>
+                                <label class="form-label">Cor da Equipe</label>
+                                <div class="input-group">
+                                    {{ form.color(class="form-control form-control-color", type="color", style="width: 50px;") }}
+                                    <input type="text" class="form-control" id="colorText" value="{{ form.color.data or '#206bc4' }}" readonly>
+                                </div>
+                                <small class="text-muted">Cor usada para identificar a equipe no sistema</small>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Comissões (para Corban) -->
-                    <div class="card mb-3" id="commissionFields" style="display: none;">
+                    <!-- Resumo -->
+                    {% if team %}
+                    <div class="card mb-3">
                         <div class="card-header">
-                            <h3 class="card-title">Comissões</h3>
+                            <h3 class="card-title">
+                                <i class="ti ti-info-circle me-2"></i> Informações
+                            </h3>
                         </div>
                         <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Taxa de Comissão (%)</label>
-                                <div class="input-group">
-                                    {{ form.commission_rate(class="form-control", placeholder="0.00") }}
-                                    <span class="input-group-text">%</span>
+                            <div class="datagrid">
+                                <div class="datagrid-item">
+                                    <div class="datagrid-title">Criado em</div>
+                                    <div class="datagrid-content">{{ team.created_at.strftime('%d/%m/%Y %H:%M') if team.created_at else '-' }}</div>
+                                </div>
+                                <div class="datagrid-item">
+                                    <div class="datagrid-title">Atualizado em</div>
+                                    <div class="datagrid-content">{{ team.updated_at.strftime('%d/%m/%Y %H:%M') if team.updated_at else '-' }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Observações -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h3 class="card-title">Observações</h3>
-                        </div>
-                        <div class="card-body">
-                            {{ form.notes(class="form-control", rows="4", placeholder="Observações sobre a equipe...") }}
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
             
@@ -228,18 +225,29 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const teamTypeSelect = document.querySelector('#team_type');
+    const teamTypeSelect = document.querySelector('#type');
     const corbanFields = document.querySelector('#corbanFields');
-    const commissionFields = document.querySelector('#commissionFields');
     
     function toggleCorbanFields() {
-        const isCorban = teamTypeSelect.value === 'corban';
-        corbanFields.style.display = isCorban ? 'block' : 'none';
-        commissionFields.style.display = isCorban ? 'block' : 'none';
+        if (teamTypeSelect) {
+            const isCorban = teamTypeSelect.value === 'corban';
+            corbanFields.style.display = isCorban ? 'block' : 'none';
+        }
     }
     
-    teamTypeSelect.addEventListener('change', toggleCorbanFields);
-    toggleCorbanFields(); // Executar no load
+    if (teamTypeSelect) {
+        teamTypeSelect.addEventListener('change', toggleCorbanFields);
+        toggleCorbanFields(); // Executar no load
+    }
+    
+    // Sincronizar cor
+    const colorInput = document.querySelector('#color');
+    const colorText = document.querySelector('#colorText');
+    if (colorInput && colorText) {
+        colorInput.addEventListener('input', function(e) {
+            colorText.value = e.target.value;
+        });
+    }
     
     // Máscara de CNPJ
     const cnpjInput = document.querySelector('#cnpj');
@@ -254,36 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Máscara de CEP
-    const cepInput = document.querySelector('#zip_code');
-    if (cepInput) {
-        cepInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            value = value.replace(/(\d{5})(\d)/, '$1-$2');
-            e.target.value = value;
-        });
-        
-        cepInput.addEventListener('blur', function(e) {
-            const cep = e.target.value.replace(/\D/g, '');
-            if (cep.length === 8) {
-                fetch(`https://viacep.com.br/ws/${cep}/json/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.erro) {
-                            document.querySelector('#street').value = data.logradouro;
-                            document.querySelector('#neighborhood').value = data.bairro;
-                            document.querySelector('#city').value = data.localidade;
-                            document.querySelector('#state').value = data.uf;
-                        }
-                    });
-            }
-        });
-    }
-    
     // Máscara de telefone
-    const phoneInputs = document.querySelectorAll('#phone, #whatsapp');
-    phoneInputs.forEach(input => {
-        input.addEventListener('input', function(e) {
+    const phoneInput = document.querySelector('#phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             if (value.length <= 10) {
                 value = value.replace(/(\d{2})(\d)/, '($1) $2');
@@ -294,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             e.target.value = value;
         });
-    });
+    }
 });
 </script>
 {% endblock %}

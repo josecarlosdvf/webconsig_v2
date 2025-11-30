@@ -1,0 +1,161 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Clientes | {{ system.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Gestão</div>
+                <h2 class="page-title">
+                    <i class="ti ti-users me-2"></i>
+                    Clientes
+                </h2>
+            </div>
+            <div class="col-auto ms-auto">
+                <a href="{{ url_for('clientes_blueprint.cliente_create') }}" class="btn btn-primary">
+                    <i class="ti ti-plus me-1"></i> Novo Cliente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="ti ti-list me-2"></i> 
+                    Lista de Clientes
+                </h3>
+                <div class="card-actions">
+                    <form method="GET" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Buscar por nome ou CPF..." 
+                               value="{{ form.search.data or '' }}" style="width: 300px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Telefone</th>
+                            <th>Email</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf) }}">
+                                    <strong>{{ cliente.nome_completo }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                <code>{{ cliente.cpf_formatted }}</code>
+                            </td>
+                            <td>
+                                {% if cliente.telefone_principal %}
+                                    {{ cliente.telefone_principal.telefone_formatted }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cliente.email_principal %}
+                                    {{ cliente.email_principal.email }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-ghost-secondary btn-icon" data-bs-toggle="dropdown">
+                                        <i class="ti ti-dots-vertical"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end">
+                                        <a class="dropdown-item" href="{{ url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf) }}">
+                                            <i class="ti ti-eye me-2"></i> Visualizar
+                                        </a>
+                                        <a class="dropdown-item" href="{{ url_for('clientes_blueprint.cliente_edit', cpf=cliente.cpf) }}">
+                                            <i class="ti ti-edit me-2"></i> Editar
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#" 
+                                           onclick="if(confirm('Tem certeza que deseja excluir este cliente?')) { document.getElementById('delete-form-{{ cliente.cpf }}').submit(); }">
+                                            <i class="ti ti-trash me-2"></i> Excluir
+                                        </a>
+                                        <form id="delete-form-{{ cliente.cpf }}" 
+                                              action="{{ url_for('clientes_blueprint.cliente_delete', cpf=cliente.cpf) }}" 
+                                              method="POST" style="display: none;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="ti ti-users-minus icon icon-lg mb-2"></i>
+                                <p class="mb-0">Nenhum cliente encontrado</p>
+                                <a href="{{ url_for('clientes_blueprint.cliente_create') }}" class="btn btn-primary mt-3">
+                                    <i class="ti ti-plus me-1"></i> Cadastrar Primeiro Cliente
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if pagination.pages > 1 %}
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">
+                    Mostrando <span>{{ pagination.page }}</span> de <span>{{ pagination.pages }}</span> páginas
+                    ({{ pagination.total }} clientes)
+                </p>
+                <ul class="pagination m-0 ms-auto">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('clientes_blueprint.clientes_list', page=pagination.prev_num, search=form.search.data or '') }}">
+                            <i class="ti ti-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+                            <a class="page-link" href="{{ url_for('clientes_blueprint.clientes_list', page=page_num, search=form.search.data or '') }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('clientes_blueprint.clientes_list', page=pagination.next_num, search=form.search.data or '') }}">
+                            Próximo <i class="ti ti-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

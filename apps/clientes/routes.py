@@ -36,6 +36,108 @@ def cpf_to_entity_id(cpf_clean):
     return int(hash_hex, 16) % (10 ** 9)
 
 
+def _process_related_data(cliente, form_data):
+    """
+    Processa dados relacionados do formulário unificado.
+    Adiciona telefones, emails, endereços, identidades e data de nascimento.
+    """
+    cpf = cliente.cpf
+    
+    # Processa Telefones
+    telefones = form_data.getlist('telefones[]')
+    telefones_tipo = form_data.getlist('telefones_tipo[]')
+    telefones_status = form_data.getlist('telefones_status[]')
+    
+    for i, telefone in enumerate(telefones):
+        if telefone and telefone.strip():
+            tel_limpo = ''.join(filter(str.isdigit, telefone))
+            if tel_limpo:
+                novo_tel = Telefone(
+                    cpf=cpf,
+                    telefone=tel_limpo,
+                    tipo=telefones_tipo[i] if i < len(telefones_tipo) else 'celular',
+                    status=telefones_status[i] if i < len(telefones_status) else '',
+                    ranking=len(telefones) - i  # Primeiro tem maior ranking
+                )
+                db.session.add(novo_tel)
+    
+    # Processa Emails
+    emails = form_data.getlist('emails[]')
+    emails_status = form_data.getlist('emails_status[]')
+    
+    for i, email in enumerate(emails):
+        if email and email.strip():
+            novo_email = Email(
+                cpf=cpf,
+                email=email.strip(),
+                status=emails_status[i] if i < len(emails_status) else ''
+            )
+            db.session.add(novo_email)
+    
+    # Processa Endereços
+    enderecos_cep = form_data.getlist('enderecos_cep[]')
+    enderecos_logradouro = form_data.getlist('enderecos_logradouro[]')
+    enderecos_numero = form_data.getlist('enderecos_numero[]')
+    enderecos_complemento = form_data.getlist('enderecos_complemento[]')
+    enderecos_bairro = form_data.getlist('enderecos_bairro[]')
+    enderecos_cidade = form_data.getlist('enderecos_cidade[]')
+    enderecos_uf = form_data.getlist('enderecos_uf[]')
+    
+    for i in range(len(enderecos_cep)):
+        # Só adiciona se tiver pelo menos CEP ou logradouro
+        if (i < len(enderecos_logradouro) and enderecos_logradouro[i]) or \
+           (i < len(enderecos_cep) and enderecos_cep[i]):
+            novo_end = Endereco(
+                cpf=cpf,
+                cep=''.join(filter(str.isdigit, enderecos_cep[i])) if i < len(enderecos_cep) else '',
+                logradouro=enderecos_logradouro[i] if i < len(enderecos_logradouro) else '',
+                numero=enderecos_numero[i] if i < len(enderecos_numero) else '',
+                complemento=enderecos_complemento[i] if i < len(enderecos_complemento) else '',
+                bairro=enderecos_bairro[i] if i < len(enderecos_bairro) else '',
+                cidade=enderecos_cidade[i] if i < len(enderecos_cidade) else '',
+                uf=enderecos_uf[i] if i < len(enderecos_uf) else ''
+            )
+            db.session.add(novo_end)
+    
+    # Processa Identidade/Documentos (se houver dados)
+    rg = form_data.get('rg', '').strip()
+    sexo = form_data.get('sexo', '').strip()
+    estado_civil = form_data.get('estado_civil', '').strip()
+    nome_mae = form_data.get('nome_mae', '').strip()
+    nome_pai = form_data.get('nome_pai', '').strip()
+    profissao = form_data.get('profissao', '').strip()
+    rg_orgao = form_data.get('rg_orgao', '').strip()
+    
+    # Só cria identidade se tiver algum dado
+    if rg or sexo or estado_civil or nome_mae or nome_pai or profissao:
+        # Remove identidade existente para recriar
+        Identidade.query.filter_by(cpf=cpf).delete()
+        
+        identidade = Identidade(
+            cpf=cpf,
+            rg=rg,
+            orgao_emissor=rg_orgao,
+            sexo=sexo,
+            estado_civil=estado_civil,
+            nome_mae=nome_mae,
+            nome_pai=nome_pai,
+            profissao=profissao
+        )
+        db.session.add(identidade)
+    
+    # Processa Data de Nascimento
+    data_nascimento = form_data.get('data_nascimento', '').strip()
+    if data_nascimento:
+        # Remove data existente
+        DataNascimento.query.filter_by(cpf=cpf).delete()
+        
+        data_nasc = DataNascimento(
+            cpf=cpf,
+            data_nasc=data_nascimento
+        )
+        db.session.add(data_nasc)
+
+
 # =============================================================================
 # LISTAGEM E BUSCA
 # =============================================================================
@@ -80,43 +182,59 @@ def clientes_list():
 @blueprint.route('/novo', methods=['GET', 'POST'])
 @login_required
 def cliente_create():
-    """Criar novo cliente"""
+    """Criar novo cliente com todos os dados relacionados"""
     form = ClienteForm()
     
-    if form.validate_on_submit():
+    if request.method == 'POST':
         # Limpa CPF
-        cpf = ''.join(filter(str.isdigit, form.cpf.data))
+        cpf = ''.join(filter(str.isdigit, request.form.get('cpf', '')))
+        nome_completo = request.form.get('nome_completo', '').strip()
+        
+        if not cpf or len(cpf) != 11:
+            flash('CPF inválido.', 'danger')
+            return render_template('clientes/form_novo.html', form=form)
+        
+        if not nome_completo:
+            flash('Nome é obrigatório.', 'danger')
+            return render_template('clientes/form_novo.html', form=form)
         
         # Verifica se CPF já existe
         existing = Cliente.get_by_cpf(cpf)
         if existing:
             flash('Já existe um cliente com este CPF.', 'danger')
-            return render_template('clientes/form.html', form=form, title='Novo Cliente')
+            return render_template('clientes/form_novo.html', form=form)
         
-        cliente = Cliente(
-            cpf=cpf,
-            nome_completo=form.nome_completo.data
-        )
-        
-        db.session.add(cliente)
-        db.session.commit()
-        
-        AuditLog.log(
-            action='create',
-            table_name='clientes',
-            record_id=None,
-            description=f'Cliente criado: {cliente.nome_completo} (CPF: {cliente.cpf_formatted})'
-        )
-        db.session.commit()
-        
-        flash('Cliente criado com sucesso!', 'success')
-        return redirect(url_for('clientes_blueprint.cliente_view', cpf=cpf))
+        try:
+            # Cria cliente
+            cliente = Cliente(
+                cpf=cpf,
+                nome_completo=nome_completo
+            )
+            db.session.add(cliente)
+            db.session.flush()  # Para obter o CPF antes do commit
+            
+            # Processa dados relacionados
+            _process_related_data(cliente, request.form)
+            
+            db.session.commit()
+            
+            AuditLog.log(
+                action='create',
+                table_name='clientes',
+                record_id=None,
+                description=f'Cliente criado: {cliente.nome_completo} (CPF: {cliente.cpf_formatted})'
+            )
+            db.session.commit()
+            
+            flash('Cliente criado com sucesso!', 'success')
+            return redirect(url_for('clientes_blueprint.cliente_view', cpf=cpf))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao criar cliente: {str(e)}', 'danger')
+            return render_template('clientes/form_novo.html', form=form)
     
-    return render_template(
-        'clientes/form.html',
-        form=form,
-        title='Novo Cliente'
-    )
+    return render_template('clientes/form_novo.html', form=form)
 
 
 # =============================================================================
@@ -160,7 +278,7 @@ def cliente_view(cpf):
 @blueprint.route('/<cpf>/editar', methods=['GET', 'POST'])
 @login_required
 def cliente_edit(cpf):
-    """Editar cliente"""
+    """Editar cliente e todos os dados relacionados"""
     cpf_clean = ''.join(filter(str.isdigit, cpf))
     cliente = Cliente.get_by_cpf(cpf_clean)
     
@@ -169,28 +287,43 @@ def cliente_edit(cpf):
     
     form = ClienteForm(obj=cliente)
     
-    if form.validate_on_submit():
-        cliente.nome_completo = form.nome_completo.data
+    if request.method == 'POST':
+        nome_completo = request.form.get('nome_completo', '').strip()
         
-        db.session.commit()
+        if not nome_completo:
+            flash('Nome é obrigatório.', 'danger')
+            return render_template('clientes/form_novo.html', form=form, cliente=cliente)
         
-        AuditLog.log(
-            action='update',
-            table_name='clientes',
-            record_id=None,
-            description=f'Cliente atualizado: {cliente.nome_completo}'
-        )
-        db.session.commit()
-        
-        flash('Cliente atualizado com sucesso!', 'success')
-        return redirect(url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf))
+        try:
+            cliente.nome_completo = nome_completo
+            
+            # Remove dados relacionados existentes (serão recriados)
+            Telefone.query.filter_by(cpf=cliente.cpf).delete()
+            Email.query.filter_by(cpf=cliente.cpf).delete()
+            Endereco.query.filter_by(cpf=cliente.cpf).delete()
+            
+            # Processa novos dados relacionados
+            _process_related_data(cliente, request.form)
+            
+            db.session.commit()
+            
+            AuditLog.log(
+                action='update',
+                table_name='clientes',
+                record_id=None,
+                description=f'Cliente atualizado: {cliente.nome_completo}'
+            )
+            db.session.commit()
+            
+            flash('Cliente atualizado com sucesso!', 'success')
+            return redirect(url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar cliente: {str(e)}', 'danger')
+            return render_template('clientes/form_novo.html', form=form, cliente=cliente)
     
-    return render_template(
-        'clientes/form.html',
-        form=form,
-        cliente=cliente,
-        title='Editar Cliente'
-    )
+    return render_template('clientes/form_novo.html', form=form, cliente=cliente)
 
 
 # =============================================================================

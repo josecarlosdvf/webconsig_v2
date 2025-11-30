@@ -1,0 +1,470 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Consulta de CPF{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Serviços</div>
+                <h2 class="page-title">
+                    <i class="ti ti-search me-2"></i>
+                    Consulta de CPF
+                </h2>
+            </div>
+            {% if current_user.is_admin %}
+            <div class="col-auto">
+                <a href="{{ url_for('home_blueprint.consulta_cpf_logs') }}" class="btn btn-outline-secondary">
+                    <i class="ti ti-list me-1"></i> Ver Logs
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <!-- Formulário de Consulta -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-id me-2"></i>
+                            Consultar Dados Cadastrais
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">CPF</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="cpf-input" 
+                                           placeholder="000.000.000-00" maxlength="14">
+                                    <button type="button" class="btn btn-primary" id="btn-consultar">
+                                        <i class="ti ti-search me-1"></i> Consultar
+                                    </button>
+                                </div>
+                                <small class="form-hint">Digite o CPF para buscar dados cadastrais</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="force-api">
+                                    <label class="form-check-label" for="force-api">
+                                        Forçar nova consulta (ignorar cache)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resultado da Consulta -->
+                <div class="card mt-3" id="resultado-container" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-user me-2"></i>
+                            Dados do CPF
+                        </h3>
+                        <div class="card-actions">
+                            <span class="badge" id="badge-cache"></span>
+                        </div>
+                    </div>
+                    <div class="card-body" id="resultado-body">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Erro -->
+                <div class="alert alert-danger mt-3" id="erro-container" style="display: none;">
+                    <i class="ti ti-alert-circle me-2"></i>
+                    <span id="erro-mensagem"></span>
+                </div>
+                
+                <!-- Loading -->
+                <div class="card mt-3" id="loading-container" style="display: none;">
+                    <div class="card-body text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="mt-2 text-muted">Consultando dados...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estatísticas -->
+            <div class="col-lg-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-chart-bar me-2"></i>
+                            Estatísticas
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="datagrid">
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Total de Consultas</div>
+                                <div class="datagrid-content">
+                                    <strong class="text-primary">{{ stats.total_consultas }}</strong>
+                                </div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">CPFs Únicos</div>
+                                <div class="datagrid-content">{{ stats.cpfs_unicos }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Taxa de Sucesso</div>
+                                <div class="datagrid-content">
+                                    <span class="badge bg-{{ 'success' if stats.taxa_sucesso >= 80 else ('warning' if stats.taxa_sucesso >= 50 else 'danger') }}">
+                                        {{ stats.taxa_sucesso }}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Economia (Cache)</div>
+                                <div class="datagrid-content">
+                                    <span class="text-success">
+                                        <i class="ti ti-trending-down me-1"></i>
+                                        {{ stats.economia_cache }} consultas
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Últimos 30 dias</div>
+                                <div class="datagrid-content">{{ stats.ultimos_30_dias }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Info sobre Cache -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-info-circle me-2"></i>
+                            Informações
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled space-y-2 mb-0">
+                            <li class="d-flex">
+                                <i class="ti ti-clock text-blue me-2 mt-1"></i>
+                                <span>Cache de <strong>30 dias</strong> para evitar cobranças duplicadas</span>
+                            </li>
+                            <li class="d-flex">
+                                <i class="ti ti-database text-green me-2 mt-1"></i>
+                                <span>Dados retornados do cache são <strong>gratuitos</strong></span>
+                            </li>
+                            <li class="d-flex">
+                                <i class="ti ti-shield-check text-yellow me-2 mt-1"></i>
+                                <span>Todas as consultas são <strong>registradas</strong> para auditoria</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Histórico Recente -->
+        {% if historico %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="ti ti-history me-2"></i>
+                    Consultas Recentes
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>CPF</th>
+                            <th>Nome</th>
+                            <th>Data/Hora</th>
+                            <th>Status</th>
+                            <th>Usuário</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in historico %}
+                        <tr>
+                            <td>
+                                <a href="#" class="cpf-link" data-cpf="{{ c.cpf }}">
+                                    {{ c.cpf_formatted }}
+                                </a>
+                            </td>
+                            <td>{{ c.nome_pessoa or '-' }}</td>
+                            <td class="text-muted">
+                                {{ c.data_consulta.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            <td>
+                                {% if c.sucesso %}
+                                <span class="badge bg-success-lt">
+                                    <i class="ti ti-check me-1"></i> Sucesso
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger-lt">
+                                    <i class="ti ti-x me-1"></i> Erro
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ c.usuario_nome or '-' }}</td>
+                            <td>
+                                <a href="#" class="btn btn-ghost-primary btn-icon btn-sm cpf-link" 
+                                   data-cpf="{{ c.cpf }}" title="Consultar novamente">
+                                    <i class="ti ti-refresh"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cpfInput = document.getElementById('cpf-input');
+    const btnConsultar = document.getElementById('btn-consultar');
+    const forceApi = document.getElementById('force-api');
+    const resultadoContainer = document.getElementById('resultado-container');
+    const resultadoBody = document.getElementById('resultado-body');
+    const erroContainer = document.getElementById('erro-container');
+    const erroMensagem = document.getElementById('erro-mensagem');
+    const loadingContainer = document.getElementById('loading-container');
+    const badgeCache = document.getElementById('badge-cache');
+    
+    // Máscara de CPF
+    cpfInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 11) value = value.slice(0, 11);
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = value;
+    });
+    
+    // Consultar ao pressionar Enter
+    cpfInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            btnConsultar.click();
+        }
+    });
+    
+    // Botão Consultar
+    btnConsultar.addEventListener('click', async function() {
+        const cpf = cpfInput.value.replace(/\D/g, '');
+        
+        if (cpf.length !== 11) {
+            mostrarErro('CPF deve ter 11 dígitos');
+            return;
+        }
+        
+        await consultarCPF(cpf);
+    });
+    
+    // Links de CPF na tabela
+    document.querySelectorAll('.cpf-link').forEach(link => {
+        link.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const cpf = this.dataset.cpf;
+            cpfInput.value = formatarCPF(cpf);
+            await consultarCPF(cpf);
+        });
+    });
+    
+    async function consultarCPF(cpf) {
+        esconderTudo();
+        loadingContainer.style.display = 'block';
+        
+        const force = forceApi.checked ? '?force=true' : '';
+        
+        try {
+            const response = await fetch(`/api/cpf/${cpf}${force}`);
+            const data = await response.json();
+            
+            loadingContainer.style.display = 'none';
+            
+            if (data.success) {
+                mostrarResultado(data.data, data.from_cache);
+            } else {
+                mostrarErro(data.error);
+            }
+        } catch (error) {
+            loadingContainer.style.display = 'none';
+            mostrarErro('Erro de conexão. Tente novamente.');
+        }
+    }
+    
+    function esconderTudo() {
+        resultadoContainer.style.display = 'none';
+        erroContainer.style.display = 'none';
+        loadingContainer.style.display = 'none';
+    }
+    
+    function mostrarErro(mensagem) {
+        esconderTudo();
+        erroMensagem.textContent = mensagem;
+        erroContainer.style.display = 'block';
+    }
+    
+    function mostrarResultado(pessoa, fromCache) {
+        esconderTudo();
+        
+        // Badge de cache
+        if (fromCache) {
+            badgeCache.className = 'badge bg-blue-lt';
+            badgeCache.innerHTML = '<i class="ti ti-database me-1"></i> Do cache';
+        } else {
+            badgeCache.className = 'badge bg-green-lt';
+            badgeCache.innerHTML = '<i class="ti ti-cloud-download me-1"></i> API';
+        }
+        
+        // Monta o HTML do resultado
+        let html = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h4 class="mb-3">${pessoa.nome || 'Nome não disponível'}</h4>
+                    <div class="datagrid">
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">CPF</div>
+                            <div class="datagrid-content">${formatarCPF(pessoa.cpf)}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Data de Nascimento</div>
+                            <div class="datagrid-content">${formatarData(pessoa.data_nascimento) || '-'}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Sexo</div>
+                            <div class="datagrid-content">${pessoa.sexo === 'M' ? 'Masculino' : (pessoa.sexo === 'F' ? 'Feminino' : '-')}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Nome da Mãe</div>
+                            <div class="datagrid-content">${pessoa.nome_mae || '-'}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Situação CPF</div>
+                            <div class="datagrid-content">
+                                <span class="badge bg-${pessoa.situacao_cpf === 'Regular' ? 'success' : 'warning'}-lt">
+                                    ${pessoa.situacao_cpf || 'Não informada'}
+                                </span>
+                            </div>
+                        </div>
+                        ${pessoa.falecido ? '<div class="datagrid-item"><div class="datagrid-title">Óbito</div><div class="datagrid-content"><span class="badge bg-danger">Falecido</span></div></div>' : ''}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="mb-3">Contato</h5>
+                    <div class="datagrid">
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Telefone Principal</div>
+                            <div class="datagrid-content">${pessoa.telefone_principal || '-'}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">E-mail Principal</div>
+                            <div class="datagrid-content">${pessoa.email_principal || '-'}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Ocupação</div>
+                            <div class="datagrid-content">${pessoa.ocupacao || '-'}</div>
+                        </div>
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Renda</div>
+                            <div class="datagrid-content">${pessoa.renda || '-'}</div>
+                        </div>
+                        ${pessoa.score_credito ? `<div class="datagrid-item"><div class="datagrid-title">Score de Crédito</div><div class="datagrid-content"><span class="badge bg-primary">${pessoa.score_credito}</span></div></div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Telefones
+        if (pessoa.celulares && pessoa.celulares.length > 0) {
+            html += `
+                <hr class="my-3">
+                <h5><i class="ti ti-phone me-2"></i>Telefones</h5>
+                <div class="row">
+            `;
+            pessoa.celulares.forEach(tel => {
+                html += `
+                    <div class="col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <span class="avatar avatar-sm bg-blue-lt me-2">
+                                <i class="ti ti-device-mobile"></i>
+                            </span>
+                            <div>
+                                <strong>(${tel.ddd}) ${tel.numero}</strong>
+                                ${tel.whatsapp ? '<span class="badge bg-green-lt ms-1">WhatsApp</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        // Endereços
+        if (pessoa.enderecos && pessoa.enderecos.length > 0) {
+            html += `
+                <hr class="my-3">
+                <h5><i class="ti ti-map-pin me-2"></i>Endereços</h5>
+            `;
+            pessoa.enderecos.forEach(end => {
+                html += `
+                    <div class="alert alert-secondary mb-2">
+                        <strong>${end.logradouro || ''}</strong>
+                        ${end.numero ? ', ' + end.numero : ''}
+                        ${end.complemento ? ' - ' + end.complemento : ''}<br>
+                        ${end.bairro || ''} - ${end.cidade || ''}/${end.uf || ''}
+                        ${end.cep ? ' - CEP: ' + end.cep : ''}
+                    </div>
+                `;
+            });
+        }
+        
+        // E-mails
+        if (pessoa.emails && pessoa.emails.length > 0) {
+            html += `
+                <hr class="my-3">
+                <h5><i class="ti ti-mail me-2"></i>E-mails</h5>
+                <div class="row">
+            `;
+            pessoa.emails.forEach(email => {
+                html += `
+                    <div class="col-md-4 mb-2">
+                        <span class="badge bg-secondary-lt">${email.email}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        resultadoBody.innerHTML = html;
+        resultadoContainer.style.display = 'block';
+    }
+    
+    function formatarCPF(cpf) {
+        if (!cpf) return '';
+        cpf = cpf.toString().padStart(11, '0');
+        return `${cpf.slice(0,3)}.${cpf.slice(3,6)}.${cpf.slice(6,9)}-${cpf.slice(9)}`;
+    }
+    
+    function formatarData(data) {
+        if (!data) return null;
+        const parts = data.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return data;
+    }
+});
+</script>
+{% endblock %}

@@ -158,7 +158,35 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="subheader">Status do Sistema</div>
+                            {% if current_user.is_admin %}
+                            <div class="ms-auto">
+                                <a href="{{ url_for('home_blueprint.system_status') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="ti ti-settings"></i>
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
+                        {% if system_status %}
+                        <div class="d-flex align-items-baseline">
+                            {% if system_status.healthy %}
+                            <div class="h1 mb-0 me-2 text-green">OK</div>
+                            <div class="me-auto">
+                                <span class="text-green d-inline-flex align-items-center lh-1">
+                                    <i class="ti ti-check me-1"></i>
+                                    {{ system_status.installed }}/{{ system_status.total }} dependências
+                                </span>
+                            </div>
+                            {% else %}
+                            <div class="h1 mb-0 me-2 text-warning">!</div>
+                            <div class="me-auto">
+                                <span class="text-warning d-inline-flex align-items-center lh-1">
+                                    <i class="ti ti-alert-triangle me-1"></i>
+                                    {{ system_status.missing }} pendências
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
                         <div class="d-flex align-items-baseline">
                             <div class="h1 mb-0 me-2 text-green">OK</div>
                             <div class="me-auto">
@@ -168,15 +196,92 @@
                                 </span>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     <div class="progress progress-sm card-progress">
+                        {% if system_status %}
+                        {% set pct = (system_status.installed / system_status.total * 100)|int if system_status.total > 0 else 100 %}
+                        <div class="progress-bar bg-{{ 'green' if system_status.healthy else 'warning' }}" style="width: {{ pct }}%" role="progressbar">
+                            <span class="visually-hidden">{{ pct }}%</span>
+                        </div>
+                        {% else %}
                         <div class="progress-bar bg-green" style="width: 100%" role="progressbar">
                             <span class="visually-hidden">100% OK</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Detalhado do Sistema (apenas para admins) -->
+        {% if current_user.is_admin and system_status %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-server me-2"></i>
+                            Status dos Serviços
+                        </h3>
+                        <div class="card-actions">
+                            <a href="{{ url_for('home_blueprint.system_status') }}" class="btn btn-sm btn-primary">
+                                <i class="ti ti-external-link me-1"></i> Ver Detalhes
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar bg-green-lt me-3">
+                                        <i class="ti ti-check text-green"></i>
+                                    </span>
+                                    <div>
+                                        <div class="font-weight-medium">{{ system_status.installed }}</div>
+                                        <div class="text-muted small">Instalados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar bg-warning-lt me-3">
+                                        <i class="ti ti-alert-triangle text-warning"></i>
+                                    </span>
+                                    <div>
+                                        <div class="font-weight-medium">{{ system_status.missing }}</div>
+                                        <div class="text-muted small">Pendentes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar bg-danger-lt me-3">
+                                        <i class="ti ti-alert-circle text-danger"></i>
+                                    </span>
+                                    <div>
+                                        <div class="font-weight-medium">{{ system_status.critical_missing }}</div>
+                                        <div class="text-muted small">Críticos</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar bg-azure-lt me-3">
+                                        <i class="ti ti-package text-azure"></i>
+                                    </span>
+                                    <div>
+                                        <div class="font-weight-medium">{{ system_status.total }}</div>
+                                        <div class="text-muted small">Total</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
         
         <!-- Boas-vindas -->
         <div class="row row-cards mb-4">

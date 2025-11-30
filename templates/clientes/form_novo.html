@@ -1,0 +1,782 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ 'Editar' if cliente else 'Novo' }} Cliente{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">
+            <a href="{{ url_for('clientes_blueprint.clientes_list') }}">Clientes</a>
+        </div>
+        <h2 class="page-title">
+            <i class="ti ti-user-{{ 'edit' if cliente else 'plus' }} me-2"></i>
+            {{ 'Editar Cliente' if cliente else 'Novo Cliente' }}
+        </h2>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <form method="POST" id="cliente-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="row">
+                <!-- Coluna Principal -->
+                <div class="col-lg-8">
+                    <!-- Dados Básicos -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-user me-2"></i> Dados Pessoais
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label required">CPF</label>
+                                    <div class="input-group">
+                                        <input type="text" name="cpf" id="cpf-input" class="form-control" 
+                                               value="{{ cliente.cpf_formatted if cliente else (form.cpf.data or '') }}"
+                                               placeholder="000.000.000-00" maxlength="14"
+                                               {% if cliente %}readonly{% endif %}
+                                               required>
+                                        {% if not cliente %}
+                                        <button type="button" class="btn btn-outline-primary" id="btn-buscar-cpf" 
+                                                title="Buscar dados na base Lemit">
+                                            <i class="ti ti-search"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% if form.cpf.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.cpf.errors[0] }}</div>
+                                    {% endif %}
+                                    {% if not cliente %}
+                                    <small class="form-hint">Digite o CPF e clique na lupa para buscar dados</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label required">Nome Completo</label>
+                                    <input type="text" name="nome_completo" id="nome_completo" class="form-control" 
+                                           value="{{ cliente.nome_completo if cliente else (form.nome_completo.data or '') }}"
+                                           placeholder="Nome completo do cliente"
+                                           required>
+                                    {% if form.nome_completo.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.nome_completo.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Data de Nascimento</label>
+                                    <input type="date" name="data_nascimento" id="data_nascimento" class="form-control"
+                                           value="{{ cliente.data_nasc.data_nasc if cliente and cliente.data_nasc else '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Sexo</label>
+                                    <select name="sexo" id="sexo" class="form-select">
+                                        <option value="">Selecione...</option>
+                                        <option value="M" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.sexo == 'M' %}selected{% endif %}>Masculino</option>
+                                        <option value="F" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.sexo == 'F' %}selected{% endif %}>Feminino</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Estado Civil</label>
+                                    <select name="estado_civil" id="estado_civil" class="form-select">
+                                        <option value="">Selecione...</option>
+                                        <option value="Solteiro" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.estado_civil == 'Solteiro' %}selected{% endif %}>Solteiro(a)</option>
+                                        <option value="Casado" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.estado_civil == 'Casado' %}selected{% endif %}>Casado(a)</option>
+                                        <option value="Divorciado" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.estado_civil == 'Divorciado' %}selected{% endif %}>Divorciado(a)</option>
+                                        <option value="Viúvo" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.estado_civil == 'Viúvo' %}selected{% endif %}>Viúvo(a)</option>
+                                        <option value="União Estável" {% if cliente and cliente.identidade_principal and cliente.identidade_principal.estado_civil == 'União Estável' %}selected{% endif %}>União Estável</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Nome da Mãe</label>
+                                    <input type="text" name="nome_mae" id="nome_mae" class="form-control"
+                                           placeholder="Nome completo da mãe"
+                                           value="{{ cliente.identidade_principal.nome_mae if cliente and cliente.identidade_principal else '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Nome do Pai</label>
+                                    <input type="text" name="nome_pai" id="nome_pai" class="form-control"
+                                           placeholder="Nome completo do pai"
+                                           value="{{ cliente.identidade_principal.nome_pai if cliente and cliente.identidade_principal else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documentos -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-id me-2"></i> Documentos
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">RG</label>
+                                    <input type="text" name="rg" id="rg" class="form-control"
+                                           placeholder="Número do RG"
+                                           value="{{ cliente.identidade_principal.rg if cliente and cliente.identidade_principal else '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Órgão Emissor</label>
+                                    <input type="text" name="rg_orgao" id="rg_orgao" class="form-control"
+                                           placeholder="SSP"
+                                           value="{{ cliente.identidade_principal.orgao_emissor if cliente and cliente.identidade_principal else '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Profissão</label>
+                                    <input type="text" name="profissao" id="profissao" class="form-control"
+                                           placeholder="Ocupação"
+                                           value="{{ cliente.identidade_principal.profissao if cliente and cliente.identidade_principal else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Telefones -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-phone me-2"></i> Telefones
+                            </h3>
+                            <div class="card-actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-telefone">
+                                    <i class="ti ti-plus me-1"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="telefones-container">
+                                {% if cliente %}
+                                    {% for tel in cliente.telefones %}
+                                    <div class="row g-2 mb-2 telefone-row">
+                                        <div class="col-md-4">
+                                            <input type="text" name="telefones[]" class="form-control telefone-input"
+                                                   value="{{ tel.telefone }}" placeholder="(00) 00000-0000">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select name="telefones_tipo[]" class="form-select">
+                                                <option value="celular" {% if tel.tipo == 'celular' %}selected{% endif %}>Celular</option>
+                                                <option value="fixo" {% if tel.tipo == 'fixo' %}selected{% endif %}>Fixo</option>
+                                                <option value="comercial" {% if tel.tipo == 'comercial' %}selected{% endif %}>Comercial</option>
+                                                <option value="recado" {% if tel.tipo == 'recado' %}selected{% endif %}>Recado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" name="telefones_status[]" class="form-control"
+                                                   value="{{ tel.status or '' }}" placeholder="Status">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-outline-danger w-100 btn-remove-telefone">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                                <!-- Template para novos telefones -->
+                                <div class="row g-2 mb-2 telefone-row" id="telefone-template" style="display: none;">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control telefone-input"
+                                               placeholder="(00) 00000-0000">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select">
+                                            <option value="celular">Celular</option>
+                                            <option value="fixo">Fixo</option>
+                                            <option value="comercial">Comercial</option>
+                                            <option value="recado">Recado</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" placeholder="Status">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-outline-danger w-100 btn-remove-telefone">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="telefones-vazio" class="text-center text-muted py-3" 
+                                 style="{% if cliente and cliente.telefones.count() > 0 %}display: none;{% endif %}">
+                                <i class="ti ti-phone-off me-1"></i> Nenhum telefone cadastrado
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- E-mails -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-mail me-2"></i> E-mails
+                            </h3>
+                            <div class="card-actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-email">
+                                    <i class="ti ti-plus me-1"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="emails-container">
+                                {% if cliente %}
+                                    {% for email in cliente.emails %}
+                                    <div class="row g-2 mb-2 email-row">
+                                        <div class="col-md-8">
+                                            <input type="email" name="emails[]" class="form-control"
+                                                   value="{{ email.email }}" placeholder="email@exemplo.com">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" name="emails_status[]" class="form-control"
+                                                   value="{{ email.status or '' }}" placeholder="Status">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-outline-danger w-100 btn-remove-email">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div id="emails-vazio" class="text-center text-muted py-3"
+                                 style="{% if cliente and cliente.emails.count() > 0 %}display: none;{% endif %}">
+                                <i class="ti ti-mail-off me-1"></i> Nenhum e-mail cadastrado
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Endereços -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-map-pin me-2"></i> Endereços
+                            </h3>
+                            <div class="card-actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-endereco">
+                                    <i class="ti ti-plus me-1"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="enderecos-container">
+                                {% if cliente %}
+                                    {% for end in cliente.enderecos %}
+                                    <div class="endereco-row border rounded p-3 mb-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <strong>Endereço {{ loop.index }}</strong>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-endereco">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-md-3">
+                                                <input type="text" name="enderecos_cep[]" class="form-control cep-input"
+                                                       value="{{ end.cep or '' }}" placeholder="CEP">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="text" name="enderecos_logradouro[]" class="form-control"
+                                                       value="{{ end.logradouro or '' }}" placeholder="Logradouro">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="text" name="enderecos_numero[]" class="form-control"
+                                                       value="{{ end.numero or '' }}" placeholder="Número">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" name="enderecos_complemento[]" class="form-control"
+                                                       value="{{ end.complemento or '' }}" placeholder="Complemento">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" name="enderecos_bairro[]" class="form-control"
+                                                       value="{{ end.bairro or '' }}" placeholder="Bairro">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" name="enderecos_cidade[]" class="form-control"
+                                                       value="{{ end.cidade or '' }}" placeholder="Cidade">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <select name="enderecos_uf[]" class="form-select">
+                                                    <option value="">UF</option>
+                                                    {% for uf in ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] %}
+                                                    <option value="{{ uf }}" {% if end.uf == uf %}selected{% endif %}>{{ uf }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div id="enderecos-vazio" class="text-center text-muted py-3"
+                                 style="{% if cliente and cliente.enderecos.count() > 0 %}display: none;{% endif %}">
+                                <i class="ti ti-map-off me-1"></i> Nenhum endereço cadastrado
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Coluna Lateral -->
+                <div class="col-lg-4">
+                    <!-- Status da Busca Lemit -->
+                    <div class="card mb-3" id="lemit-status" style="display: none;">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-database me-2"></i> Dados Lemit
+                            </h3>
+                        </div>
+                        <div class="card-body" id="lemit-body">
+                            <!-- Preenchido via JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Dados Bancários -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-building-bank me-2"></i> Dados Bancários
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Cód. Banco</label>
+                                    <input type="text" name="banco_codigo" class="form-control" placeholder="000"
+                                           value="{{ cliente.dados_bancarios_principal.numero_banco if cliente and cliente.dados_bancarios_principal else '' }}">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Nome do Banco</label>
+                                    <input type="text" name="banco_nome" class="form-control" placeholder="Nome do Banco"
+                                           value="{{ cliente.dados_bancarios_principal.banco if cliente and cliente.dados_bancarios_principal else '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Agência</label>
+                                    <input type="text" name="banco_agencia" class="form-control" placeholder="0000"
+                                           value="{{ cliente.dados_bancarios_principal.agencia if cliente and cliente.dados_bancarios_principal else '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Conta</label>
+                                    <input type="text" name="banco_conta" class="form-control" placeholder="00000-0"
+                                           value="{{ cliente.dados_bancarios_principal.conta if cliente and cliente.dados_bancarios_principal else '' }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Chave PIX</label>
+                                    <input type="text" name="banco_pix" class="form-control" placeholder="CPF, E-mail, Telefone..."
+                                           value="{{ cliente.dados_bancarios_principal.chave_pix if cliente and cliente.dados_bancarios_principal else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações Adicionais -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-info-circle me-2"></i> Informações
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Renda</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" name="renda" id="renda" class="form-control" 
+                                               placeholder="0,00">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Score de Crédito</label>
+                                    <input type="text" name="score_credito" id="score_credito" class="form-control" 
+                                           placeholder="Score" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Arquivos (se editando) -->
+                    {% if cliente %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-folder me-2"></i> Documentos
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <a href="{{ url_for('files_blueprint.entity_files', entity_type='cliente', entity_id=cliente.cpf) }}" 
+                               class="btn btn-outline-primary w-100">
+                                <i class="ti ti-files me-1"></i> Gerenciar Documentos
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="card">
+                <div class="card-footer d-flex">
+                    <a href="{{ url_for('clientes_blueprint.clientes_list') }}" class="btn btn-ghost-secondary">
+                        <i class="ti ti-arrow-left me-1"></i> Voltar
+                    </a>
+                    <div class="ms-auto">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i> Salvar Cliente
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal modal-blur fade" id="loading-modal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <div>Buscando dados...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cpfInput = document.getElementById('cpf-input');
+    const btnBuscarCpf = document.getElementById('btn-buscar-cpf');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loading-modal'));
+    
+    // Máscara de CPF
+    cpfInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 11) value = value.slice(0, 11);
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = value;
+    });
+    
+    // Buscar CPF na Lemit
+    if (btnBuscarCpf) {
+        btnBuscarCpf.addEventListener('click', async function() {
+            const cpf = cpfInput.value.replace(/\D/g, '');
+            
+            if (cpf.length !== 11) {
+                Notify.warning('Digite um CPF válido com 11 dígitos');
+                return;
+            }
+            
+            loadingModal.show();
+            
+            try {
+                const response = await fetch(`/api/cpf/${cpf}`);
+                const data = await response.json();
+                
+                loadingModal.hide();
+                
+                if (data.success) {
+                    preencherDados(data.data, data.from_cache);
+                    Notify.success(data.from_cache ? 'Dados carregados do cache' : 'Dados obtidos com sucesso');
+                } else {
+                    Notify.error(data.error || 'Erro ao buscar dados');
+                }
+            } catch (error) {
+                loadingModal.hide();
+                Notify.error('Erro de conexão');
+            }
+        });
+    }
+    
+    function preencherDados(pessoa, fromCache) {
+        // Dados básicos
+        document.getElementById('nome_completo').value = pessoa.nome || '';
+        document.getElementById('nome_mae').value = pessoa.nome_mae || '';
+        document.getElementById('nome_pai').value = pessoa.nome_pai || '';
+        
+        // Data de nascimento
+        if (pessoa.data_nascimento) {
+            document.getElementById('data_nascimento').value = pessoa.data_nascimento;
+        }
+        
+        // Sexo
+        if (pessoa.sexo) {
+            document.getElementById('sexo').value = pessoa.sexo;
+        }
+        
+        // Ocupação/Profissão
+        if (pessoa.ocupacao) {
+            document.getElementById('profissao').value = pessoa.ocupacao;
+        }
+        
+        // Renda e Score
+        if (pessoa.renda) {
+            document.getElementById('renda').value = pessoa.renda;
+        }
+        if (pessoa.score_credito) {
+            document.getElementById('score_credito').value = pessoa.score_credito;
+        }
+        
+        // Telefones
+        if (pessoa.celulares && pessoa.celulares.length > 0) {
+            const container = document.getElementById('telefones-container');
+            document.getElementById('telefones-vazio').style.display = 'none';
+            
+            pessoa.celulares.forEach(tel => {
+                const numero = `(${tel.ddd}) ${tel.numero}`;
+                adicionarTelefone(numero, 'celular', tel.whatsapp ? 'WhatsApp' : '');
+            });
+        }
+        
+        if (pessoa.fixos && pessoa.fixos.length > 0) {
+            pessoa.fixos.forEach(tel => {
+                const numero = `(${tel.ddd}) ${tel.numero}`;
+                adicionarTelefone(numero, 'fixo', '');
+            });
+        }
+        
+        // E-mails
+        if (pessoa.emails && pessoa.emails.length > 0) {
+            document.getElementById('emails-vazio').style.display = 'none';
+            pessoa.emails.forEach(email => {
+                adicionarEmail(email.email, '');
+            });
+        }
+        
+        // Endereços
+        if (pessoa.enderecos && pessoa.enderecos.length > 0) {
+            document.getElementById('enderecos-vazio').style.display = 'none';
+            pessoa.enderecos.forEach(end => {
+                adicionarEndereco(end);
+            });
+        }
+        
+        // Mostrar status Lemit
+        const lemitStatus = document.getElementById('lemit-status');
+        const lemitBody = document.getElementById('lemit-body');
+        
+        lemitBody.innerHTML = `
+            <div class="alert alert-${fromCache ? 'info' : 'success'} mb-0">
+                <div class="d-flex align-items-center">
+                    <i class="ti ti-${fromCache ? 'database' : 'cloud-download'} me-2"></i>
+                    <div>
+                        <strong>${fromCache ? 'Dados do Cache' : 'Dados da API'}</strong>
+                        <div class="small">
+                            ${pessoa.situacao_cpf ? 'CPF: ' + pessoa.situacao_cpf : ''}
+                            ${pessoa.falecido ? '<span class="badge bg-danger ms-1">Falecido</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        lemitStatus.style.display = 'block';
+    }
+    
+    // Adicionar Telefone
+    document.getElementById('btn-add-telefone').addEventListener('click', function() {
+        adicionarTelefone('', 'celular', '');
+        document.getElementById('telefones-vazio').style.display = 'none';
+    });
+    
+    function adicionarTelefone(numero, tipo, status) {
+        const container = document.getElementById('telefones-container');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 telefone-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <input type="text" name="telefones[]" class="form-control telefone-input"
+                       value="${numero}" placeholder="(00) 00000-0000">
+            </div>
+            <div class="col-md-3">
+                <select name="telefones_tipo[]" class="form-select">
+                    <option value="celular" ${tipo === 'celular' ? 'selected' : ''}>Celular</option>
+                    <option value="fixo" ${tipo === 'fixo' ? 'selected' : ''}>Fixo</option>
+                    <option value="comercial" ${tipo === 'comercial' ? 'selected' : ''}>Comercial</option>
+                    <option value="recado" ${tipo === 'recado' ? 'selected' : ''}>Recado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="telefones_status[]" class="form-control"
+                       value="${status}" placeholder="Status">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger w-100 btn-remove-telefone">
+                    <i class="ti ti-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+        
+        // Aplicar máscara
+        const input = row.querySelector('.telefone-input');
+        input.addEventListener('input', mascaraTelefone);
+    }
+    
+    // Adicionar Email
+    document.getElementById('btn-add-email').addEventListener('click', function() {
+        adicionarEmail('', '');
+        document.getElementById('emails-vazio').style.display = 'none';
+    });
+    
+    function adicionarEmail(email, status) {
+        const container = document.getElementById('emails-container');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 email-row';
+        row.innerHTML = `
+            <div class="col-md-8">
+                <input type="email" name="emails[]" class="form-control"
+                       value="${email}" placeholder="email@exemplo.com">
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="emails_status[]" class="form-control"
+                       value="${status}" placeholder="Status">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger w-100 btn-remove-email">
+                    <i class="ti ti-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+    
+    // Adicionar Endereço
+    document.getElementById('btn-add-endereco').addEventListener('click', function() {
+        adicionarEndereco({});
+        document.getElementById('enderecos-vazio').style.display = 'none';
+    });
+    
+    function adicionarEndereco(end) {
+        const container = document.getElementById('enderecos-container');
+        const count = container.querySelectorAll('.endereco-row').length + 1;
+        
+        const row = document.createElement('div');
+        row.className = 'endereco-row border rounded p-3 mb-3';
+        row.innerHTML = `
+            <div class="d-flex justify-content-between mb-2">
+                <strong>Endereço ${count}</strong>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-endereco">
+                    <i class="ti ti-trash"></i>
+                </button>
+            </div>
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" name="enderecos_cep[]" class="form-control cep-input"
+                           value="${end.cep || ''}" placeholder="CEP">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" name="enderecos_logradouro[]" class="form-control"
+                           value="${end.logradouro || ''}" placeholder="Logradouro">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="enderecos_numero[]" class="form-control"
+                           value="${end.numero || ''}" placeholder="Número">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="enderecos_complemento[]" class="form-control"
+                           value="${end.complemento || ''}" placeholder="Complemento">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="enderecos_bairro[]" class="form-control"
+                           value="${end.bairro || ''}" placeholder="Bairro">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="enderecos_cidade[]" class="form-control"
+                           value="${end.cidade || ''}" placeholder="Cidade">
+                </div>
+                <div class="col-md-2">
+                    <select name="enderecos_uf[]" class="form-select">
+                        <option value="">UF</option>
+                        ${['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => 
+                            `<option value="${uf}" ${end.uf === uf ? 'selected' : ''}>${uf}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+            </div>
+        `;
+        container.appendChild(row);
+        
+        // Aplicar máscara de CEP
+        const cepInput = row.querySelector('.cep-input');
+        cepInput.addEventListener('input', mascaraCEP);
+        cepInput.addEventListener('blur', buscarCEP);
+    }
+    
+    // Remover itens (delegação de eventos)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-remove-telefone')) {
+            e.target.closest('.telefone-row').remove();
+            if (document.querySelectorAll('.telefone-row').length === 0) {
+                document.getElementById('telefones-vazio').style.display = 'block';
+            }
+        }
+        if (e.target.closest('.btn-remove-email')) {
+            e.target.closest('.email-row').remove();
+            if (document.querySelectorAll('.email-row').length === 0) {
+                document.getElementById('emails-vazio').style.display = 'block';
+            }
+        }
+        if (e.target.closest('.btn-remove-endereco')) {
+            e.target.closest('.endereco-row').remove();
+            if (document.querySelectorAll('.endereco-row').length === 0) {
+                document.getElementById('enderecos-vazio').style.display = 'block';
+            }
+        }
+    });
+    
+    // Máscaras
+    function mascaraTelefone(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 10) {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        } else {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    }
+    
+    function mascaraCEP(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        e.target.value = value;
+    }
+    
+    async function buscarCEP(e) {
+        const cep = e.target.value.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+        
+        const row = e.target.closest('.endereco-row');
+        
+        try {
+            const response = await fetch(`/api/cep/${cep}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                row.querySelector('[name="enderecos_logradouro[]"]').value = data.data.logradouro || '';
+                row.querySelector('[name="enderecos_bairro[]"]').value = data.data.bairro || '';
+                row.querySelector('[name="enderecos_cidade[]"]').value = data.data.localidade || '';
+                row.querySelector('[name="enderecos_uf[]"]').value = data.data.uf || '';
+            }
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+        }
+    }
+    
+    // Aplicar máscaras aos campos existentes
+    document.querySelectorAll('.telefone-input').forEach(input => {
+        input.addEventListener('input', mascaraTelefone);
+    });
+    
+    document.querySelectorAll('.cep-input').forEach(input => {
+        input.addEventListener('input', mascaraCEP);
+        input.addEventListener('blur', buscarCEP);
+    });
+});
+</script>
+{% endblock %}

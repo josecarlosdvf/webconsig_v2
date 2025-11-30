@@ -58,6 +58,71 @@ def system_status():
 
 
 # ============================================
+# Consulta Lemit - Dados Cadastrais por CPF
+# ============================================
+
+@blueprint.route('/consulta-cpf')
+@login_required
+def consulta_cpf():
+    """Página de consulta de CPF via Lemit"""
+    from apps.services.lemit import LemitService
+    
+    # Estatísticas para exibir no dashboard
+    stats = LemitService.get_estatisticas()
+    
+    # Histórico recente (últimas 20 consultas)
+    historico = LemitService.get_historico(limit=20)
+    
+    return render_template(
+        'home/consulta_cpf.html',
+        segment='consulta-cpf',
+        stats=stats,
+        historico=historico
+    )
+
+
+@blueprint.route('/consulta-cpf/logs')
+@login_required
+def consulta_cpf_logs():
+    """Página de logs/auditoria de consultas Lemit"""
+    if not current_user.is_admin:
+        from flask import abort
+        abort(403)
+    
+    from apps.services.lemit import LemitService, ConsultaLog
+    
+    # Parâmetros de filtro
+    cpf = request.args.get('cpf', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+    
+    # Query
+    query = ConsultaLog.query
+    
+    if cpf:
+        cpf_clean = ''.join(filter(str.isdigit, cpf))
+        if cpf_clean:
+            query = query.filter(ConsultaLog.cpf.like(f'%{cpf_clean}%'))
+    
+    # Paginação
+    pagination = query.order_by(ConsultaLog.data_consulta.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Estatísticas
+    stats = LemitService.get_estatisticas()
+    
+    return render_template(
+        'home/consulta_cpf_logs.html',
+        segment='consulta-cpf-logs',
+        consultas=pagination.items,
+        pagination=pagination,
+        stats=stats,
+        cpf_filter=cpf
+    )
+
+
+# ============================================
 # Rotas de Componentes
 # ============================================
 

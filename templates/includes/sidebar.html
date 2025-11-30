@@ -107,13 +107,30 @@
                 
                 <!-- Clientes -->
                 {% if user_has_permission('clientes.view') or current_user.is_admin %}
-                <li class="nav-item {% if 'clientes' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('clientes_blueprint.clientes_list') }}">
+                <li class="nav-item dropdown {% if 'clientes' in segment or 'consulta-cpf' in segment %}active{% endif %}">
+                    <a class="nav-link dropdown-toggle" href="#navbar-clientes" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{% if 'clientes' in segment or 'consulta-cpf' in segment %}true{% else %}false{% endif %}">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
                             <i class="ti ti-users"></i>
                         </span>
                         <span class="nav-link-title">Clientes</span>
                     </a>
+                    <div class="dropdown-menu {% if 'clientes' in segment or 'consulta-cpf' in segment %}show{% endif %}">
+                        <a class="dropdown-item" href="{{ url_for('clientes_blueprint.clientes_list') }}">
+                            <i class="ti ti-list me-2"></i> Lista de Clientes
+                        </a>
+                        <a class="dropdown-item" href="{{ url_for('clientes_blueprint.cliente_create') }}">
+                            <i class="ti ti-user-plus me-2"></i> Novo Cliente
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('home_blueprint.consulta_cpf') }}">
+                            <i class="ti ti-search me-2"></i> Consulta CPF
+                        </a>
+                        {% if current_user.is_admin %}
+                        <a class="dropdown-item" href="{{ url_for('home_blueprint.consulta_cpf_logs') }}">
+                            <i class="ti ti-history me-2"></i> Histórico Consultas
+                        </a>
+                        {% endif %}
+                    </div>
                 </li>
                 {% endif %}
                 

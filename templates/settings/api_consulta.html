@@ -1,0 +1,344 @@
+{% extends "settings/index.html" %}
+
+{% block settings_content %}
+<div class="card border-0 shadow mb-4">
+    <div class="card-header border-bottom">
+        <h3 class="h5 mb-0">
+            <i class="ti ti-api me-2"></i> Configurações da API de Consulta
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <!-- Status da API -->
+            <div class="alert alert-info mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="ti ti-info-circle me-2"></i>
+                    <div>
+                        <strong>API de Consulta de Dados Cadastrais</strong>
+                        <p class="mb-0 small">
+                            Configure a API para buscar dados cadastrais de pessoas físicas por CPF.
+                            Os dados são armazenados em cache para evitar cobranças desnecessárias.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Provedor da API</label>
+                    <select name="api_consulta_provider" class="form-select" id="api_provider">
+                        {% for value, label in form.api_consulta_provider.choices %}
+                        <option value="{{ value }}" {% if form.api_consulta_provider.data == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Selecione o provedor de dados cadastrais</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" name="api_consulta_enabled" id="api_enabled"
+                               {% if form.api_consulta_enabled.data %}checked{% endif %}>
+                        <label class="form-check-label" for="api_enabled">
+                            API Habilitada
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">URL da API</label>
+                    <input type="url" class="form-control" name="api_consulta_url" id="api_url"
+                           value="{{ form.api_consulta_url.data or '' }}"
+                           placeholder="https://api.exemplo.com/v1/consulta">
+                    <small class="text-muted">Endpoint completo para consulta de dados</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Token de Autenticação</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" name="api_consulta_token" id="api_token"
+                               value="{{ form.api_consulta_token.data or '' }}"
+                               placeholder="Bearer token ou API key">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleToken()">
+                            <i class="ti ti-eye" id="token-icon"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Token de autenticação para acesso à API</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Timeout (segundos)</label>
+                    <input type="number" class="form-control" name="api_consulta_timeout"
+                           value="{{ form.api_consulta_timeout.data or '30' }}"
+                           min="5" max="120">
+                    <small class="text-muted">Tempo máximo de espera por resposta</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Dias de Cache</label>
+                    <input type="number" class="form-control" name="api_consulta_cache_days"
+                           value="{{ form.api_consulta_cache_days.data or '30' }}"
+                           min="1" max="365">
+                    <small class="text-muted">Tempo para reutilizar dados em cache</small>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <button type="button" class="btn btn-outline-primary" onclick="testarAPI()">
+                    <i class="ti ti-plug me-1"></i> Testar Conexão
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-device-floppy me-1"></i> Salvar Configurações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas de Uso -->
+{% if stats %}
+<div class="card border-0 shadow mb-4">
+    <div class="card-header border-bottom">
+        <h3 class="h5 mb-0">
+            <i class="ti ti-chart-bar me-2"></i> Estatísticas de Uso
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="d-flex align-items-center">
+                    <span class="avatar bg-primary-lt me-3">
+                        <i class="ti ti-search text-primary"></i>
+                    </span>
+                    <div>
+                        <div class="h4 mb-0">{{ stats.total_consultas }}</div>
+                        <div class="text-muted small">Total de Consultas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="d-flex align-items-center">
+                    <span class="avatar bg-success-lt me-3">
+                        <i class="ti ti-check text-success"></i>
+                    </span>
+                    <div>
+                        <div class="h4 mb-0">{{ stats.consultas_sucesso }}</div>
+                        <div class="text-muted small">Com Sucesso</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="d-flex align-items-center">
+                    <span class="avatar bg-info-lt me-3">
+                        <i class="ti ti-database text-info"></i>
+                    </span>
+                    <div>
+                        <div class="h4 mb-0">{{ stats.cache_hits }}</div>
+                        <div class="text-muted small">Do Cache</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="d-flex align-items-center">
+                    <span class="avatar bg-warning-lt me-3">
+                        <i class="ti ti-users text-warning"></i>
+                    </span>
+                    <div>
+                        <div class="h4 mb-0">{{ stats.cpfs_unicos }}</div>
+                        <div class="text-muted small">CPFs Únicos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{{ url_for('home_blueprint.consulta_cpf_logs') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="ti ti-history me-1"></i> Ver Histórico Completo
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Documentação da API -->
+<div class="card border-0 shadow">
+    <div class="card-header border-bottom">
+        <h3 class="h5 mb-0">
+            <i class="ti ti-book me-2"></i> Documentação
+        </h3>
+    </div>
+    <div class="card-body">
+        <h6>Provedores Suportados</h6>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Provedor</th>
+                        <th>URL Padrão</th>
+                        <th>Documentação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lemit</strong></td>
+                        <td><code>https://api.lemit.com.br/api/v1/consulta/pessoa</code></td>
+                        <td><a href="https://lemit.com.br/docs" target="_blank">Ver docs</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>CPF/CNPJ Brasil</strong></td>
+                        <td><code>https://api.cpfcnpj.com.br/v1/pessoa</code></td>
+                        <td><a href="https://cpfcnpj.com.br/docs" target="_blank">Ver docs</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Serpro</strong></td>
+                        <td><code>https://gateway.serpro.gov.br/consulta-cpf</code></td>
+                        <td><a href="https://servicos.serpro.gov.br" target="_blank">Ver docs</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <h6 class="mt-4">Formato da Requisição</h6>
+        <pre class="bg-dark text-light p-3 rounded"><code>POST {{ form.api_consulta_url.data or '/api/v1/consulta/pessoa' }}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "documento": "12345678901"
+}</code></pre>
+    </div>
+</div>
+
+<script>
+function toggleToken() {
+    const input = document.getElementById('api_token');
+    const icon = document.getElementById('token-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'ti ti-eye-off';
+    } else {
+        input.type = 'password';
+        icon.className = 'ti ti-eye';
+    }
+}
+
+async function testarAPI() {
+    // Usar SweetAlert2 para solicitar CPF
+    const { value: cpf, isConfirmed } = await Swal.fire({
+        title: 'Testar Conexão com API',
+        input: 'text',
+        inputLabel: 'Digite um CPF para testar',
+        inputPlaceholder: '000.000.000-00',
+        inputAttributes: {
+            maxlength: 14,
+            autocomplete: 'off'
+        },
+        showCancelButton: true,
+        confirmButtonText: '<i class="ti ti-plug me-1"></i> Testar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#0054a6',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        },
+        inputValidator: (value) => {
+            const cleanCpf = value.replace(/\D/g, '');
+            if (value && cleanCpf.length !== 11) {
+                return 'CPF deve ter 11 dígitos';
+            }
+        },
+        didOpen: (popup) => {
+            // Aplicar máscara de CPF
+            const input = popup.querySelector('input');
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            });
+        }
+    });
+    
+    if (!isConfirmed) return;
+    
+    // Mostrar loading
+    Swal.fire({
+        title: 'Testando conexão...',
+        html: 'Aguarde enquanto testamos a API',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    try {
+        const cleanCpf = cpf ? cpf.replace(/\D/g, '') : '00000000000';
+        
+        const response = await fetch('{{ url_for("settings_blueprint.api_consulta_testar") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ cpf: cleanCpf })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'API Funcionando!',
+                html: data.data?.nome 
+                    ? `<p class="mb-1">Conexão estabelecida com sucesso.</p><p class="mb-0"><strong>Nome encontrado:</strong> ${data.data.nome}</p>`
+                    : 'Conexão estabelecida com sucesso.',
+                confirmButtonColor: '#0054a6'
+            });
+        } else {
+            let errorMessage = data.error || 'Erro desconhecido';
+            let errorIcon = 'error';
+            let errorTitle = 'Erro na API';
+            
+            // Mensagens amigáveis para erros comuns
+            if (errorMessage.includes('403') || errorMessage.includes('fora do horário')) {
+                errorIcon = 'warning';
+                errorTitle = 'API Indisponível';
+                errorMessage = `
+                    <p class="mb-2"><strong>A API está fora do horário de funcionamento.</strong></p>
+                    <p class="mb-1 text-muted small">Horário de funcionamento:</p>
+                    <p class="mb-0 text-muted small">Segunda a Sexta, das 8h às 18h</p>
+                `;
+            } else if (errorMessage.includes('401') || errorMessage.includes('autenticação')) {
+                errorMessage = 'Token de autenticação inválido ou expirado. Verifique suas credenciais.';
+            } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+                errorMessage = 'A API demorou muito para responder. Tente novamente.';
+            }
+            
+            Swal.fire({
+                icon: errorIcon,
+                title: errorTitle,
+                html: errorMessage,
+                confirmButtonColor: '#0054a6'
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro de Conexão',
+            text: 'Não foi possível conectar ao servidor. Verifique sua conexão.',
+            confirmButtonColor: '#0054a6'
+        });
+    }
+}
+</script>
+{% endblock %}

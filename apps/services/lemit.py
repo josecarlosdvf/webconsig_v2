@@ -20,13 +20,51 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from apps import db
-from apps.logs import log_info, log_error
+from apps.logs import log_info, log_error, log_warning
 
 
 # =============================================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO - Obtém do banco de dados ou variáveis de ambiente
 # =============================================================================
 
+def get_api_config():
+    """Obtém configurações da API do banco de dados ou variáveis de ambiente"""
+    try:
+        from apps.settings.models import SystemSettings
+        
+        url = SystemSettings.get('api_consulta_url') or os.environ.get(
+            'LEMIT_API_URL', 
+            'https://api.lemit.com.br/api/v1/consulta/pessoa'
+        )
+        token = SystemSettings.get('api_consulta_token') or os.environ.get(
+            'LEMIT_API_TOKEN', 
+            'GL6gd3BCoTC7hAMNK1Hv6dFH8n9omtqQBXeGixKq'
+        )
+        cache_days = SystemSettings.get('api_consulta_cache_days') or int(os.environ.get('LEMIT_CACHE_DAYS', '30'))
+        timeout = SystemSettings.get('api_consulta_timeout') or int(os.environ.get('LEMIT_TIMEOUT', '30'))
+        enabled = SystemSettings.get('api_consulta_enabled')
+        if enabled is None:
+            enabled = True
+        
+        return {
+            'url': url,
+            'token': token,
+            'cache_days': int(cache_days) if cache_days else 30,
+            'timeout': int(timeout) if timeout else 30,
+            'enabled': enabled
+        }
+    except Exception as e:
+        log_warning(f'Lemit: Erro ao carregar config do banco, usando padrão: {e}')
+        return {
+            'url': os.environ.get('LEMIT_API_URL', 'https://api.lemit.com.br/api/v1/consulta/pessoa'),
+            'token': os.environ.get('LEMIT_API_TOKEN', 'GL6gd3BCoTC7hAMNK1Hv6dFH8n9omtqQBXeGixKq'),
+            'cache_days': int(os.environ.get('LEMIT_CACHE_DAYS', '30')),
+            'timeout': int(os.environ.get('LEMIT_TIMEOUT', '30')),
+            'enabled': True
+        }
+
+
+# Configurações legadas (para compatibilidade)
 LEMIT_API_URL = os.environ.get(
     'LEMIT_API_URL', 
     'https://api.lemit.com.br/api/v1/consulta/pessoa'
@@ -359,33 +397,48 @@ class LemitService:
         """
         cpf = cls._clean_cpf(cpf)
         
+        log_info(f'Lemit: Iniciando consulta para CPF {cpf[:3]}***{cpf[-2:]}')
+        
         if not cls.validate_cpf(cpf):
+            log_warning(f'Lemit: CPF inválido: {cpf[:3]}***')
             return None, 'CPF inválido. Deve conter 11 dígitos.', False
+        
+        # Obtém configurações dinâmicas
+        config = get_api_config()
+        log_info(f'Lemit: Config carregada - URL: {config["url"][:30]}..., Enabled: {config["enabled"]}')
+        
+        # Verifica se API está habilitada
+        if not config['enabled']:
+            log_warning('Lemit: API está desabilitada nas configurações')
+            return None, 'API de consulta está desabilitada. Contate o administrador.', False
         
         # Verifica cache (se não forçar API)
         if not force_api:
             cache = ConsultaLog.get_cache(cpf)
             if cache:
-                log_info(f'Lemit: Retornando CPF {cpf[:3]}***{cpf[-2:]} do cache')
+                log_info(f'Lemit: Retornando CPF {cpf[:3]}***{cpf[-2:]} do cache (consulta de {cache.data_consulta})')
                 ConsultaLog.registrar_uso_cache(cache)
                 pessoa = PessoaLemit.from_api_response(cpf, cache.json_resposta)
                 return pessoa, None, True
         
         # Consulta a API
         try:
-            log_info(f'Lemit: Consultando API para CPF {cpf[:3]}***{cpf[-2:]}')
+            log_info(f'Lemit: Consultando API externa para CPF {cpf[:3]}***{cpf[-2:]}')
+            log_info(f'Lemit: URL={config["url"]}, Timeout={config["timeout"]}s')
             
             headers = {
-                'Authorization': f'Bearer {LEMIT_API_TOKEN}',
+                'Authorization': f'Bearer {config["token"]}',
                 'Content-Type': 'application/json'
             }
             
             response = requests.post(
-                LEMIT_API_URL,
+                config['url'],
                 headers=headers,
                 json={'documento': cpf},
-                timeout=LEMIT_TIMEOUT
+                timeout=config['timeout']
             )
+            
+            log_info(f'Lemit: Resposta HTTP {response.status_code}')
             
             # Registra a consulta no log
             consulta = ConsultaLog(
@@ -405,6 +458,7 @@ class LemitService:
                 db.session.add(consulta)
                 db.session.commit()
                 
+                log_info(f'Lemit: Sucesso! Nome encontrado: {data.get("pessoa", {}).get("nome", "N/A")[:20]}...')
                 pessoa = PessoaLemit.from_api_response(cpf, data)
                 return pessoa, None, False
             
@@ -421,7 +475,15 @@ class LemitService:
                 db.session.add(consulta)
                 db.session.commit()
                 log_error('Lemit: Token inválido ou expirado')
-                return None, 'Erro de autenticação na API', False
+                return None, 'Erro de autenticação: Token inválido ou expirado. Verifique as configurações da API.', False
+            
+            elif response.status_code == 403:
+                consulta.sucesso = False
+                consulta.erro = 'Acesso negado (403) - API indisponível'
+                db.session.add(consulta)
+                db.session.commit()
+                log_error('Lemit: Acesso negado (403) - API pode estar fora do horário comercial')
+                return None, 'API indisponível. A API Lemit só funciona em dias úteis, das 8h às 18h.', False
             
             elif response.status_code == 404:
                 consulta.sucesso = False
@@ -430,12 +492,21 @@ class LemitService:
                 db.session.commit()
                 return None, 'CPF não encontrado na base de dados', False
             
+            elif response.status_code == 500:
+                consulta.sucesso = False
+                consulta.erro = 'Erro interno do servidor Lemit'
+                db.session.add(consulta)
+                db.session.commit()
+                log_error('Lemit: Erro interno do servidor (500)')
+                return None, 'Erro interno no servidor da API. Tente novamente mais tarde.', False
+            
             else:
                 consulta.sucesso = False
                 consulta.erro = f'Erro HTTP {response.status_code}'
                 db.session.add(consulta)
                 db.session.commit()
-                return None, f'Erro na API: HTTP {response.status_code}', False
+                log_warning(f'Lemit: Resposta inesperada HTTP {response.status_code}')
+                return None, f'Erro na API: HTTP {response.status_code}. Tente novamente mais tarde.', False
                 
         except requests.Timeout:
             log_error('Lemit: Timeout na consulta')

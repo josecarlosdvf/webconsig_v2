@@ -287,20 +287,37 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const force = forceApi.checked ? '?force=true' : '';
         
+        console.log('[Consulta CPF] Iniciando busca para:', cpf.substring(0, 3) + '***');
+        console.log('[Consulta CPF] Force API:', forceApi.checked);
+        
         try {
-            const response = await fetch(`/api/cpf/${cpf}${force}`);
+            const url = `/api/cpf/${cpf}${force}`;
+            console.log('[Consulta CPF] URL:', url);
+            
+            const response = await fetch(url);
+            console.log('[Consulta CPF] Status HTTP:', response.status);
+            
             const data = await response.json();
+            console.log('[Consulta CPF] Resposta:', data);
             
             loadingContainer.style.display = 'none';
             
             if (data.success) {
+                console.log('[Consulta CPF] Sucesso! Nome:', data.data?.nome);
                 mostrarResultado(data.data, data.from_cache);
+                Notify.success(data.from_cache ? 'Dados do cache' : 'Dados obtidos da API');
             } else {
-                mostrarErro(data.error);
+                console.error('[Consulta CPF] Erro:', data.error);
+                const errorMsg = data.error || 'Erro desconhecido na consulta';
+                mostrarErro(errorMsg);
+                // Toast com duração maior para erros
+                Notify.error(errorMsg, 8000);
             }
         } catch (error) {
+            console.error('[Consulta CPF] Erro de conexão:', error);
             loadingContainer.style.display = 'none';
-            mostrarErro('Erro de conexão. Tente novamente.');
+            mostrarErro('Erro de conexão. Verifique sua internet e tente novamente.');
+            Notify.error('Erro de conexão. Verifique sua internet.', 8000);
         }
     }
     

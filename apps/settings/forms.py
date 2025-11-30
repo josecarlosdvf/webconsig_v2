@@ -76,3 +76,20 @@ class SecurityForm(FlaskForm):
     max_login_attempts = StringField('Tentativas de Login', validators=[Optional()])
     password_min_length = StringField('Tamanho Mínimo da Senha', validators=[Optional()])
     maintenance_mode = BooleanField('Modo Manutenção')
+
+
+class ApiConsultaForm(FlaskForm):
+    """Formulário de configurações de API para consulta de dados cadastrais"""
+    api_consulta_provider = SelectField('Provedor da API', choices=[
+        ('lemit', 'Lemit'),
+        ('cpfcnpj', 'CPF/CNPJ Brasil'),
+        ('serpro', 'Serpro'),
+        ('bigdata', 'BigData Corp'),
+        ('custom', 'Personalizado'),
+    ])
+    api_consulta_url = StringField('URL da API', validators=[Optional(), Length(max=500)])
+    api_consulta_token = StringField('Token de Autenticação', validators=[Optional(), Length(max=500)])
+    api_consulta_timeout = StringField('Timeout (segundos)', validators=[Optional()])
+    api_consulta_cache_days = StringField('Dias de Cache', validators=[Optional()])
+    api_consulta_enabled = BooleanField('API Habilitada')
+

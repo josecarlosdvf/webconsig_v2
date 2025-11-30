@@ -10,7 +10,8 @@ from apps.settings.models import SystemSettings
 from apps.settings.utils import SETTINGS_CATEGORIES, refresh_settings_cache
 from apps.settings.forms import (
     SystemInfoForm, CompanyForm, DeveloperForm,
-    AppearanceForm, LocalizationForm, SecurityForm
+    AppearanceForm, LocalizationForm, SecurityForm,
+    ApiConsultaForm
 )
 from apps import db
 from apps.files.models import FileCategory
@@ -208,6 +209,102 @@ def seguranca():
         title='Segurança',
         category='seguranca'
     )
+
+
+# =============================================================================
+# API DE CONSULTA DE DADOS CADASTRAIS
+# =============================================================================
+
+@blueprint.route('/api-consulta', methods=['GET', 'POST'])
+@login_required
+def api_consulta():
+    """Configurações da API de consulta de dados cadastrais (CPF)"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home_blueprint.dashboard'))
+    
+    form = ApiConsultaForm()
+    
+    if request.method == 'GET':
+        form.api_consulta_provider.data = SystemSettings.get('api_consulta_provider', 'lemit')
+        form.api_consulta_url.data = SystemSettings.get('api_consulta_url', 'https://api.lemit.com.br/api/v1/consulta/pessoa')
+        form.api_consulta_token.data = SystemSettings.get('api_consulta_token', '')
+        form.api_consulta_timeout.data = str(SystemSettings.get('api_consulta_timeout', 30))
+        form.api_consulta_cache_days.data = str(SystemSettings.get('api_consulta_cache_days', 30))
+        form.api_consulta_enabled.data = SystemSettings.get('api_consulta_enabled', True)
+    
+    if form.validate_on_submit():
+        SystemSettings.set('api_consulta_provider', form.api_consulta_provider.data, 
+                          category='api', label='Provedor da API')
+        SystemSettings.set('api_consulta_url', form.api_consulta_url.data,
+                          category='api', label='URL da API')
+        SystemSettings.set('api_consulta_token', form.api_consulta_token.data,
+                          category='api', label='Token de Autenticação')
+        SystemSettings.set('api_consulta_timeout', form.api_consulta_timeout.data,
+                          category='api', value_type='int', label='Timeout (segundos)')
+        SystemSettings.set('api_consulta_cache_days', form.api_consulta_cache_days.data,
+                          category='api', value_type='int', label='Dias de Cache')
+        SystemSettings.set('api_consulta_enabled', 'true' if form.api_consulta_enabled.data else 'false',
+                          category='api', value_type='bool', label='API Habilitada')
+        
+        refresh_settings_cache()
+        flash('Configurações da API atualizadas com sucesso!', 'success')
+        return redirect(url_for('settings_blueprint.api_consulta'))
+    
+    # Estatísticas de uso
+    stats = None
+    try:
+        from apps.services.lemit import LemitService
+        stats = LemitService.get_estatisticas()
+    except Exception:
+        pass
+    
+    return render_template(
+        'settings/api_consulta.html',
+        segment='settings',
+        form=form,
+        stats=stats,
+        title='API de Consulta',
+        category='api'
+    )
+
+
+@blueprint.route('/api-consulta/testar', methods=['POST'])
+@login_required
+def api_consulta_testar():
+    """Testa a conexão com a API de consulta"""
+    if not current_user.is_admin:
+        return {'success': False, 'error': 'Acesso negado'}, 403
+    
+    cpf_teste = request.json.get('cpf', '00000000000')
+    
+    try:
+        from apps.services.lemit import LemitService
+        pessoa, erro, from_cache = LemitService.consultar_cpf(
+            cpf_teste,
+            force_api=True,
+            user_id=current_user.id,
+            user_name=current_user.username,
+            ip_address=request.remote_addr
+        )
+        
+        if pessoa:
+            return {
+                'success': True,
+                'message': 'API funcionando corretamente!',
+                'from_cache': from_cache,
+                'data': {'nome': pessoa.nome}
+            }
+        else:
+            return {
+                'success': False,
+                'error': erro or 'Erro desconhecido'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 
 # =============================================================================

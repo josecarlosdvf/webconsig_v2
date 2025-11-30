@@ -471,28 +471,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            console.log('[Lemit] Iniciando busca para CPF:', cpf.substring(0, 3) + '***');
             loadingModal.show();
             
             try {
+                console.log('[Lemit] Fazendo requisição para /api/cpf/' + cpf);
                 const response = await fetch(`/api/cpf/${cpf}`);
+                console.log('[Lemit] Status da resposta:', response.status);
+                
                 const data = await response.json();
+                console.log('[Lemit] Dados recebidos:', data);
                 
                 loadingModal.hide();
                 
                 if (data.success) {
+                    console.log('[Lemit] Sucesso! Nome:', data.data?.nome);
                     preencherDados(data.data, data.from_cache);
-                    Notify.success(data.from_cache ? 'Dados carregados do cache' : 'Dados obtidos com sucesso');
+                    const msg = data.from_cache 
+                        ? `Dados carregados do cache - ${data.data?.nome || 'Nome não disponível'}`
+                        : `Dados obtidos da API - ${data.data?.nome || 'Nome não disponível'}`;
+                    Notify.success(msg);
                 } else {
-                    Notify.error(data.error || 'Erro ao buscar dados');
+                    console.error('[Lemit] Erro:', data.error);
+                    // Exibir erro detalhado via toast
+                    const errorMsg = data.error || 'Erro desconhecido ao buscar dados';
+                    Notify.error(errorMsg, 8000); // Toast fica 8 segundos
+                    
+                    // Mostrar alerta visual no card de status
+                    const lemitStatus = document.getElementById('lemit-status');
+                    const lemitBody = document.getElementById('lemit-body');
+                    if (lemitStatus && lemitBody) {
+                        lemitBody.innerHTML = `
+                            <div class="alert alert-danger mb-0">
+                                <div class="d-flex align-items-center">
+                                    <i class="ti ti-alert-circle me-2"></i>
+                                    <div>
+                                        <strong>Erro na Consulta</strong>
+                                        <div class="small">${errorMsg}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        lemitStatus.style.display = 'block';
+                    }
                 }
             } catch (error) {
+                console.error('[Lemit] Erro de conexão:', error);
                 loadingModal.hide();
-                Notify.error('Erro de conexão');
-            }
+                Notify.error('Erro de conexão. Verifique sua internet e tente novamente.', 8000);
         });
     }
     
     function preencherDados(pessoa, fromCache) {
+        console.log('[Lemit] Preenchendo dados:', pessoa);
+        
         // Dados básicos
         document.getElementById('nome_completo').value = pessoa.nome || '';
         document.getElementById('nome_mae').value = pessoa.nome_mae || '';

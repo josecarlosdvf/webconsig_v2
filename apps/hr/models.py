@@ -10,6 +10,11 @@ from dateutil.relativedelta import relativedelta
 from apps import db
 from apps.database.models import BaseModel, audited
 
+# Import lazy para evitar importação circular
+def get_file_category():
+    from apps.files.models import FileCategory
+    return FileCategory
+
 
 # =============================================================================
 # ENUMS E CONSTANTES
@@ -789,6 +794,107 @@ class Employee(db.Model, BaseModel):
     def first_name(self):
         """Primeiro nome"""
         return self.name.split()[0] if self.name else None
+    
+    @property
+    def full_name(self):
+        """Alias para name (compatibilidade)"""
+        return self.name
+    
+    @property
+    def photo_url(self):
+        """URL da foto do funcionário"""
+        from flask import url_for
+        
+        # Se tiver caminho de foto definido, usa ele
+        if self.photo_path:
+            return url_for('files_blueprint.serve_file', file_id=self.photo_file_id) if self.photo_file_id else None
+        
+        # Busca foto na tabela de arquivos
+        photo = self.get_photo()
+        if photo:
+            return url_for('files_blueprint.serve_file', file_id=photo.id)
+        
+        # Retorna avatar padrão
+        return None
+    
+    @property
+    def photo_file_id(self):
+        """ID do arquivo da foto"""
+        photo = self.get_photo()
+        return photo.id if photo else None
+    
+    def get_photo(self):
+        """Retorna o arquivo de foto do funcionário"""
+        from apps.files.models import File, FileCategory
+        return File.query_active().filter_by(
+            entity_type='employee',
+            entity_id=self.id
+        ).join(File.category).filter(
+            FileCategory.code == 'FOTO_3X4'
+        ).first()
+    
+    def get_files(self, category_code=None):
+        """Retorna arquivos do funcionário, opcionalmente filtrados por categoria"""
+        from apps.files.models import File, FileCategory
+        
+        query = File.query_active().filter_by(
+            entity_type='employee',
+            entity_id=self.id
+        )
+        
+        if category_code:
+            query = query.join(File.category).filter(
+                FileCategory.code == category_code
+            )
+        
+        return query.order_by(File.created_at.desc()).all()
+    
+    def get_files_by_category(self):
+        """Retorna arquivos agrupados por categoria"""
+        from apps.files.models import File, FileCategory
+        
+        files = File.query_active().filter_by(
+            entity_type='employee',
+            entity_id=self.id
+        ).order_by(File.category_id, File.created_at.desc()).all()
+        
+        # Agrupa por categoria
+        grouped = {}
+        for file in files:
+            cat_name = file.category.name if file.category else 'Outros'
+            if cat_name not in grouped:
+                grouped[cat_name] = []
+            grouped[cat_name].append(file)
+        
+        return grouped
+    
+    def get_missing_documents(self):
+        """Retorna categorias de documentos obrigatórios que estão faltando"""
+        from apps.files.models import File, FileCategory
+        
+        # Busca categorias obrigatórias para funcionários
+        required_categories = FileCategory.query_active().filter(
+            FileCategory.is_required == True,
+            FileCategory.entity_types.like('%employee%')
+        ).all()
+        
+        missing = []
+        for category in required_categories:
+            existing = File.query_active().filter_by(
+                entity_type='employee',
+                entity_id=self.id,
+                category_id=category.id
+            ).first()
+            
+            if not existing:
+                missing.append(category)
+        
+        return missing
+    
+    @property
+    def documents_complete(self):
+        """Verifica se todos os documentos obrigatórios foram enviados"""
+        return len(self.get_missing_documents()) == 0
     
     @property
     def is_active(self):

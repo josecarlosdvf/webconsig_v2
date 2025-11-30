@@ -56,61 +56,6 @@
                     </a>
                 </li>
                 
-                <!-- Section: Componentes -->
-                <li class="nav-item">
-                    <span class="nav-label">Componentes</span>
-                </li>
-                
-                <!-- Botões -->
-                <li class="nav-item {% if 'buttons' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='buttons') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-click"></i>
-                        </span>
-                        <span class="nav-link-title">Botões</span>
-                    </a>
-                </li>
-                
-                <!-- Formulários -->
-                <li class="nav-item {% if 'forms' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='forms') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-forms"></i>
-                        </span>
-                        <span class="nav-link-title">Formulários</span>
-                    </a>
-                </li>
-                
-                <!-- Modais -->
-                <li class="nav-item {% if 'modals' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='modals') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-app-window"></i>
-                        </span>
-                        <span class="nav-link-title">Modais</span>
-                    </a>
-                </li>
-                
-                <!-- Notificações -->
-                <li class="nav-item {% if 'notifications' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='notifications') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-bell"></i>
-                        </span>
-                        <span class="nav-link-title">Notificações</span>
-                    </a>
-                </li>
-                
-                <!-- Tabelas -->
-                <li class="nav-item {% if 'tables' in segment %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('home_blueprint.route_template', template='tables') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <i class="ti ti-table"></i>
-                        </span>
-                        <span class="nav-link-title">Tabelas</span>
-                    </a>
-                </li>
-                
                 <!-- Section: Gestão -->
                 {% if user_has_permission('hr.view') or user_has_permission('files.view') or current_user.is_admin %}
                 <li class="nav-item">
@@ -156,6 +101,59 @@
                             <i class="ti ti-category me-2"></i> Categorias
                         </a>
                         {% endif %}
+                    </div>
+                </li>
+                {% endif %}
+                
+                <!-- Clientes -->
+                {% if user_has_permission('clientes.view') or current_user.is_admin %}
+                <li class="nav-item dropdown {% if 'clientes' in segment or 'consulta-cpf' in segment %}active{% endif %}">
+                    <a class="nav-link dropdown-toggle" href="#navbar-clientes" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{% if 'clientes' in segment or 'consulta-cpf' in segment %}true{% else %}false{% endif %}">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <i class="ti ti-users"></i>
+                        </span>
+                        <span class="nav-link-title">Clientes</span>
+                    </a>
+                    <div class="dropdown-menu {% if 'clientes' in segment or 'consulta-cpf' in segment %}show{% endif %}">
+                        <a class="dropdown-item" href="{{ url_for('clientes_blueprint.clientes_list') }}">
+                            <i class="ti ti-list me-2"></i> Lista de Clientes
+                        </a>
+                        <a class="dropdown-item" href="{{ url_for('clientes_blueprint.cliente_create') }}">
+                            <i class="ti ti-user-plus me-2"></i> Novo Cliente
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('home_blueprint.consulta_cpf') }}">
+                            <i class="ti ti-search me-2"></i> Consulta CPF
+                        </a>
+                        {% if current_user.is_admin %}
+                        <a class="dropdown-item" href="{{ url_for('home_blueprint.consulta_cpf_logs') }}">
+                            <i class="ti ti-history me-2"></i> Histórico Consultas
+                        </a>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endif %}
+                
+                <!-- Propostas / Contratos -->
+                {% if user_has_permission('propostas.view') or current_user.is_admin %}
+                <li class="nav-item dropdown {% if 'propostas' in segment %}active{% endif %}">
+                    <a class="nav-link dropdown-toggle" href="#navbar-propostas" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{% if 'propostas' in segment %}true{% else %}false{% endif %}">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <i class="ti ti-file-invoice"></i>
+                        </span>
+                        <span class="nav-link-title">Propostas</span>
+                    </a>
+                    <div class="dropdown-menu {% if 'propostas' in segment %}show{% endif %}">
+                        <a class="dropdown-item" href="{{ url_for('propostas_blueprint.propostas_list') }}">
+                            <i class="ti ti-list me-2"></i> Lista de Propostas
+                        </a>
+                        <a class="dropdown-item" href="{{ url_for('propostas_blueprint.proposta_create') }}">
+                            <i class="ti ti-plus me-2"></i> Nova Proposta
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('propostas_blueprint.tabelas_list') }}">
+                            <i class="ti ti-table me-2"></i> Tabelas de Empréstimo
+                        </a>
                     </div>
                 </li>
                 {% endif %}
@@ -273,6 +271,10 @@
                         </a>
                         <a class="dropdown-item" href="{{ url_for('settings_blueprint.seguranca') }}">
                             Segurança
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('settings_blueprint.tipos_arquivo') }}">
+                            <i class="ti ti-file-type-doc me-2"></i> Tipos de Arquivo
                         </a>
                     </div>
                 </li>

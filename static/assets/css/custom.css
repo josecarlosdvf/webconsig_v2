@@ -389,3 +389,41 @@ textarea:focus {
 .skip-link:focus {
     top: 0;
 }
+
+/* ========================================
+   FIX: Dropdown em Tabelas
+   Garante que o menu dropdown saia de dentro
+   da tabela e fique visível
+======================================== */
+.table-responsive {
+    overflow: visible !important;
+}
+
+.table-responsive .dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+}
+
+/* Para tabelas dentro de cards */
+.card .table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+/* Garantir que dropdown apareça por cima */
+.table .dropdown {
+    position: static;
+}
+
+.table .dropdown-menu {
+    position: absolute;
+    z-index: 1050 !important;
+}
+
+/* Para o último item da tabela, abrir dropdown para cima */
+.table tbody tr:last-child .dropdown-menu,
+.table tbody tr:nth-last-child(-n+2) .dropdown-menu {
+    top: auto;
+    bottom: 100%;
+}
+

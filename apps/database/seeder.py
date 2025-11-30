@@ -161,6 +161,9 @@ def run_all_seeds(app, include_demo=True):
             if include_demo:
                 demo_count = seed_demo_users()
             
+            # Seed das categorias de arquivos de funcionários
+            seed_hr_file_categories()
+            
             log_info('='*50)
             log_info('Processo de seed concluído com sucesso')
             log_info('='*50)
@@ -171,6 +174,17 @@ def run_all_seeds(app, include_demo=True):
             log_error(f'Erro durante o seed: {str(e)}')
             db.session.rollback()
             return False
+
+
+def seed_hr_file_categories():
+    """Popula categorias de arquivos para RH"""
+    try:
+        from apps.hr.seeders import seed_employee_file_categories
+        created, updated = seed_employee_file_categories()
+        return created + updated
+    except Exception as e:
+        log_warning(f'Erro ao criar categorias de arquivos HR: {e}')
+        return 0
 
 
 def init_database(app):

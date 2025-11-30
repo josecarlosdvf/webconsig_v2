@@ -1,0 +1,514 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Compressão de Arquivos{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .compression-card {
+        transition: all 0.3s ease;
+    }
+    .compression-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .file-type-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 24px;
+    }
+    .progress-container {
+        display: none;
+    }
+    .progress-container.active {
+        display: block;
+    }
+    .size-comparison {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .size-comparison .arrow {
+        color: var(--tblr-success);
+        font-size: 20px;
+    }
+    .size-reduction {
+        color: var(--tblr-success);
+        font-weight: bold;
+    }
+    .quality-preview {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+        object-fit: contain;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="page-pretitle">Ferramentas</div>
+        <div class="d-flex align-items-center">
+            <h2 class="page-title">
+                <i class="ti ti-file-zip me-2"></i>Compressão de Arquivos
+            </h2>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <!-- Alerta informativo -->
+        <div class="alert alert-info mb-4">
+            <div class="d-flex">
+                <div>
+                    <i class="ti ti-info-circle alert-icon"></i>
+                </div>
+                <div>
+                    <h4 class="alert-title">Reduza o tamanho dos seus arquivos</h4>
+                    <div class="text-muted">
+                        Comprima imagens, PDFs, vídeos e outros arquivos para economizar espaço de armazenamento.
+                        A compressão pode reduzir significativamente o tamanho sem perda perceptível de qualidade.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Upload de arquivo para compressão -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Selecionar Arquivo</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="compressionForm" action="{{ url_for('files_blueprint.compress_file') }}" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            
+                            <!-- Seleção de arquivo existente ou novo -->
+                            <div class="mb-3">
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="source_type" id="sourceExisting" value="existing" checked>
+                                    <label class="btn btn-outline-primary" for="sourceExisting">
+                                        <i class="ti ti-files me-1"></i> Arquivo Existente
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="source_type" id="sourceUpload" value="upload">
+                                    <label class="btn btn-outline-primary" for="sourceUpload">
+                                        <i class="ti ti-upload me-1"></i> Upload Novo
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Seleção de arquivo existente -->
+                            <div id="existingFileSection" class="mb-3">
+                                <label class="form-label">Selecionar arquivo do sistema</label>
+                                <select name="file_id" id="fileSelect" class="form-select">
+                                    <option value="">Selecione um arquivo...</option>
+                                    {% for file in files %}
+                                    <option value="{{ file.id }}" 
+                                            data-size="{{ file.size }}"
+                                            data-type="{{ file.mime_type }}"
+                                            data-name="{{ file.original_name }}"
+                                            {% if selected_file_id == file.id %}selected{% endif %}>
+                                        {{ file.original_name }} ({{ file.size_formatted }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Upload de novo arquivo -->
+                            <div id="uploadFileSection" class="mb-3" style="display: none;">
+                                <label class="form-label">Fazer upload de arquivo</label>
+                                <input type="file" name="file" id="fileUpload" class="form-control" 
+                                       accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+                            </div>
+                            
+                            <!-- Informações do arquivo selecionado -->
+                            <div id="fileInfo" class="alert alert-secondary" style="display: none;">
+                                <div class="d-flex align-items-center">
+                                    <div class="file-type-icon bg-primary-lt me-3">
+                                        <i class="ti ti-file" id="fileIcon"></i>
+                                    </div>
+                                    <div>
+                                        <strong id="fileName">-</strong>
+                                        <div class="text-muted small">
+                                            Tamanho: <span id="fileSize">-</span> | 
+                                            Tipo: <span id="fileType">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Opções de compressão baseadas no tipo -->
+                            <div id="compressionOptions" style="display: none;">
+                                <hr>
+                                <h4 class="mb-3">Opções de Compressão</h4>
+                                
+                                <!-- Opções para Imagens -->
+                                <div id="imageOptions" class="compression-type-options" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Qualidade: <span id="qualityValue">80</span>%</label>
+                                                <input type="range" class="form-range" name="image_quality" id="imageQuality" 
+                                                       min="10" max="100" value="80">
+                                                <small class="text-muted">Menor qualidade = menor tamanho</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Redimensionar</label>
+                                                <select name="image_resize" class="form-select">
+                                                    <option value="">Manter original</option>
+                                                    <option value="1920">Full HD (1920px)</option>
+                                                    <option value="1280">HD (1280px)</option>
+                                                    <option value="800">Web (800px)</option>
+                                                    <option value="400">Thumbnail (400px)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" name="strip_metadata" id="stripMetadata" checked>
+                                        <label class="form-check-label" for="stripMetadata">
+                                            Remover metadados (EXIF, GPS, etc.)
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Opções para PDF -->
+                                <div id="pdfOptions" class="compression-type-options" style="display: none;">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nível de Compressão</label>
+                                        <select name="pdf_level" class="form-select">
+                                            <option value="screen">Tela (menor tamanho, qualidade reduzida)</option>
+                                            <option value="ebook" selected>E-book (equilíbrio qualidade/tamanho)</option>
+                                            <option value="printer">Impressão (alta qualidade)</option>
+                                            <option value="prepress">Pré-impressão (qualidade máxima)</option>
+                                        </select>
+                                    </div>
+                                    <div class="alert alert-warning">
+                                        <i class="ti ti-alert-triangle me-2"></i>
+                                        <strong>Nota:</strong> A compressão de PDF requer Ghostscript instalado no servidor.
+                                    </div>
+                                </div>
+                                
+                                <!-- Opções para Vídeo -->
+                                <div id="videoOptions" class="compression-type-options" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Resolução</label>
+                                                <select name="video_resolution" class="form-select">
+                                                    <option value="">Manter original</option>
+                                                    <option value="1080">1080p (Full HD)</option>
+                                                    <option value="720" selected>720p (HD)</option>
+                                                    <option value="480">480p (SD)</option>
+                                                    <option value="360">360p (Web)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Qualidade (CRF): <span id="crfValue">23</span></label>
+                                                <input type="range" class="form-range" name="video_crf" id="videoCrf" 
+                                                       min="18" max="35" value="23">
+                                                <small class="text-muted">Maior valor = menor tamanho</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" name="remove_audio" id="removeAudio">
+                                        <label class="form-check-label" for="removeAudio">
+                                            Remover áudio
+                                        </label>
+                                    </div>
+                                    <div class="alert alert-warning">
+                                        <i class="ti ti-alert-triangle me-2"></i>
+                                        <strong>Nota:</strong> A compressão de vídeo requer FFmpeg instalado no servidor.
+                                    </div>
+                                </div>
+                                
+                                <!-- Opções gerais -->
+                                <div class="mb-3">
+                                    <label class="form-check">
+                                        <input type="radio" name="save_mode" value="replace" class="form-check-input">
+                                        <span class="form-check-label">Substituir arquivo original</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input type="radio" name="save_mode" value="copy" class="form-check-input" checked>
+                                        <span class="form-check-label">Salvar como cópia (recomendado)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Progresso -->
+                            <div id="progressContainer" class="progress-container mb-3">
+                                <label class="form-label">Processando...</label>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-indeterminate"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Resultado -->
+                            <div id="resultContainer" style="display: none;">
+                                <div class="alert alert-success">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <i class="ti ti-check me-2"></i>
+                                            <strong>Compressão concluída!</strong>
+                                        </div>
+                                        <div class="size-comparison">
+                                            <span id="originalSize">-</span>
+                                            <i class="ti ti-arrow-right arrow"></i>
+                                            <span id="newSize">-</span>
+                                            <span class="badge bg-success ms-2" id="reduction">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" id="compressBtn" disabled>
+                                <i class="ti ti-file-zip me-1"></i> Comprimir Arquivo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estatísticas e dicas -->
+            <div class="col-lg-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Tipos Suportados</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="avatar bg-blue-lt me-3">
+                                <i class="ti ti-photo"></i>
+                            </span>
+                            <div>
+                                <strong>Imagens</strong>
+                                <div class="text-muted small">JPG, PNG, WebP, GIF</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="avatar bg-red-lt me-3">
+                                <i class="ti ti-file-type-pdf"></i>
+                            </span>
+                            <div>
+                                <strong>Documentos PDF</strong>
+                                <div class="text-muted small">Reduz imagens e fontes</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="avatar bg-purple-lt me-3">
+                                <i class="ti ti-video"></i>
+                            </span>
+                            <div>
+                                <strong>Vídeos</strong>
+                                <div class="text-muted small">MP4, AVI, MOV, MKV</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Dicas</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled space-y-2">
+                            <li class="d-flex">
+                                <i class="ti ti-bulb text-warning me-2 mt-1"></i>
+                                <span>Para imagens, qualidade 80% oferece bom equilíbrio</span>
+                            </li>
+                            <li class="d-flex">
+                                <i class="ti ti-bulb text-warning me-2 mt-1"></i>
+                                <span>PDFs com muitas imagens têm maior redução</span>
+                            </li>
+                            <li class="d-flex">
+                                <i class="ti ti-bulb text-warning me-2 mt-1"></i>
+                                <span>Vídeos podem ter redução de 50-80%</span>
+                            </li>
+                            <li class="d-flex">
+                                <i class="ti ti-bulb text-warning me-2 mt-1"></i>
+                                <span>Sempre salve uma cópia antes de substituir</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Histórico de compressões recentes -->
+        {% if recent_compressions %}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Compressões Recentes</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Arquivo</th>
+                            <th>Tamanho Original</th>
+                            <th>Tamanho Final</th>
+                            <th>Redução</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comp in recent_compressions %}
+                        <tr>
+                            <td>{{ comp.filename }}</td>
+                            <td>{{ comp.original_size }}</td>
+                            <td>{{ comp.new_size }}</td>
+                            <td><span class="badge bg-success">{{ comp.reduction }}%</span></td>
+                            <td>{{ comp.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('compressionForm');
+    const fileSelect = document.getElementById('fileSelect');
+    const fileUpload = document.getElementById('fileUpload');
+    const fileInfo = document.getElementById('fileInfo');
+    const compressionOptions = document.getElementById('compressionOptions');
+    const compressBtn = document.getElementById('compressBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    
+    // Alternar entre arquivo existente e upload
+    document.querySelectorAll('input[name="source_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isExisting = this.value === 'existing';
+            document.getElementById('existingFileSection').style.display = isExisting ? 'block' : 'none';
+            document.getElementById('uploadFileSection').style.display = isExisting ? 'none' : 'block';
+            
+            // Reset
+            fileInfo.style.display = 'none';
+            compressionOptions.style.display = 'none';
+            compressBtn.disabled = true;
+            hideAllTypeOptions();
+        });
+    });
+    
+    // Seleção de arquivo existente
+    fileSelect.addEventListener('change', function() {
+        if (this.value) {
+            const option = this.options[this.selectedIndex];
+            showFileInfo(
+                option.dataset.name,
+                parseInt(option.dataset.size),
+                option.dataset.type
+            );
+        } else {
+            fileInfo.style.display = 'none';
+            compressionOptions.style.display = 'none';
+            compressBtn.disabled = true;
+        }
+    });
+    
+    // Upload de arquivo novo
+    fileUpload.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            showFileInfo(file.name, file.size, file.type);
+        } else {
+            fileInfo.style.display = 'none';
+            compressionOptions.style.display = 'none';
+            compressBtn.disabled = true;
+        }
+    });
+    
+    function showFileInfo(name, size, type) {
+        document.getElementById('fileName').textContent = name;
+        document.getElementById('fileSize').textContent = formatBytes(size);
+        document.getElementById('fileType').textContent = type;
+        
+        // Define ícone baseado no tipo
+        const icon = document.getElementById('fileIcon');
+        if (type.startsWith('image/')) {
+            icon.className = 'ti ti-photo';
+            icon.parentElement.className = 'file-type-icon bg-blue-lt me-3';
+        } else if (type === 'application/pdf') {
+            icon.className = 'ti ti-file-type-pdf';
+            icon.parentElement.className = 'file-type-icon bg-red-lt me-3';
+        } else if (type.startsWith('video/')) {
+            icon.className = 'ti ti-video';
+            icon.parentElement.className = 'file-type-icon bg-purple-lt me-3';
+        } else {
+            icon.className = 'ti ti-file';
+            icon.parentElement.className = 'file-type-icon bg-secondary-lt me-3';
+        }
+        
+        fileInfo.style.display = 'block';
+        
+        // Mostra opções de compressão
+        showCompressionOptions(type);
+    }
+    
+    function hideAllTypeOptions() {
+        document.querySelectorAll('.compression-type-options').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+    
+    function showCompressionOptions(type) {
+        hideAllTypeOptions();
+        compressionOptions.style.display = 'block';
+        compressBtn.disabled = false;
+        
+        if (type.startsWith('image/')) {
+            document.getElementById('imageOptions').style.display = 'block';
+        } else if (type === 'application/pdf') {
+            document.getElementById('pdfOptions').style.display = 'block';
+        } else if (type.startsWith('video/')) {
+            document.getElementById('videoOptions').style.display = 'block';
+        }
+    }
+    
+    // Sliders
+    document.getElementById('imageQuality').addEventListener('input', function() {
+        document.getElementById('qualityValue').textContent = this.value;
+    });
+    
+    document.getElementById('videoCrf').addEventListener('input', function() {
+        document.getElementById('crfValue').textContent = this.value;
+    });
+    
+    // Submit
+    form.addEventListener('submit', function(e) {
+        compressBtn.disabled = true;
+        compressBtn.innerHTML = '<i class="ti ti-loader spinner-border spinner-border-sm me-1"></i> Comprimindo...';
+        progressContainer.classList.add('active');
+    });
+    
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Auto-selecionar arquivo se vier via query string
+    if (fileSelect.value) {
+        fileSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

@@ -38,11 +38,17 @@ def register_blueprints(app):
         'hr',
         'files',
         'messaging',
+        'clientes',
+        'propostas',
     )
     
     for module_name in blueprints:
         module = import_module(f'apps.{module_name}.routes')
         app.register_blueprint(module.blueprint)
+    
+    # Registra blueprint de API
+    from apps.api import blueprint as api_blueprint
+    app.register_blueprint(api_blueprint)
 
 
 def configure_database(app):

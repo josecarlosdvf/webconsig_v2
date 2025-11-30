@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} | {{ system.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">
+                    <a href="{{ url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf) }}">{{ cliente.nome_completo }}</a>
+                </div>
+                <h2 class="page-title">
+                    <i class="ti ti-id me-2"></i>
+                    {{ title }}
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <form method="POST" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">RG</label>
+                                <input type="text" name="rg" class="form-control" 
+                                       value="{{ form.rg.data or '' }}">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Órgão Emissor</label>
+                                <input type="text" name="orgao_emissor" class="form-control" 
+                                       value="{{ form.orgao_emissor.data or '' }}"
+                                       placeholder="SSP, DETRAN, etc.">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Data de Emissão</label>
+                                <input type="text" name="data_emissao" class="form-control" 
+                                       value="{{ form.data_emissao.data or '' }}"
+                                       placeholder="DD/MM/AAAA">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Sexo</label>
+                                <select name="sexo" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="M" {% if form.sexo.data == 'M' %}selected{% endif %}>Masculino</option>
+                                    <option value="F" {% if form.sexo.data == 'F' %}selected{% endif %}>Feminino</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Estado Civil</label>
+                                <select name="estado_civil" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Solteiro" {% if form.estado_civil.data == 'Solteiro' %}selected{% endif %}>Solteiro(a)</option>
+                                    <option value="Casado" {% if form.estado_civil.data == 'Casado' %}selected{% endif %}>Casado(a)</option>
+                                    <option value="Divorciado" {% if form.estado_civil.data == 'Divorciado' %}selected{% endif %}>Divorciado(a)</option>
+                                    <option value="Viúvo" {% if form.estado_civil.data == 'Viúvo' %}selected{% endif %}>Viúvo(a)</option>
+                                    <option value="União Estável" {% if form.estado_civil.data == 'União Estável' %}selected{% endif %}>União Estável</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Profissão</label>
+                                <input type="text" name="profissao" class="form-control" 
+                                       value="{{ form.profissao.data or '' }}">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Nacionalidade</label>
+                                <input type="text" name="nacionalidade" class="form-control" 
+                                       value="{{ form.nacionalidade.data or 'Brasileira' }}">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Naturalidade</label>
+                                <input type="text" name="naturalidade" class="form-control" 
+                                       value="{{ form.naturalidade.data or '' }}"
+                                       placeholder="Cidade/UF de nascimento">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Nome da Mãe</label>
+                                <input type="text" name="nome_mae" class="form-control" 
+                                       value="{{ form.nome_mae.data or '' }}">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Nome do Pai</label>
+                                <input type="text" name="nome_pai" class="form-control" 
+                                       value="{{ form.nome_pai.data or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer text-end">
+                        <a href="{{ url_for('clientes_blueprint.cliente_view', cpf=cliente.cpf) }}" class="btn btn-ghost-secondary me-2">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ti ti-device-floppy me-1"></i> Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

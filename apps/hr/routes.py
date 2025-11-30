@@ -47,6 +47,26 @@ def team_create():
     """Criar nova equipe/corban"""
     form = TeamForm()
     
+    # Gera uma cor única que não é usada por nenhuma outra equipe
+    existing_colors = [t.color for t in Team.query_active().filter(Team.color.isnot(None)).all()]
+    default_colors = [
+        '#206bc4', '#4299e1', '#38a169', '#2fb344', '#d69e2e', '#f59f00',
+        '#d63939', '#e53e3e', '#805ad5', '#9f7aea', '#00b5ad', '#319795',
+        '#e91e63', '#ed64a6', '#f56565', '#fc8181', '#667eea', '#7c3aed'
+    ]
+    available_color = '#206bc4'
+    for color in default_colors:
+        if color not in existing_colors:
+            available_color = color
+            break
+    else:
+        # Se todas as cores padrão estão em uso, gera uma aleatória
+        import random
+        available_color = '#%06x' % random.randint(0, 0xFFFFFF)
+    
+    if request.method == 'GET' and not form.color.data:
+        form.color.data = available_color
+    
     if form.validate_on_submit():
         team = Team()
         form.populate_obj(team)
@@ -80,7 +100,7 @@ def team_create():
 @login_required
 def team_view(team_id):
     """Visualizar equipe"""
-    team = Team.query_active().get_or_404(team_id)
+    team = Team.query_active().filter_by(id=team_id).first_or_404()
     employees = Employee.get_by_team(team_id)
     
     return render_template(
@@ -94,7 +114,7 @@ def team_view(team_id):
 @login_required
 def team_edit(team_id):
     """Editar equipe"""
-    team = Team.query_active().get_or_404(team_id)
+    team = Team.query_active().filter_by(id=team_id).first_or_404()
     form = TeamForm(obj=team)
     
     if form.validate_on_submit():
@@ -129,7 +149,7 @@ def team_edit(team_id):
 @login_required
 def team_delete(team_id):
     """Excluir equipe (soft delete)"""
-    team = Team.query_active().get_or_404(team_id)
+    team = Team.query_active().filter_by(id=team_id).first_or_404()
     
     # Verifica se tem funcionários vinculados
     if team.employee_count > 0:
@@ -220,6 +240,22 @@ def employee_create():
         db.session.add(employee)
         db.session.commit()
         
+        # Processa upload de foto se enviada
+        photo_file = request.files.get('photo')
+        if photo_file and photo_file.filename:
+            try:
+                from apps.files.services import FileService
+                FileService.upload(
+                    file=photo_file,
+                    category_code='FOTO_3X4',
+                    entity_type='employee',
+                    entity_id=employee.id,
+                    uploaded_by_id=current_user.id,
+                    description=f'Foto do funcionário {employee.name}'
+                )
+            except Exception as e:
+                flash(f'Funcionário criado, mas houve erro no upload da foto: {str(e)}', 'warning')
+        
         AuditLog.log(
             action='create',
             table_name='employees',
@@ -236,13 +272,19 @@ def employee_create():
         form=form,
         title='Novo Funcionário'
     )
+    
+    return render_template(
+        'hr/employees/form.html',
+        form=form,
+        title='Novo Funcionário'
+    )
 
 
 @blueprint.route('/funcionarios/<int:employee_id>')
 @login_required
 def employee_view(employee_id):
     """Visualizar funcionário"""
-    employee = Employee.query_active().get_or_404(employee_id)
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
     
     # Busca arquivos do funcionário
     files = FileService.get_entity_files('employee', employee_id)
@@ -260,7 +302,7 @@ def employee_view(employee_id):
 @login_required
 def employee_edit(employee_id):
     """Editar funcionário"""
-    employee = Employee.query_active().get_or_404(employee_id)
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
     form = EmployeeForm(obj=employee)
     
     if form.validate_on_submit():
@@ -284,6 +326,22 @@ def employee_edit(employee_id):
         # Limpa CEP
         if employee.address_zipcode:
             employee.address_zipcode = ''.join(filter(str.isdigit, employee.address_zipcode))
+        
+        # Processa upload de foto se enviada
+        photo_file = request.files.get('photo')
+        if photo_file and photo_file.filename:
+            try:
+                from apps.files.services import FileService
+                FileService.upload(
+                    file=photo_file,
+                    category_code='FOTO_3X4',
+                    entity_type='employee',
+                    entity_id=employee.id,
+                    uploaded_by_id=current_user.id,
+                    description=f'Foto do funcionário {employee.name}'
+                )
+            except Exception as e:
+                flash(f'Dados atualizados, mas houve erro no upload da foto: {str(e)}', 'warning')
         
         db.session.commit()
         
@@ -310,7 +368,7 @@ def employee_edit(employee_id):
 @login_required
 def employee_terminate(employee_id):
     """Desligar funcionário"""
-    employee = Employee.query_active().get_or_404(employee_id)
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
     
     if employee.is_terminated:
         flash('Este funcionário já está desligado.', 'warning')
@@ -357,7 +415,7 @@ def employee_terminate(employee_id):
 @login_required
 def employee_reactivate(employee_id):
     """Reativar funcionário desligado"""
-    employee = Employee.query_active().get_or_404(employee_id)
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
     
     if not employee.is_terminated:
         flash('Este funcionário não está desligado.', 'warning')
@@ -387,7 +445,7 @@ def employee_reactivate(employee_id):
 @login_required
 def employee_delete(employee_id):
     """Excluir funcionário (soft delete)"""
-    employee = Employee.query_active().get_or_404(employee_id)
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
     
     employee.soft_delete(current_user.id)
     
@@ -412,20 +470,26 @@ def employee_delete(employee_id):
 def api_employee_search():
     """Busca de funcionários (autocomplete)"""
     term = request.args.get('term', '')
-    limit = request.args.get('limit', 10, type=int)
+    limit = request.args.get('limit', 50, type=int)
     
+    # Se não há termo, retorna lista de funcionários ativos
     if len(term) < 2:
-        return jsonify([])
+        employees = Employee.query_active().filter_by(
+            status=EmployeeStatus.ACTIVE
+        ).order_by(Employee.name).limit(limit).all()
+    else:
+        employees = Employee.search(term, limit=limit)
     
-    employees = Employee.search(term, limit=limit)
-    
-    return jsonify([{
-        'id': e.id,
-        'name': e.name,
-        'cpf': e.cpf_formatted,
-        'team': e.team.display_name if e.team else None,
-        'position': e.position
-    } for e in employees])
+    return jsonify({
+        'results': [{
+            'id': e.id,
+            'text': e.name,
+            'name': e.name,
+            'cpf': e.cpf_formatted,
+            'team': e.team.display_name if e.team else None,
+            'position': e.position
+        } for e in employees]
+    })
 
 
 @blueprint.route('/api/equipes')
@@ -440,39 +504,117 @@ def api_teams_list():
     
     teams = query.order_by(Team.name).all()
     
-    return jsonify([{
-        'id': t.id,
-        'name': t.display_name,
-        'type': t.type,
-        'employee_count': t.employee_count
-    } for t in teams])
+    return jsonify({
+        'results': [{
+            'id': t.id,
+            'text': t.display_name,
+            'name': t.display_name,
+            'type': t.type,
+            'employee_count': t.employee_count
+        } for t in teams]
+    })
 
 
 @blueprint.route('/api/cep/<cep>')
 @login_required
 def api_cep_lookup(cep):
     """Busca endereço por CEP (via ViaCEP)"""
-    import requests
+    from apps.services.viacep import ViaCepService
     
-    cep_clean = ''.join(filter(str.isdigit, cep))
+    address = ViaCepService.get_address_dict(cep)
     
-    if len(cep_clean) != 8:
-        return jsonify({'error': 'CEP inválido'}), 400
-    
-    try:
-        response = requests.get(f'https://viacep.com.br/ws/{cep_clean}/json/', timeout=5)
-        data = response.json()
-        
-        if 'erro' in data:
-            return jsonify({'error': 'CEP não encontrado'}), 404
-        
+    if address:
+        # Retorna no formato esperado pelo frontend legado
         return jsonify({
-            'street': data.get('logradouro', ''),
-            'neighborhood': data.get('bairro', ''),
-            'city': data.get('localidade', ''),
-            'state': data.get('uf', ''),
-            'zipcode': cep_clean
+            'street': address.get('logradouro', ''),
+            'neighborhood': address.get('bairro', ''),
+            'city': address.get('localidade', ''),
+            'state': address.get('uf', ''),
+            'zipcode': ViaCepService._clean_cep(cep),
+            # Também inclui dados completos
+            **address
         })
     
+    return jsonify({'error': 'CEP não encontrado'}), 404
+
+
+@blueprint.route('/funcionarios/<int:employee_id>/upload', methods=['POST'])
+@login_required
+def employee_upload_document(employee_id):
+    """Upload de documento do funcionário"""
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
+    
+    file = request.files.get('file')
+    category_code = request.form.get('category', 'DOC_OUTROS')
+    description = request.form.get('description', '')
+    
+    if not file or not file.filename:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Nenhum arquivo selecionado'}), 400
+        flash('Nenhum arquivo selecionado.', 'danger')
+        return redirect(url_for('hr_blueprint.employee_view', employee_id=employee_id))
+    
+    try:
+        from apps.files.services import FileService
+        
+        file_record = FileService.upload(
+            file=file,
+            category_code=category_code,
+            entity_type='employee',
+            entity_id=employee_id,
+            uploaded_by_id=current_user.id,
+            description=description or f'Documento de {employee.name}'
+        )
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'file': {
+                    'id': file_record.id,
+                    'name': file_record.original_name,
+                    'category': file_record.category.name if file_record.category else None,
+                    'size': file_record.size_formatted
+                }
+            })
+        
+        flash('Documento enviado com sucesso!', 'success')
+        
     except Exception as e:
-        return jsonify({'error': 'Erro ao buscar CEP'}), 500
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': str(e)}), 400
+        flash(f'Erro ao enviar documento: {str(e)}', 'danger')
+    
+    return redirect(url_for('hr_blueprint.employee_view', employee_id=employee_id))
+
+
+@blueprint.route('/funcionarios/<int:employee_id>/documentos')
+@login_required
+def employee_documents(employee_id):
+    """Lista de documentos do funcionário (JSON)"""
+    employee = Employee.query_active().filter_by(id=employee_id).first_or_404()
+    
+    files = employee.get_files()
+    missing = employee.get_missing_documents()
+    
+    return jsonify({
+        'employee': {
+            'id': employee.id,
+            'name': employee.name,
+            'documents_complete': employee.documents_complete
+        },
+        'files': [{
+            'id': f.id,
+            'name': f.original_name,
+            'category': f.category.name if f.category else None,
+            'category_code': f.category.code if f.category else None,
+            'size': f.size_formatted,
+            'uploaded_at': f.created_at.isoformat() if f.created_at else None,
+            'is_image': f.is_image,
+            'thumbnail_url': url_for('files_blueprint.thumbnail', file_id=f.id) if f.is_image else None
+        } for f in files],
+        'missing': [{
+            'code': c.code,
+            'name': c.name,
+            'is_required': c.is_required
+        } for c in missing]
+    })

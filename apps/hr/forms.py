@@ -370,7 +370,7 @@ class EmployeeForm(FlaskForm):
     
     team_id = SelectField(
         'Equipe/Corban',
-        coerce=int,
+        coerce=lambda x: int(x) if x and x != '' else None,
         validators=[Optional()]
     )
     
@@ -510,7 +510,7 @@ class EmployeeSearchForm(FlaskForm):
     )
     team_id = SelectField(
         'Equipe',
-        coerce=int,
+        coerce=lambda x: int(x) if x and x != '' else None,
         validators=[Optional()]
     )
     status = SelectField(

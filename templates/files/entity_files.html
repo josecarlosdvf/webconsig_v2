@@ -77,7 +77,7 @@
                                 </div>
                                 <a href="#" class="btn btn-sm btn-outline-warning ms-auto" 
                                    data-bs-toggle="modal" data-bs-target="#uploadModal" 
-                                   onclick="document.getElementById('uploadCategory').value='{{ category.id }}'">
+                                   onclick="document.getElementById('uploadCategory').value='{{ category.code }}'">
                                     <i class="ti ti-upload"></i>
                                 </a>
                             </div>
@@ -115,7 +115,7 @@
                                             </span>
                                             {% endif %}
                                             <div>
-                                                <div class="font-weight-medium">{{ file.original_filename }}</div>
+                                                <div class="font-weight-medium">{{ file.original_name }}</div>
                                                 <div class="text-muted small">{{ file.mime_type }}</div>
                                             </div>
                                         </div>
@@ -182,7 +182,7 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="entity_type" value="{{ entity_type }}">
                 <input type="hidden" name="entity_id" value="{{ entity.id }}">
-                <input type="hidden" name="redirect_url" value="{{ request.url }}">
+                <input type="hidden" name="redirect_url" value="{{ url_for('files_blueprint.entity_files', entity_type=entity_type, entity_id=entity.id) }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label required">Arquivo</label>
@@ -190,10 +190,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Categoria</label>
-                        <select name="category_id" id="uploadCategory" class="form-select">
+                        <select name="category" id="uploadCategory" class="form-select">
                             <option value="">Selecione...</option>
                             {% for category in categories %}
-                            <option value="{{ category.id }}" {% if category.is_required %}data-required="true"{% endif %}>
+                            <option value="{{ category.code }}" {% if category.is_required %}data-required="true"{% endif %}>
                                 {{ category.name }}
                                 {% if category.is_required %}(Obrigatório){% endif %}
                             </option>
@@ -222,11 +222,11 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{ file.original_filename }}</h5>
+                <h5 class="modal-title">{{ file.original_name }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center">
-                <img src="{{ url_for('files_blueprint.view', file_id=file.id) }}" class="img-fluid" alt="{{ file.original_filename }}">
+                <img src="{{ url_for('files_blueprint.view', file_id=file.id) }}" class="img-fluid" alt="{{ file.original_name }}">
             </div>
             <div class="modal-footer">
                 <a href="{{ url_for('files_blueprint.download', file_id=file.id) }}" class="btn btn-primary">
@@ -248,13 +248,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Tem certeza que deseja excluir o arquivo <strong>{{ file.original_filename }}</strong>?</p>
+                <p>Tem certeza que deseja excluir o arquivo <strong>{{ file.original_name }}</strong>?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form action="{{ url_for('files_blueprint.delete', file_id=file.id) }}" method="POST" class="d-inline">
+                <form action="{{ url_for('files_blueprint.delete_file', file_id=file.id) }}" method="POST" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="redirect_url" value="{{ request.url }}">
+                    <input type="hidden" name="redirect_url" value="{{ url_for('files_blueprint.entity_files', entity_type=entity_type, entity_id=entity.id) }}">
                     <button type="submit" class="btn btn-danger">
                         <i class="ti ti-trash me-1"></i> Excluir
                     </button>

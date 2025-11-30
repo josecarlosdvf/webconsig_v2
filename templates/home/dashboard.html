@@ -38,6 +38,65 @@
 <div class="page-body">
     <div class="container-xl">
         
+        <!-- Avisos de Sistema (apenas para admins) -->
+        {% if current_user.is_admin and system_warnings %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning-lt">
+                        <h3 class="card-title">
+                            <i class="ti ti-alert-triangle me-2"></i>
+                            Avisos do Sistema
+                        </h3>
+                        <div class="card-actions">
+                            <span class="badge bg-warning">{{ system_warnings|length }} pendência(s)</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for warning in system_warnings %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="avatar bg-{{ warning.color }}-lt">
+                                            <i class="ti ti-{{ warning.icon }} text-{{ warning.color }}"></i>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ warning.title }}</strong>
+                                            {% if warning.required_for %}
+                                            <span class="badge bg-secondary-lt">{{ warning.required_for }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-muted small">{{ warning.message }}</div>
+                                        {% if warning.action %}
+                                        <div class="mt-1">
+                                            <code class="user-select-all small">{{ warning.action }}</code>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex align-items-center">
+                            <span class="text-muted small">
+                                <i class="ti ti-info-circle me-1"></i>
+                                Execute os comandos acima no terminal do servidor para resolver os avisos.
+                            </span>
+                            <a href="{{ url_for('home_blueprint.system_status') }}" class="btn btn-sm btn-outline-warning ms-auto">
+                                <i class="ti ti-settings me-1"></i> Ver Detalhes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Stats Cards -->
         <div class="row row-deck row-cards mb-4">
             <!-- Card Usuários -->

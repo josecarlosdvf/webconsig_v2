@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}{{ employee.full_name }}{% endblock %}
+{% block title %}{{ employee.name }}{% endblock %}
 
 {% block content %}
 <div class="page-header d-print-none">
@@ -8,12 +8,15 @@
         <div class="page-pretitle">RH / Funcionários</div>
         <div class="d-flex align-items-center">
             <h2 class="page-title">
-                {{ employee.full_name }}
+                {{ employee.name }}
             </h2>
             <div class="ms-auto btn-list">
                 {% if user_has_permission('files.view') or current_user.is_admin %}
                 <a href="{{ url_for('files_blueprint.entity_files', entity_type='employee', entity_id=employee.id) }}" class="btn btn-outline-primary">
                     <i class="ti ti-folder me-1"></i> Documentos
+                    {% if missing_files %}
+                    <span class="badge bg-warning ms-1">{{ missing_files|length }}</span>
+                    {% endif %}
                 </a>
                 {% endif %}
                 {% if user_has_permission('hr.edit') or current_user.is_admin %}
@@ -34,33 +37,50 @@
                 <!-- Card Principal -->
                 <div class="card mb-3">
                     <div class="card-body text-center py-4">
-                        <span class="avatar avatar-xl mb-3" style="background-image: url({{ employee.photo_url or url_for('static', filename='assets/img/team/profile-picture-3.jpg') }})"></span>
-                        <h3 class="mb-0">{{ employee.full_name }}</h3>
+                        {% if employee.photo_url %}
+                        <span class="avatar avatar-xl mb-3" 
+                              style="background-image: url({{ employee.photo_url }}); width: 150px; height: 200px; background-size: cover;">
+                        </span>
+                        {% else %}
+                        <span class="avatar avatar-xl bg-secondary-lt mb-3" 
+                              style="width: 150px; height: 200px; font-size: 3rem;">
+                            <i class="ti ti-user"></i>
+                        </span>
+                        {% endif %}
+                        <h3 class="mb-0">{{ employee.name }}</h3>
                         <p class="text-muted mb-3">{{ employee.position or 'Cargo não definido' }}</p>
                         
                         {% if employee.is_active %}
                         <span class="badge bg-success-lt">
                             <i class="ti ti-check me-1"></i> Ativo
                         </span>
-                        {% else %}
+                        {% elif employee.status == 'vacation' %}
+                        <span class="badge bg-info-lt">
+                            <i class="ti ti-beach me-1"></i> Férias
+                        </span>
+                        {% elif employee.status == 'leave' %}
+                        <span class="badge bg-warning-lt">
+                            <i class="ti ti-first-aid-kit me-1"></i> Licença
+                        </span>
+                        {% elif employee.status == 'terminated' %}
                         <span class="badge bg-danger-lt">
-                            <i class="ti ti-x me-1"></i> Inativo
+                            <i class="ti ti-x me-1"></i> Desligado
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary-lt">
+                            <i class="ti ti-minus me-1"></i> Inativo
                         </span>
                         {% endif %}
                     </div>
                     
                     <div class="card-body border-top">
                         <div class="row g-2 mb-2">
-                            <div class="col-5 text-muted">Matrícula</div>
-                            <div class="col-7">{{ employee.registration_number or '-' }}</div>
-                        </div>
-                        <div class="row g-2 mb-2">
                             <div class="col-5 text-muted">CPF</div>
                             <div class="col-7">{{ employee.cpf_formatted or '-' }}</div>
                         </div>
                         <div class="row g-2 mb-2">
                             <div class="col-5 text-muted">RG</div>
-                            <div class="col-7">{{ employee.rg or '-' }}</div>
+                            <div class="col-7">{{ employee.rg_number or '-' }}</div>
                         </div>
                         <div class="row g-2 mb-2">
                             <div class="col-5 text-muted">Nascimento</div>
@@ -74,15 +94,45 @@
                             </div>
                         </div>
                         <div class="row g-2 mb-2">
-                            <div class="col-5 text-muted">Gênero</div>
-                            <div class="col-7">{{ employee.gender or '-' }}</div>
-                        </div>
-                        <div class="row g-2">
-                            <div class="col-5 text-muted">Estado Civil</div>
-                            <div class="col-7">{{ employee.marital_status or '-' }}</div>
+                            <div class="col-5 text-muted">Admissão</div>
+                            <div class="col-7">
+                                {% if employee.admission_date %}
+                                {{ employee.admission_date.strftime('%d/%m/%Y') }}
+                                {% if employee.service_time %}
+                                <small class="text-muted">({{ employee.service_time.formatted }})</small>
+                                {% endif %}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Documentos Pendentes -->
+                {% if missing_files %}
+                <div class="card mb-3 border-warning">
+                    <div class="card-header bg-warning-lt">
+                        <h3 class="card-title text-warning">
+                            <i class="ti ti-alert-triangle me-2"></i> Documentos Pendentes
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            {% for cat in missing_files %}
+                            <li class="mb-2">
+                                <i class="ti ti-file-off text-warning me-1"></i>
+                                {{ cat.name }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{{ url_for('files_blueprint.entity_files', entity_type='employee', entity_id=employee.id) }}" 
+                           class="btn btn-warning btn-sm w-100 mt-3">
+                            <i class="ti ti-upload me-1"></i> Enviar Documentos
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
                 
                 <!-- Equipe -->
                 <div class="card mb-3">
@@ -94,26 +144,18 @@
                     <div class="card-body">
                         {% if employee.team %}
                         <div class="d-flex align-items-center mb-3">
-                            <span class="avatar avatar-sm bg-azure-lt me-2">
-                                <i class="ti ti-users text-azure"></i>
+                            <span class="avatar avatar-sm me-2" style="background-color: {{ employee.team.color or '#206bc4' }}">
+                                <i class="ti ti-users text-white"></i>
                             </span>
                             <div>
                                 <div class="font-weight-medium">{{ employee.team.name }}</div>
-                                <div class="text-muted small">{{ employee.team.team_type }}</div>
+                                <div class="text-muted small">
+                                    {% if employee.team.is_corban %}Corban{% else %}Equipe{% endif %}
+                                </div>
                             </div>
                         </div>
                         {% else %}
                         <p class="text-muted mb-0">Nenhuma equipe atribuída</p>
-                        {% endif %}
-                        
-                        {% if employee.manager %}
-                        <div class="border-top pt-3 mt-3">
-                            <div class="text-muted small mb-2">Gestor</div>
-                            <div class="d-flex align-items-center">
-                                <span class="avatar avatar-sm me-2" style="background-image: url({{ employee.manager.photo_url or url_for('static', filename='assets/img/team/profile-picture-3.jpg') }})"></span>
-                                <div class="font-weight-medium">{{ employee.manager.full_name }}</div>
-                            </div>
-                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -176,7 +218,7 @@
                                 <div class="text-muted small">Telefone</div>
                                 <div>
                                     {% if employee.phone %}
-                                    <a href="tel:{{ employee.phone }}">{{ employee.phone }}</a>
+                                    <a href="tel:{{ employee.phone }}">{{ employee.phone_formatted }}</a>
                                     {% else %}
                                     -
                                     {% endif %}
@@ -185,8 +227,8 @@
                             <div class="col-md-4">
                                 <div class="text-muted small">Celular</div>
                                 <div>
-                                    {% if employee.mobile %}
-                                    <a href="tel:{{ employee.mobile }}">{{ employee.mobile }}</a>
+                                    {% if employee.phone_secondary %}
+                                    <a href="tel:{{ employee.phone_secondary }}">{{ employee.phone_secondary }}</a>
                                     {% else %}
                                     -
                                     {% endif %}
@@ -204,13 +246,13 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        {% if employee.street %}
+                        {% if employee.address_street %}
                         <p class="mb-0">
-                            {{ employee.street }}{% if employee.number %}, {{ employee.number }}{% endif %}
-                            {% if employee.complement %} - {{ employee.complement }}{% endif %}<br>
-                            {% if employee.neighborhood %}{{ employee.neighborhood }} - {% endif %}
-                            {{ employee.city }}/{{ employee.state }}<br>
-                            CEP: {{ employee.zip_code }}
+                            {{ employee.address_street }}{% if employee.address_number %}, {{ employee.address_number }}{% endif %}
+                            {% if employee.address_complement %} - {{ employee.address_complement }}{% endif %}<br>
+                            {% if employee.address_neighborhood %}{{ employee.address_neighborhood }} - {% endif %}
+                            {{ employee.address_city }}/{{ employee.address_state }}<br>
+                            CEP: {{ employee.zipcode_formatted }}
                         </p>
                         {% else %}
                         <p class="text-muted mb-0">Endereço não informado</p>
@@ -236,14 +278,8 @@
                                 <div>{{ employee.department or '-' }}</div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-muted small">Data de Admissão</div>
-                                <div>
-                                    {% if employee.hire_date %}
-                                    {{ employee.hire_date.strftime('%d/%m/%Y') }}
-                                    {% else %}
-                                    -
-                                    {% endif %}
-                                </div>
+                                <div class="text-muted small">Tipo de Contrato</div>
+                                <div>{{ employee.contract_type or '-' }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted small">Salário</div>
@@ -256,14 +292,18 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-muted small">Carga Horária</div>
+                                <div class="text-muted small">CTPS</div>
                                 <div>
-                                    {% if employee.work_hours %}
-                                    {{ employee.work_hours }}h/semana
+                                    {% if employee.ctps_number %}
+                                    {{ employee.ctps_number }}{% if employee.ctps_series %}/{{ employee.ctps_series }}{% endif %}
                                     {% else %}
                                     -
                                     {% endif %}
                                 </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">PIS/PASEP</div>
+                                <div>{{ employee.pis or '-' }}</div>
                             </div>
                         </div>
                     </div>
@@ -289,7 +329,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted small">Conta</div>
-                                <div>{{ employee.bank_account or '-' }} ({{ employee.bank_account_type or 'Corrente' }})</div>
+                                <div>{{ employee.bank_account or '-' }} ({{ 'Corrente' if employee.bank_account_type == 'checking' else 'Poupança' }})</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted small">Chave PIX</div>

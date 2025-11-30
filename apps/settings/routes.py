@@ -282,7 +282,7 @@ def tipo_arquivo_editar(id):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    category = FileCategory.query_active().get_or_404(id)
+    category = FileCategory.query_active().filter_by(id=id).first_or_404()
     
     category.name = request.form.get('name', category.name)
     category.description = request.form.get('description')
@@ -320,7 +320,7 @@ def tipo_arquivo_upload_modelo(id):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    category = FileCategory.query_active().get_or_404(id)
+    category = FileCategory.query_active().filter_by(id=id).first_or_404()
     
     if 'reference_model' not in request.files:
         flash('Nenhum arquivo selecionado.', 'warning')
@@ -360,7 +360,7 @@ def tipo_arquivo_remover_modelo(id):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    category = FileCategory.query_active().get_or_404(id)
+    category = FileCategory.query_active().filter_by(id=id).first_or_404()
     
     try:
         from apps.files.services import DocumentSimilarityService
@@ -381,7 +381,7 @@ def tipo_arquivo_excluir(id):
         flash('Acesso negado.', 'danger')
         return redirect(url_for('home_blueprint.dashboard'))
     
-    category = FileCategory.query_active().get_or_404(id)
+    category = FileCategory.query_active().filter_by(id=id).first_or_404()
     
     # Sempre usa soft delete para consistência
     category.soft_delete(current_user.id)

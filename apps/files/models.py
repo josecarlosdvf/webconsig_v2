@@ -313,18 +313,18 @@ class File(db.Model, BaseModel):
         comment='Altura em pixels (imagens)'
     )
     
-    # Vinculação com entidade
+    # Vinculação com entidade (opcional - pode ser arquivo geral)
     entity_type = db.Column(
         db.String(50), 
-        nullable=False,
+        nullable=True,
         index=True,
-        comment='Tipo de entidade (employee, team, user, etc)'
+        comment='Tipo de entidade (employee, team, user, etc) - nulo para arquivos gerais'
     )
     entity_id = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=True,
         index=True,
-        comment='ID da entidade vinculada'
+        comment='ID da entidade vinculada - nulo para arquivos gerais'
     )
     
     # Upload
@@ -440,6 +440,40 @@ class File(db.Model, BaseModel):
         return self.mime_type == 'application/pdf'
     
     @property
+    def icon(self):
+        """Retorna ícone baseado no tipo de arquivo"""
+        if self.is_image:
+            return 'photo'
+        elif self.is_pdf:
+            return 'file-type-pdf'
+        elif self.mime_type in ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
+            return 'file-type-doc'
+        elif self.mime_type in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+            return 'file-type-xls'
+        elif self.mime_type in ['application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed']:
+            return 'file-zip'
+        elif self.mime_type and self.mime_type.startswith('text/'):
+            return 'file-text'
+        else:
+            return 'file'
+    
+    @property
+    def icon_color(self):
+        """Retorna cor do ícone baseado no tipo de arquivo"""
+        if self.is_image:
+            return 'purple'
+        elif self.is_pdf:
+            return 'red'
+        elif self.mime_type in ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
+            return 'blue'
+        elif self.mime_type in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+            return 'green'
+        elif self.mime_type in ['application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed']:
+            return 'orange'
+        else:
+            return 'secondary'
+    
+    @property
     def full_path(self):
         """Retorna caminho completo do arquivo"""
         from flask import current_app
@@ -500,7 +534,7 @@ class File(db.Model, BaseModel):
         return query.order_by(cls.uploaded_at.desc()).all()
     
     @classmethod
-    def create_from_upload(cls, file, category, entity_type, entity_id, 
+    def create_from_upload(cls, file, category, entity_type=None, entity_id=None, 
                            uploaded_by_id=None, description=None):
         """
         Cria um registro de arquivo a partir de um upload.
@@ -508,8 +542,8 @@ class File(db.Model, BaseModel):
         Args:
             file: FileStorage do Werkzeug
             category: FileCategory instance
-            entity_type: Tipo da entidade
-            entity_id: ID da entidade
+            entity_type: Tipo da entidade (opcional)
+            entity_id: ID da entidade (opcional)
             uploaded_by_id: ID do usuário que fez upload
             description: Descrição opcional
         
@@ -524,8 +558,11 @@ class File(db.Model, BaseModel):
         extension = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
         stored_name = f'{uuid.uuid4().hex}.{extension}'
         
-        # Define caminho
-        relative_path = os.path.join(entity_type, str(entity_id), category.code)
+        # Define caminho - se não tem entidade, vai para pasta 'general'
+        if entity_type and entity_id:
+            relative_path = os.path.join(entity_type, str(entity_id), category.code)
+        else:
+            relative_path = os.path.join('general', category.code)
         
         # Lê o arquivo para calcular tamanho e hash
         file_content = file.read()
@@ -577,7 +614,7 @@ class File(db.Model, BaseModel):
         )
         
         db.session.add(file_record)
-        db.session.commit()
+        db.session.flush()  # Gera o ID sem commit para permitir mais operações na mesma transação
         
         return file_record
 

@@ -14,9 +14,46 @@ from apps.home import blueprint
 @login_required
 def dashboard():
     """Página principal do dashboard"""
+    
+    # Verificação de sistema para admins
+    system_warnings = []
+    system_status = None
+    
+    if current_user.is_admin:
+        try:
+            from apps.system_check import SystemCheck
+            system_status = SystemCheck.get_system_status()
+            system_warnings = system_status.get('warnings', [])
+        except Exception as e:
+            # Se falhar, não bloqueia o dashboard
+            pass
+    
     return render_template(
         'home/dashboard.html',
-        segment='dashboard'
+        segment='dashboard',
+        system_warnings=system_warnings,
+        system_status=system_status
+    )
+
+
+@blueprint.route('/system-status')
+@login_required
+def system_status():
+    """Página de status do sistema (apenas admin)"""
+    if not current_user.is_admin:
+        from flask import abort
+        abort(403)
+    
+    from apps.system_check import SystemCheck
+    
+    dependencies = SystemCheck.check_all_dependencies()
+    status = SystemCheck.get_system_status()
+    
+    return render_template(
+        'home/system_status.html',
+        segment='system-status',
+        dependencies=dependencies,
+        status=status
     )
 
 

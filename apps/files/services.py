@@ -89,7 +89,7 @@ class FileService:
         return True, None
     
     @classmethod
-    def upload(cls, file, category_code: str, entity_type: str, entity_id: int,
+    def upload(cls, file, category_code: str, entity_type: str = None, entity_id: int = None,
                uploaded_by_id: int = None, description: str = None) -> File:
         """
         Faz upload de um arquivo.
@@ -97,8 +97,8 @@ class FileService:
         Args:
             file: FileStorage do Werkzeug
             category_code: Código da categoria do arquivo
-            entity_type: Tipo da entidade (employee, team, etc)
-            entity_id: ID da entidade
+            entity_type: Tipo da entidade (employee, team, etc) - opcional
+            entity_id: ID da entidade - opcional
             uploaded_by_id: ID do usuário que fez upload
             description: Descrição opcional
         
@@ -118,8 +118,8 @@ class FileService:
         if not is_valid:
             raise FileValidationError(error)
         
-        # Verifica se categoria permite múltiplos
-        if not category.allow_multiple:
+        # Verifica se categoria permite múltiplos (só se tiver entidade)
+        if entity_type and entity_id and not category.allow_multiple:
             existing = File.get_for_entity(entity_type, entity_id, category_code)
             if existing:
                 # Soft delete do arquivo anterior
@@ -143,28 +143,37 @@ class FileService:
                     file_record.full_path,
                     category
                 )
-                file_record.visual_similarity_score = validation_result['similarity']
-                file_record.visual_validation_passed = validation_result['compatible']
                 
-                # Adiciona informação na descrição
-                if not validation_result['compatible']:
-                    if file_record.validation_notes:
-                        file_record.validation_notes += f"\n{validation_result['message']}"
-                    else:
-                        file_record.validation_notes = validation_result['message']
-                
-                db.session.commit()
+                # Só salva se a validação foi realmente executada
+                if validation_result['similarity'] is not None:
+                    file_record.visual_similarity_score = validation_result['similarity']
+                    file_record.visual_validation_passed = validation_result['compatible']
+                    
+                    # Adiciona informação na descrição
+                    if validation_result['compatible'] == False:
+                        if file_record.validation_notes:
+                            file_record.validation_notes += f"\n{validation_result['message']}"
+                        else:
+                            file_record.validation_notes = validation_result['message']
+                else:
+                    # Validação não foi possível - deixa campos como None
+                    current_app.logger.info(f'Validação visual não executada: {validation_result["message"]}')
             except Exception as e:
-                current_app.logger.warning(f'Erro na validação visual: {e}')
+                current_app.logger.error(f'Erro na validação visual: {e}', exc_info=True)
         
         # Log de auditoria
-        AuditLog.log(
-            action='file_upload',
-            table_name='files',
-            record_id=file_record.id,
-            description=f'Upload: {file_record.original_name} ({category.name})',
-            user_id=uploaded_by_id
-        )
+        try:
+            AuditLog.log(
+                action='file_upload',
+                table_name='files',
+                record_id=file_record.id,
+                description=f'Upload: {file_record.original_name} ({category.name})',
+                user_id=uploaded_by_id
+            )
+        except Exception as e:
+            current_app.logger.warning(f'Erro no audit log: {e}')
+        
+        # Commit único no final
         db.session.commit()
         
         return file_record
@@ -183,7 +192,7 @@ class FileService:
         Raises:
             FileNotFoundError: Se arquivo não existir
         """
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -210,7 +219,7 @@ class FileService:
         with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
             for file_id in file_ids:
                 try:
-                    file_record = File.query_active().get(file_id)
+                    file_record = File.query_active().filter_by(id=file_id).first()
                     if file_record and os.path.exists(file_record.full_path):
                         # Usa nome único no ZIP para evitar conflitos
                         zip_filename = f'{file_record.category.code}_{file_record.original_name}'
@@ -233,7 +242,7 @@ class FileService:
         Returns:
             bool: True se excluído com sucesso
         """
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             return False
         
@@ -345,7 +354,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -369,7 +378,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -396,7 +405,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record:
             raise FileNotFoundError('Arquivo não encontrado')
         
@@ -424,7 +433,7 @@ class ImageService:
         """
         from PIL import Image
         
-        file_record = File.query_active().get(file_id)
+        file_record = File.query_active().filter_by(id=file_id).first()
         if not file_record or not file_record.is_image:
             raise FileNotFoundError('Imagem não encontrada')
         
@@ -910,17 +919,17 @@ class DocumentSimilarityService:
         
         Returns:
             dict: {
-                'compatible': bool,
-                'similarity': float,
+                'compatible': bool or None (se não foi possível validar),
+                'similarity': float (0.0 a 1.0),
                 'details': dict com métricas detalhadas,
                 'message': str
             }
         """
         result = {
-            'compatible': True,
-            'similarity': 1.0,
+            'compatible': None,  # None indica que não foi possível validar
+            'similarity': None,  # None indica que não foi calculado
             'details': {},
-            'message': 'Arquivo aceito'
+            'message': 'Validação não realizada'
         }
         
         # Verifica se validação visual está habilitada
@@ -931,8 +940,8 @@ class DocumentSimilarityService:
         # Carrega imagem do arquivo enviado
         file_images = cls.file_to_images(file_path)
         if not file_images:
-            result['compatible'] = False
             result['similarity'] = 0.0
+            result['compatible'] = False
             result['message'] = 'Não foi possível processar o arquivo enviado'
             return result
         

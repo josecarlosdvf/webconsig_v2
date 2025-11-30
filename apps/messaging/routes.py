@@ -559,6 +559,69 @@ def contacts_list():
     )
 
 
+@blueprint.route('/contatos/novo', methods=['GET', 'POST'])
+@login_required
+@permission_required('messaging.manage')
+def contact_create():
+    """Criar novo contato"""
+    form = ContactForm()
+    
+    if form.validate_on_submit():
+        # Verificar se já existe contato com este telefone
+        existing = WhatsAppContact.query.filter_by(
+            phone_number=form.phone_number.data,
+            deleted_at=None
+        ).first()
+        
+        if existing:
+            flash('Já existe um contato com este telefone.', 'warning')
+            return render_template('messaging/contacts/form.html', form=form)
+        
+        contact = WhatsAppContact(
+            name=form.name.data,
+            phone_number=form.phone_number.data,
+            email=form.email.data
+        )
+        
+        db.session.add(contact)
+        db.session.commit()
+        
+        # Registrar auditoria
+        AuditLog.log(
+            user_id=current_user.id,
+            action='create',
+            entity='contact',
+            entity_id=contact.id,
+            description=f'Contato criado: {contact.name or contact.phone_number}'
+        )
+        
+        flash('Contato criado com sucesso!', 'success')
+        return redirect(url_for('messaging_blueprint.contacts_list'))
+    
+    return render_template('messaging/contacts/form.html', form=form)
+
+
+@blueprint.route('/contatos/<int:contact_id>/editar', methods=['GET', 'POST'])
+@login_required
+@permission_required('messaging.manage')
+def contact_edit(contact_id):
+    """Editar contato"""
+    contact = WhatsAppContact.query.get_or_404(contact_id)
+    form = ContactForm(obj=contact)
+    
+    if form.validate_on_submit():
+        contact.name = form.name.data
+        contact.phone_number = form.phone_number.data
+        contact.email = form.email.data
+        
+        db.session.commit()
+        
+        flash('Contato atualizado com sucesso!', 'success')
+        return redirect(url_for('messaging_blueprint.contacts_list'))
+    
+    return render_template('messaging/contacts/form.html', form=form, contact=contact)
+
+
 @blueprint.route('/contatos/<int:contact_id>')
 @login_required
 @permission_required('messaging.view')

@@ -427,3 +427,56 @@ textarea:focus {
     bottom: 100%;
 }
 
+
+/* ========================================
+   Logo para Tema Escuro no Sidebar
+======================================== */
+
+/* Tema Claro: mostrar logo padrão, esconder dark */
+.navbar-vertical .hide-theme-dark {
+    display: block !important;
+}
+
+.navbar-vertical .hide-theme-light {
+    display: none !important;
+}
+
+/* Tema Escuro: mostrar logo dark, esconder padrão */
+[data-bs-theme="dark"] .navbar-vertical .hide-theme-dark {
+    display: none !important;
+}
+
+[data-bs-theme="dark"] .navbar-vertical .hide-theme-light {
+    display: block !important;
+}
+
+/* ========================================
+   Avatar Fixes
+======================================== */
+
+/* Garantir que o avatar exiba corretamente */
+.avatar {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Avatar no perfil */
+.avatar-profile {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Login centralizado */
+.page-center .navbar-brand {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.page-center .navbar-brand img {
+    max-width: 200px;
+    height: auto;
+}
+

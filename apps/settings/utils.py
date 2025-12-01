@@ -81,6 +81,7 @@ def get_system_settings() -> dict:
         
         # Aparência
         'logo_url': cache.get('logo_url', '/static/assets/img/brand/logo.svg'),
+        'logo_login_url': cache.get('logo_login_url', ''),
         'logo_dark_url': cache.get('logo_dark_url', '/static/assets/img/brand/logo-light.svg'),
         'favicon_url': cache.get('favicon_url', '/static/assets/img/favicon/favicon.svg'),
         'primary_color': cache.get('primary_color', '#1F2937'),

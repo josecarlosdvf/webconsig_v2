@@ -8,7 +8,8 @@
         
         <h1 class="navbar-brand navbar-brand-autodark">
             <a href="{{ url_for('home_blueprint.dashboard') }}" class="d-flex flex-column align-items-center">
-                <img src="{{ system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image">
+                <img src="{{ system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image hide-theme-dark">
+                <img src="{{ system.logo_dark_url or system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image hide-theme-light">
                 <span class="mt-1">{{ system.name }}</span>
             </a>
         </h1>
@@ -17,7 +18,7 @@
         <div class="navbar-nav flex-row d-lg-none">
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
-                    <span class="avatar avatar-sm" style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})"></span>
+                    <span class="avatar avatar-sm" style="background-image: url('{% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %}')"></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
                     <a class="dropdown-item" href="{{ url_for('authentication_blueprint.profile') }}">

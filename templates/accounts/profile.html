@@ -110,7 +110,7 @@
                     <div class="card-body text-center">
                         <div class="position-relative d-inline-block mb-3">
                             <span class="avatar avatar-xl avatar-profile" id="avatarPreview"
-                                  style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% elif current_user.employee and current_user.employee.photo_url %}{{ current_user.employee.photo_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})">
+                                  style="background-image: url('{% if current_user.avatar_url %}{{ current_user.avatar_url }}{% elif current_user.employee and current_user.employee.photo_url %}{{ current_user.employee.photo_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %}')">
                             </span>
                             <label class="avatar-upload-overlay" for="avatarInput" title="Alterar foto">
                                 <i class="ti ti-camera"></i>

@@ -36,7 +36,9 @@ requests>=2.31.0
 
 # File Management
 Pillow==10.1.0
-python-magic==0.4.27
+# Use python-magic on Unix-like systems and python-magic-bin on Windows
+python-magic==0.4.27; sys_platform != "win32"
+python-magic-bin==0.4.14; sys_platform == "win32"
 
 # Email
 Flask-Mail==0.9.1
@@ -52,4 +54,8 @@ redis==5.0.1
 pytest>=7.4.0
 pytest-flask>=1.2.0
 pytest-cov>=4.1.0
+
+# Visual validation (PDF -> image, numeric ops)
+pdf2image>=1.16.0
+numpy>=1.26.0
 

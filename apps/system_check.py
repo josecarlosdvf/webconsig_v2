@@ -6,6 +6,7 @@ Verifica se todas as dependências necessárias estão instaladas
 
 import shutil
 import subprocess
+import platform
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
@@ -71,6 +72,8 @@ class SystemCheck:
         """
         dependencies = []
         
+        # Detecta plataforma para comandos de instalação
+        is_windows = platform.system() == 'Windows'
         # ============================================
         # Dependências de Sistema (comandos)
         # ============================================
@@ -83,33 +86,52 @@ class SystemCheck:
             description='Necessário para converter PDFs em imagens na validação visual de documentos',
             installed=pdftoppm_installed,
             version=pdftoppm_version,
-            install_command='sudo apt-get install -y poppler-utils',
+            install_command=(
+                'choco install poppler -y' if is_windows else 'sudo apt-get install -y poppler-utils'
+            ),
             required_for='Validação visual de PDFs',
             severity='warning'
         ))
         
         # ImageMagick (convert) - útil para manipulação de imagens
-        convert_installed = cls.check_command_exists('convert')
-        convert_version = cls.get_command_version('convert', '-version') if convert_installed else None
+        if is_windows:
+            # Em Windows o binário padrão é `magick` (convert conflita com utilitário do sistema)
+            convert_installed = cls.check_command_exists('magick')
+            convert_version = cls.get_command_version('magick', '-version') if convert_installed else None
+        else:
+            convert_installed = cls.check_command_exists('convert')
+            convert_version = cls.get_command_version('convert', '-version') if convert_installed else None
         dependencies.append(DependencyStatus(
             name='ImageMagick',
             description='Útil para manipulação avançada de imagens',
             installed=convert_installed,
             version=convert_version,
-            install_command='sudo apt-get install -y imagemagick',
+            install_command=(
+                'choco install imagemagick -y' if is_windows else 'sudo apt-get install -y imagemagick'
+            ),
             required_for='Edição avançada de imagens',
             severity='info'
         ))
         
         # Ghostscript - necessário para compressão de PDFs
-        gs_installed = cls.check_command_exists('gs')
-        gs_version = cls.get_command_version('gs', '--version') if gs_installed else None
+        if is_windows:
+            # Ghostscript em Windows geralmente expõe gswin64c/gswin32c
+            gs_cmd = 'gswin64c' if cls.check_command_exists('gswin64c') else (
+                'gswin32c' if cls.check_command_exists('gswin32c') else None
+            )
+            gs_installed = gs_cmd is not None
+            gs_version = cls.get_command_version(gs_cmd, '--version') if gs_installed else None
+        else:
+            gs_installed = cls.check_command_exists('gs')
+            gs_version = cls.get_command_version('gs', '--version') if gs_installed else None
         dependencies.append(DependencyStatus(
             name='Ghostscript',
             description='Necessário para compressão de arquivos PDF',
             installed=gs_installed,
             version=gs_version,
-            install_command='sudo apt-get install -y ghostscript',
+            install_command=(
+                'choco install ghostscript -y' if is_windows else 'sudo apt-get install -y ghostscript'
+            ),
             required_for='Compressão de PDFs',
             severity='warning'
         ))
@@ -122,19 +144,30 @@ class SystemCheck:
             description='Necessário para compressão e conversão de vídeos',
             installed=ffmpeg_installed,
             version=ffmpeg_version,
-            install_command='sudo apt-get install -y ffmpeg',
+            install_command=(
+                'choco install ffmpeg -y' if is_windows else 'sudo apt-get install -y ffmpeg'
+            ),
             required_for='Compressão de vídeos',
             severity='warning'
         ))
         
         # libmagic (file) - para detecção de tipo de arquivo
-        file_installed = cls.check_command_exists('file')
+        if is_windows:
+            # Em Windows normalmente não há `file`; usamos python-magic-bin
+            magic_ok, _ = cls.check_python_package('magic')
+            file_installed = magic_ok
+        else:
+            file_installed = cls.check_command_exists('file')
         dependencies.append(DependencyStatus(
             name='libmagic (file)',
             description='Detecta tipo real de arquivos para validação de segurança',
             installed=file_installed,
-            version=cls.get_command_version('file', '--version') if file_installed else None,
-            install_command='sudo apt-get install -y libmagic1',
+            version=(
+                cls.get_command_version('file', '--version') if (not is_windows and file_installed) else None
+            ),
+            install_command=(
+                'pip install python-magic-bin' if is_windows else 'sudo apt-get install -y libmagic1'
+            ),
             required_for='Validação de tipo de arquivo',
             severity='warning'
         ))
@@ -174,7 +207,7 @@ class SystemCheck:
             description='Detecta tipo MIME real de arquivos',
             installed=magic_installed,
             version=magic_version,
-            install_command='pip install python-magic',
+            install_command=('pip install python-magic-bin' if is_windows else 'pip install python-magic'),
             required_for='Validação de tipo de arquivo',
             severity='warning'
         ))

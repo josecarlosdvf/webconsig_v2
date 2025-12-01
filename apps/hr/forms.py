@@ -136,6 +136,12 @@ class TeamForm(FlaskForm):
         'Chave PIX',
         validators=[Optional(), Length(max=100)]
     )
+    comissao_fator_percentual = DecimalField(
+        'Fator de Comissão (%)',
+        validators=[Optional()],
+        default=100.00,
+        places=2
+    )
     
     # Localização
     location = StringField(

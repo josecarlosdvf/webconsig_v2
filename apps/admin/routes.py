@@ -4,7 +4,7 @@ Rotas de Administração - Usuários, Grupos e Permissões
 """
 
 from flask import (
-    render_template, redirect, url_for, flash, request, jsonify, abort
+    render_template, redirect, url_for, flash, request, jsonify, abort, send_file
 )
 from flask_login import login_required, current_user
 from sqlalchemy import or_, and_
@@ -191,6 +191,137 @@ def users_create():
             flash(f'Erro ao criar usuário: {str(e)}', 'danger')
     
     return render_template('admin/users/form.html', form=form, is_new=True)
+
+
+@blueprint.route('/usuarios/csv-template')
+@login_required
+@permission_required('users.create')
+def users_csv_template():
+    """Download do modelo CSV para importação de usuários"""
+    import io
+    
+    # Cria o conteúdo do CSV modelo
+    csv_content = "username;email;first_name;last_name;password;is_admin;group_name\n"
+    csv_content += "joao.silva;joao@empresa.com;João;Silva;senha123;false;Usuários\n"
+    csv_content += "maria.santos;maria@empresa.com;Maria;Santos;senha456;false;Usuários\n"
+    csv_content += "admin.teste;admin@empresa.com;Admin;Teste;admin123;true;Administradores\n"
+    
+    # Cria o arquivo em memória
+    buffer = io.BytesIO()
+    buffer.write(csv_content.encode('utf-8-sig'))  # BOM para Excel
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='modelo_usuarios.csv'
+    )
+
+
+@blueprint.route('/usuarios/import-csv', methods=['POST'])
+@login_required
+@permission_required('users.create')
+def users_import_csv():
+    """Importação de usuários via CSV"""
+    import csv
+    import io
+    
+    if 'csv_file' not in request.files:
+        return jsonify({'success': False, 'error': 'Nenhum arquivo enviado'}), 400
+    
+    file = request.files['csv_file']
+    if not file.filename.endswith('.csv'):
+        return jsonify({'success': False, 'error': 'O arquivo deve ser CSV'}), 400
+    
+    send_invite = 'send_invite' in request.form
+    skip_errors = 'skip_errors' in request.form
+    
+    try:
+        # Lê o conteúdo do arquivo
+        content = file.read().decode('utf-8-sig')
+        
+        # Detecta separador
+        separator = ';' if ';' in content.split('\n')[0] else ','
+        
+        # Parse CSV
+        reader = csv.DictReader(io.StringIO(content), delimiter=separator)
+        
+        created = 0
+        errors = []
+        
+        for i, row in enumerate(reader, start=2):  # Linha 2 (após cabeçalho)
+            try:
+                # Valida campos obrigatórios
+                username = row.get('username', '').strip().lower()
+                email = row.get('email', '').strip().lower()
+                
+                if not username or not email:
+                    errors.append(f'Linha {i}: username e email são obrigatórios')
+                    if not skip_errors:
+                        raise ValueError('Campos obrigatórios faltando')
+                    continue
+                
+                # Verifica duplicidade
+                if Users.query.filter(
+                    (Users.username == username) | (Users.email == email)
+                ).first():
+                    errors.append(f'Linha {i}: usuário ou email já existe ({username})')
+                    if not skip_errors:
+                        raise ValueError('Usuário duplicado')
+                    continue
+                
+                # Cria usuário
+                password = row.get('password', '').strip() or 'mudar123'
+                user = Users(
+                    username=username,
+                    email=email,
+                    first_name=row.get('first_name', '').strip(),
+                    last_name=row.get('last_name', '').strip(),
+                    is_admin=row.get('is_admin', '').lower() in ('true', '1', 'sim', 'yes'),
+                    is_active=True
+                )
+                user.set_password(password)
+                db.session.add(user)
+                db.session.flush()
+                
+                # Adiciona ao grupo se especificado
+                group_name = row.get('group_name', '').strip()
+                if group_name:
+                    group = UserGroup.query.filter_by(name=group_name).first()
+                    if group:
+                        membership = UserGroupMembership(
+                            user_id=user.id,
+                            group_id=group.id
+                        )
+                        db.session.add(membership)
+                
+                created += 1
+                
+            except Exception as e:
+                errors.append(f'Linha {i}: {str(e)}')
+                if not skip_errors:
+                    db.session.rollback()
+                    return jsonify({'success': False, 'error': f'Erro na linha {i}: {str(e)}'}), 400
+        
+        db.session.commit()
+        
+        AuditLog.log(
+            action='users.bulk_import',
+            table_name='users',
+            description=f'Importação CSV: {created} usuários criados, {len(errors)} erros',
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'created': created,
+            'errors': errors
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @blueprint.route('/usuarios/<int:user_id>')
@@ -982,6 +1113,64 @@ def groups_edit(group_id):
         is_new=False,
         permissions_grouped=permissions
     )
+
+
+@blueprint.route('/grupos/<int:group_id>/permissions', methods=['GET', 'POST'])
+@login_required
+@permission_required('groups.edit')
+def groups_permissions_api(group_id):
+    """API para gerenciar permissões do grupo"""
+    
+    group = UserGroup.query_active().filter_by(id=group_id).first()
+    if not group:
+        return jsonify({'success': False, 'error': 'Grupo não encontrado.'}), 404
+    
+    if request.method == 'GET':
+        # Retorna todas as permissões e as do grupo
+        all_permissions = Permission.get_all_grouped()
+        group_permission_ids = [p.id for p in group.permissions]
+        
+        # Formata para JSON
+        permissions_dict = {}
+        for module, perms in all_permissions.items():
+            permissions_dict[module] = [
+                {'id': p.id, 'code': p.code, 'name': p.name}
+                for p in perms
+            ]
+        
+        return jsonify({
+            'success': True,
+            'all_permissions': permissions_dict,
+            'group_permissions': group_permission_ids
+        })
+    
+    else:  # POST
+        try:
+            data = request.get_json()
+            permission_ids = data.get('permissions', [])
+            
+            # Atualiza permissões
+            group.permissions = []
+            for perm_id in permission_ids:
+                perm = Permission.query.get(perm_id)
+                if perm:
+                    group.permissions.append(perm)
+            
+            db.session.commit()
+            
+            AuditLog.log(
+                action='group.permissions_updated',
+                table_name='group',
+                record_id=group.id,
+                description=f'Permissões do grupo {group.name} atualizadas ({len(permission_ids)} permissões)',
+                user_id=current_user.id
+            )
+            
+            return jsonify({'success': True})
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @blueprint.route('/grupos/<int:group_id>/excluir', methods=['POST'])

@@ -197,6 +197,15 @@ class Team(db.Model, BaseModel):
         comment='Chave PIX'
     )
     
+    # Comissão para corbans (percentual sobre comissão externos das tabelas)
+    # Ex: 110 = 110% (10% a mais), 90 = 90% (10% a menos)
+    comissao_fator_percentual = db.Column(
+        db.Numeric(5, 2),
+        nullable=True,
+        default=100.00,
+        comment='Fator percentual sobre comissão externos (ex: 110 = 110%)'
+    )
+    
     # Localização
     location = db.Column(
         db.String(200), 

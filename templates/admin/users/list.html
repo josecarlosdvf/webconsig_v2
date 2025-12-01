@@ -39,6 +39,11 @@
                 <a href="{{ url_for('admin_blueprint.terms_settings') }}" class="btn btn-outline-secondary" title="Termos de Uso">
                     <i class="ti ti-file-text me-2"></i> Termos de Uso
                 </a>
+                {% if perm.can('users.create') %}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                    <i class="ti ti-file-import me-2"></i> Importar CSV
+                </button>
+                {% endif %}
                 {% if perm.can('users.invite') %}
                 <a href="{{ url_for('admin_blueprint.invitations_create') }}" class="btn btn-success">
                     <i class="ti ti-mail-forward me-2"></i> Enviar Convite
@@ -261,6 +266,79 @@
     </div>
 </div>
 
+<!-- Modal Importar CSV -->
+<div class="modal modal-blur fade" id="importCsvModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ti ti-file-import me-2"></i>
+                    Importar Usuários via CSV
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="importCsvForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <div><i class="ti ti-info-circle alert-icon"></i></div>
+                            <div>
+                                <h4 class="alert-title">Formato do arquivo</h4>
+                                <p class="mb-2">O arquivo CSV deve conter as seguintes colunas:</p>
+                                <code>username;email;first_name;last_name;password;is_admin;group_name</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <a href="{{ url_for('admin_blueprint.users_csv_template') }}" class="btn btn-outline-primary">
+                            <i class="ti ti-download me-2"></i> Baixar Modelo CSV
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required">Arquivo CSV</label>
+                        <input type="file" name="csv_file" id="csvFile" class="form-control" accept=".csv" required>
+                        <small class="form-hint">Selecione um arquivo CSV com os dados dos usuários</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-check">
+                            <input type="checkbox" name="send_invite" class="form-check-input" checked>
+                            <span class="form-check-label">Enviar convite por e-mail após criar</span>
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-check">
+                            <input type="checkbox" name="skip_errors" class="form-check-input" checked>
+                            <span class="form-check-label">Continuar importação mesmo com erros (ignora linhas inválidas)</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Preview dos dados -->
+                    <div id="csvPreview" style="display: none;">
+                        <hr>
+                        <h4>Pré-visualização</h4>
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-sm table-striped">
+                                <thead id="csvPreviewHead"></thead>
+                                <tbody id="csvPreviewBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> Importar Usuários
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Forms ocultos para ações -->
 <form id="unlock-form" method="post" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -416,5 +494,90 @@ function sendInvite(userId, email) {
         }
     });
 }
+
+// === Importação CSV ===
+document.getElementById('csvFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+            Swal.fire('Erro', 'O arquivo deve ter pelo menos o cabeçalho e uma linha de dados', 'error');
+            return;
+        }
+        
+        // Parse CSV (considerando ; como separador)
+        const separator = lines[0].includes(';') ? ';' : ',';
+        const headers = lines[0].split(separator).map(h => h.trim().replace(/"/g, ''));
+        
+        const headHtml = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+        document.getElementById('csvPreviewHead').innerHTML = headHtml;
+        
+        let bodyHtml = '';
+        const maxPreview = Math.min(lines.length, 6); // Mostra até 5 linhas
+        for (let i = 1; i < maxPreview; i++) {
+            const cols = lines[i].split(separator).map(c => c.trim().replace(/"/g, ''));
+            bodyHtml += '<tr>' + cols.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        }
+        if (lines.length > 6) {
+            bodyHtml += `<tr><td colspan="${headers.length}" class="text-muted text-center">... e mais ${lines.length - 6} linhas</td></tr>`;
+        }
+        document.getElementById('csvPreviewBody').innerHTML = bodyHtml;
+        document.getElementById('csvPreview').style.display = 'block';
+    };
+    reader.readAsText(file);
+});
+
+document.getElementById('importCsvForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    Swal.fire({
+        title: 'Importando...',
+        html: 'Processando arquivo CSV...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+    
+    fetch('{{ url_for("admin_blueprint.users_import_csv") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let message = `${data.created} usuário(s) criado(s) com sucesso.`;
+            if (data.errors && data.errors.length > 0) {
+                message += `<br><br><strong>Erros:</strong><br>` + 
+                    data.errors.slice(0, 5).map(e => `- ${e}`).join('<br>');
+                if (data.errors.length > 5) {
+                    message += `<br>... e mais ${data.errors.length - 5} erros`;
+                }
+            }
+            
+            Swal.fire({
+                icon: data.errors && data.errors.length > 0 ? 'warning' : 'success',
+                title: 'Importação concluída',
+                html: message
+            }).then(() => {
+                if (data.created > 0) location.reload();
+            });
+        } else {
+            Swal.fire('Erro', data.error || 'Erro na importação', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        Swal.fire('Erro', 'Erro de conexão', 'error');
+    });
+});
 </script>
 {% endblock %}

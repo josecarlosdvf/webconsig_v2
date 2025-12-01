@@ -31,7 +31,7 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('authentication_blueprint.profile') }}">
-                            {{ form.hidden_tag() }}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="save_profile" value="1">
                             
                             <div class="row g-3">
@@ -74,20 +74,20 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('authentication_blueprint.change_password') }}">
-                            {{ password_form.hidden_tag() }}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             
                             <div class="row g-3">
                                 <div class="col-md-12">
                                     <label class="form-label">Senha Atual</label>
-                                    {{ password_form.current_password(class="form-control", type="password", placeholder="Digite sua senha atual") }}
+                                    {{ password_form.current_password(class="form-control", type="password", placeholder="Digite sua senha atual", autocomplete="current-password") }}
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Nova Senha</label>
-                                    {{ password_form.new_password(class="form-control", type="password", placeholder="Nova senha") }}
+                                    {{ password_form.new_password(class="form-control", type="password", placeholder="Nova senha", autocomplete="new-password") }}
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Confirmar Nova Senha</label>
-                                    {{ password_form.confirm_password(class="form-control", type="password", placeholder="Confirme a nova senha") }}
+                                    {{ password_form.confirm_password(class="form-control", type="password", placeholder="Confirme a nova senha", autocomplete="new-password") }}
                                 </div>
                             </div>
                             
@@ -121,7 +121,7 @@
                         <div class="text-muted mb-3">{{ current_user.email }}</div>
                         
                         <form id="avatarForm" action="{{ url_for('authentication_blueprint.update_avatar') }}" method="POST" enctype="multipart/form-data" class="d-none">
-                            {{ form.hidden_tag() }}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="file" id="avatarInput" name="avatar" accept="image/png, image/jpeg, image/gif, image/webp">
                         </form>
                         

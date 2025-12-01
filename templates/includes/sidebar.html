@@ -8,8 +8,8 @@
         
         <h1 class="navbar-brand navbar-brand-autodark">
             <a href="{{ url_for('home_blueprint.dashboard') }}" class="d-flex flex-column align-items-center">
-                <img src="{{ system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image hide-theme-dark">
-                <img src="{{ system.logo_dark_url or system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image hide-theme-light">
+                <!-- Sidebar é sempre escuro, então usa logo_dark_url (versão clara para fundos escuros) -->
+                <img src="{{ system.logo_dark_url or system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image">
                 <span class="mt-1">{{ system.name }}</span>
             </a>
         </h1>

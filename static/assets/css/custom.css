@@ -432,22 +432,15 @@ textarea:focus {
    Logo para Tema Escuro no Sidebar
 ======================================== */
 
-/* Tema Claro: mostrar logo padrão, esconder dark */
-.navbar-vertical .hide-theme-dark {
+/* O sidebar é sempre escuro (navbar-dark), então sempre mostramos a logo clara (para fundos escuros) */
+/* A logo_dark_url é a versão CLARA da logo, para ser usada em fundos escuros */
+
+.navbar-vertical .logo-for-dark-bg {
     display: block !important;
 }
 
-.navbar-vertical .hide-theme-light {
+.navbar-vertical .logo-for-light-bg {
     display: none !important;
-}
-
-/* Tema Escuro: mostrar logo dark, esconder padrão */
-[data-bs-theme="dark"] .navbar-vertical .hide-theme-dark {
-    display: none !important;
-}
-
-[data-bs-theme="dark"] .navbar-vertical .hide-theme-light {
-    display: block !important;
 }
 
 /* ========================================
@@ -456,16 +449,47 @@ textarea:focus {
 
 /* Garantir que o avatar exiba corretamente */
 .avatar {
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
 }
 
 /* Avatar no perfil */
 .avatar-profile {
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    width: 120px !important;
+    height: 120px !important;
+}
+
+/* Overlay para upload de avatar */
+.avatar-upload-overlay {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: var(--tblr-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid white;
+}
+
+.avatar-upload-overlay:hover {
+    background: var(--tblr-primary-darken);
+    transform: scale(1.1);
+}
+
+/* Container do avatar */
+.position-relative.d-inline-block {
+    position: relative;
+    display: inline-block;
 }
 
 /* Login centralizado */

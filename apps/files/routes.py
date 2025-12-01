@@ -64,6 +64,54 @@ def index():
     )
 
 
+@blueprint.route('/validacao-pendente')
+@login_required
+def pending_validation():
+    """Lista de documentos aguardando validação"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    # Busca arquivos pendentes de validação
+    query = File.query_active().filter_by(validation_status='pending')
+    
+    # Filtro por categoria
+    category_id = request.args.get('category_id', type=int)
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+    
+    # Filtro por tipo de entidade
+    entity_type = request.args.get('entity_type')
+    if entity_type:
+        query = query.filter_by(entity_type=entity_type)
+    
+    # Filtro por validação visual (se falhou)
+    visual_failed = request.args.get('visual_failed')
+    if visual_failed == 'true':
+        query = query.filter_by(visual_validation_passed=False)
+    
+    # Ordena por data de upload
+    pagination = query.order_by(File.uploaded_at.desc()).paginate(page=page, per_page=per_page)
+    
+    # Categorias para filtro
+    categories = FileCategory.query_active().filter_by(requires_validation=True).all()
+    
+    # Contadores
+    total_pending = File.query_active().filter_by(validation_status='pending').count()
+    visual_failed_count = File.query_active().filter_by(
+        validation_status='pending',
+        visual_validation_passed=False
+    ).count()
+    
+    return render_template(
+        'files/pending_validation.html',
+        files=pagination.items,
+        pagination=pagination,
+        categories=categories,
+        total_pending=total_pending,
+        visual_failed_count=visual_failed_count
+    )
+
+
 @blueprint.route('/entity/<entity_type>/<int:entity_id>')
 @login_required
 def entity_files(entity_type, entity_id):

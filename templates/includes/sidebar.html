@@ -96,6 +96,11 @@
                         <a class="dropdown-item" href="{{ url_for('files_blueprint.index') }}">
                             <i class="ti ti-files me-2"></i> Meus Arquivos
                         </a>
+                        {% if user_has_permission('files.validate') or current_user.is_admin %}
+                        <a class="dropdown-item" href="{{ url_for('files_blueprint.pending_validation') }}">
+                            <i class="ti ti-file-check me-2"></i> Validação Pendente
+                        </a>
+                        {% endif %}
                         {% if user_has_permission('files.manage_categories') or current_user.is_admin %}
                         <a class="dropdown-item" href="{{ url_for('files_blueprint.categories') }}">
                             <i class="ti ti-category me-2"></i> Categorias

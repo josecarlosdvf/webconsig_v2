@@ -1,0 +1,345 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Validação de Documentos{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Arquivos</div>
+                <h2 class="page-title">
+                    <i class="ti ti-file-check me-2"></i>
+                    Validação de Documentos
+                </h2>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <!-- Contadores -->
+                    <span class="badge bg-yellow-lt py-2 px-3">
+                        <i class="ti ti-clock me-1"></i>
+                        {{ total_pending }} Pendente(s)
+                    </span>
+                    {% if visual_failed_count > 0 %}
+                    <span class="badge bg-red-lt py-2 px-3">
+                        <i class="ti ti-alert-triangle me-1"></i>
+                        {{ visual_failed_count }} com problema visual
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page Body -->
+<div class="page-body">
+    <div class="container-xl">
+        
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Categoria</label>
+                        <select name="category_id" class="form-select" onchange="this.form.submit()">
+                            <option value="">Todas as categorias</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if request.args.get('category_id')|int == cat.id %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de Entidade</label>
+                        <select name="entity_type" class="form-select" onchange="this.form.submit()">
+                            <option value="">Todos os tipos</option>
+                            <option value="employee" {% if request.args.get('entity_type') == 'employee' %}selected{% endif %}>
+                                Funcionários
+                            </option>
+                            <option value="team" {% if request.args.get('entity_type') == 'team' %}selected{% endif %}>
+                                Equipes
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Filtro Visual</label>
+                        <select name="visual_failed" class="form-select" onchange="this.form.submit()">
+                            <option value="">Todos</option>
+                            <option value="true" {% if request.args.get('visual_failed') == 'true' %}selected{% endif %}>
+                                Com problema visual
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <a href="{{ url_for('files_blueprint.pending_validation') }}" class="btn btn-outline-secondary">
+                            <i class="ti ti-filter-off me-1"></i> Limpar Filtros
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if files %}
+        <!-- Lista de Arquivos -->
+        <div class="row row-cards">
+            {% for file in files %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100" id="file-card-{{ file.id }}">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center w-100">
+                            <div class="me-3">
+                                {% if file.is_image %}
+                                <span class="avatar avatar-lg" style="background-image: url({{ url_for('files_blueprint.serve_file', file_id=file.id) }})"></span>
+                                {% else %}
+                                <span class="avatar avatar-lg bg-azure-lt">
+                                    <i class="ti ti-file-text fs-2"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <h3 class="card-title mb-1 text-truncate" title="{{ file.original_name }}">
+                                    {{ file.original_name }}
+                                </h3>
+                                <div class="text-muted small">
+                                    {{ file.category.name if file.category else 'Sem categoria' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Informações do arquivo -->
+                        <div class="datagrid mb-3">
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Entidade</div>
+                                <div class="datagrid-content">
+                                    {% if file.entity_type == 'employee' %}
+                                    <a href="{{ url_for('hr_blueprint.employee_view', id=file.entity_id) }}">
+                                        <i class="ti ti-user me-1"></i>Funcionário #{{ file.entity_id }}
+                                    </a>
+                                    {% elif file.entity_type == 'team' %}
+                                    <a href="{{ url_for('hr_blueprint.team_view', id=file.entity_id) }}">
+                                        <i class="ti ti-users me-1"></i>Equipe #{{ file.entity_id }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Enviado em</div>
+                                <div class="datagrid-content">
+                                    {{ file.uploaded_at.strftime('%d/%m/%Y %H:%M') if file.uploaded_at else '-' }}
+                                </div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Tamanho</div>
+                                <div class="datagrid-content">{{ file.size_formatted }}</div>
+                            </div>
+                            {% if file.visual_similarity_score is not none %}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">Similaridade</div>
+                                <div class="datagrid-content">
+                                    {% set score = (file.visual_similarity_score * 100)|round|int %}
+                                    <span class="badge {% if score >= 70 %}bg-green{% elif score >= 50 %}bg-yellow{% else %}bg-red{% endif %}">
+                                        {{ score }}%
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Alerta de problema visual -->
+                        {% if file.visual_validation_passed == false %}
+                        <div class="alert alert-danger alert-sm mb-3">
+                            <div class="d-flex">
+                                <div>
+                                    <i class="ti ti-alert-triangle alert-icon"></i>
+                                </div>
+                                <div>
+                                    <h4 class="alert-title">Problema na validação visual</h4>
+                                    <div class="text-muted">
+                                        {{ file.validation_notes or 'O documento não corresponde ao modelo de referência.' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Comparação visual (se tiver modelo de referência) -->
+                        {% if file.category and file.category.reference_model_path and file.is_image %}
+                        <div class="mb-3">
+                            <label class="form-label">Comparação Visual</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="text-muted small text-center mb-1">Modelo</div>
+                                    <div class="ratio ratio-4x3 bg-light rounded border">
+                                        <img src="{{ url_for('static', filename='uploads/' ~ file.category.reference_model_path.split('/')[-1]) }}" 
+                                             alt="Modelo" class="img-fluid object-fit-contain p-1" 
+                                             onerror="this.parentElement.innerHTML='<div class=\'d-flex align-items-center justify-content-center h-100\'><span class=\'text-muted\'>Sem modelo</span></div>'">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small text-center mb-1">Enviado</div>
+                                    <div class="ratio ratio-4x3 bg-light rounded border">
+                                        <img src="{{ url_for('files_blueprint.serve_file', file_id=file.id) }}" 
+                                             alt="Documento" class="img-fluid object-fit-contain p-1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success flex-grow-1" onclick="validateFile({{ file.id }}, 'approve')">
+                                <i class="ti ti-check me-1"></i> Aprovar
+                            </button>
+                            <button type="button" class="btn btn-danger flex-grow-1" onclick="validateFile({{ file.id }}, 'reject')">
+                                <i class="ti ti-x me-1"></i> Rejeitar
+                            </button>
+                            <a href="{{ url_for('files_blueprint.serve_file', file_id=file.id) }}" 
+                               class="btn btn-outline-secondary" target="_blank" title="Visualizar">
+                                <i class="ti ti-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginação -->
+        {% if pagination.pages > 1 %}
+        <div class="card mt-4">
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">
+                    Mostrando <span>{{ ((pagination.page - 1) * pagination.per_page) + 1 }}</span> a 
+                    <span>{{ min(pagination.page * pagination.per_page, pagination.total) }}</span> de 
+                    <span>{{ pagination.total }}</span> registros
+                </p>
+                <ul class="pagination m-0 ms-auto">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{% if pagination.has_prev %}{{ url_for('files_blueprint.pending_validation', page=pagination.prev_num, **request.args) }}{% else %}#{% endif %}">
+                            <i class="ti ti-chevron-left"></i> anterior
+                        </a>
+                    </li>
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('files_blueprint.pending_validation', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{% if pagination.has_next %}{{ url_for('files_blueprint.pending_validation', page=pagination.next_num, **request.args) }}{% else %}#{% endif %}">
+                            próximo <i class="ti ti-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- Estado vazio -->
+        <div class="empty">
+            <div class="empty-icon">
+                <i class="ti ti-check text-green" style="font-size: 4rem;"></i>
+            </div>
+            <p class="empty-title">Nenhum documento pendente</p>
+            <p class="empty-subtitle text-muted">
+                Todos os documentos foram validados ou não há documentos que requerem validação.
+            </p>
+            <div class="empty-action">
+                <a href="{{ url_for('files_blueprint.index') }}" class="btn btn-primary">
+                    <i class="ti ti-files me-2"></i>Ver todos os arquivos
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function validateFile(fileId, action) {
+    const actionText = action === 'approve' ? 'aprovar' : 'rejeitar';
+    const actionPast = action === 'approve' ? 'aprovado' : 'rejeitado';
+    
+    Swal.fire({
+        title: action === 'approve' ? 'Aprovar documento?' : 'Rejeitar documento?',
+        text: `Deseja ${actionText} este documento?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: action === 'approve' ? 'Sim, aprovar' : 'Sim, rejeitar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: action === 'approve' ? '#2fb344' : '#dc3545',
+        input: action === 'reject' ? 'textarea' : null,
+        inputLabel: action === 'reject' ? 'Motivo da rejeição (opcional)' : null,
+        inputPlaceholder: action === 'reject' ? 'Descreva o motivo...' : null
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`{{ url_for('files_blueprint.validate_file', file_id=0) }}`.replace('0', fileId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    notes: result.value || null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: `Documento ${actionPast}!`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    // Remove o card com animação
+                    const card = document.getElementById(`file-card-${fileId}`);
+                    if (card) {
+                        card.closest('.col-md-6').style.transition = 'all 0.3s ease';
+                        card.closest('.col-md-6').style.opacity = '0';
+                        card.closest('.col-md-6').style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            card.closest('.col-md-6').remove();
+                            // Verifica se não tem mais cards
+                            if (document.querySelectorAll('[id^="file-card-"]').length === 0) {
+                                location.reload();
+                            }
+                        }, 300);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: data.error || 'Erro ao processar'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro de conexão'
+                });
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

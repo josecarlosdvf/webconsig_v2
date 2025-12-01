@@ -3,7 +3,7 @@
 Rotas de Autenticação
 """
 
-from flask import render_template, redirect, request, url_for, flash, session, jsonify, make_response
+from flask import render_template, redirect, request, url_for, flash, session, jsonify, make_response, current_app
 from flask_login import current_user, login_user, logout_user, login_required
 
 from apps import db
@@ -57,6 +57,9 @@ def login():
             if not user.is_active:
                 msg = Messages.get('account_inactive')
             else:
+                # Atualiza último login
+                user.update_last_login()
+                
                 # Realiza o login
                 login_user(user, remember=form.remember.data)
                 
@@ -212,6 +215,128 @@ def change_password():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(error, 'danger')
+    
+    return redirect(url_for('authentication_blueprint.profile'))
+
+
+@blueprint.route('/perfil/avatar', methods=['POST'])
+@login_required
+def update_avatar():
+    """Upload/atualização de foto do perfil"""
+    import os
+    from werkzeug.utils import secure_filename
+    
+    # Extensões permitidas para avatar
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    MAX_SIZE = 5 * 1024 * 1024  # 5MB
+    
+    if 'avatar' not in request.files:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Nenhum arquivo selecionado'}), 400
+        flash('Nenhum arquivo selecionado.', 'danger')
+        return redirect(url_for('authentication_blueprint.profile'))
+    
+    file = request.files['avatar']
+    
+    if not file or file.filename == '':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Arquivo inválido'}), 400
+        flash('Arquivo inválido.', 'danger')
+        return redirect(url_for('authentication_blueprint.profile'))
+    
+    # Verifica extensão
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_EXTENSIONS:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Formato não permitido. Use: PNG, JPG, GIF ou WebP'}), 400
+        flash('Formato não permitido. Use: PNG, JPG, GIF ou WebP', 'danger')
+        return redirect(url_for('authentication_blueprint.profile'))
+    
+    # Verifica tamanho
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    
+    if size > MAX_SIZE:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Arquivo muito grande. Máximo: 5MB'}), 400
+        flash('Arquivo muito grande. Máximo: 5MB', 'danger')
+        return redirect(url_for('authentication_blueprint.profile'))
+    
+    try:
+        # Define pasta de avatars
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        avatar_folder = os.path.join(upload_folder, 'avatars')
+        os.makedirs(avatar_folder, exist_ok=True)
+        
+        # Nome do arquivo: user_{id}_{timestamp}.{ext}
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        filename = f"user_{current_user.id}_{timestamp}.{ext}"
+        filepath = os.path.join(avatar_folder, filename)
+        
+        # Remove avatar anterior se existir
+        if current_user.avatar_url:
+            old_filename = current_user.avatar_url.split('/')[-1]
+            old_filepath = os.path.join(avatar_folder, old_filename)
+            if os.path.exists(old_filepath):
+                os.remove(old_filepath)
+        
+        # Salva novo arquivo
+        file.save(filepath)
+        
+        # Atualiza URL no usuário
+        current_user.avatar_url = f"/uploads/avatars/{filename}"
+        db.session.commit()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'avatar_url': current_user.avatar_url,
+                'message': 'Foto atualizada com sucesso!'
+            })
+        
+        flash('Foto atualizada com sucesso!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Erro ao atualizar avatar: {e}')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Erro ao salvar arquivo'}), 500
+        flash('Erro ao salvar arquivo.', 'danger')
+    
+    return redirect(url_for('authentication_blueprint.profile'))
+
+
+@blueprint.route('/perfil/avatar/remover', methods=['POST'])
+@login_required
+def remove_avatar():
+    """Remove a foto do perfil"""
+    import os
+    
+    try:
+        if current_user.avatar_url:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+            filename = current_user.avatar_url.split('/')[-1]
+            filepath = os.path.join(upload_folder, 'avatars', filename)
+            
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            
+            current_user.avatar_url = None
+            db.session.commit()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': 'Foto removida com sucesso!'})
+        
+        flash('Foto removida com sucesso!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Erro ao remover avatar: {e}')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Erro ao remover foto'}), 500
+        flash('Erro ao remover foto.', 'danger')
     
     return redirect(url_for('authentication_blueprint.profile'))
 

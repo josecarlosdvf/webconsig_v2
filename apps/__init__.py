@@ -193,6 +193,15 @@ def create_app(config):
     from apps.htmx import init_htmx
     init_htmx(app)
     
+    # Registra rota para servir arquivos de upload (avatars, etc.)
+    from flask import send_from_directory
+    
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        """Serve arquivos da pasta de uploads"""
+        upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+        return send_from_directory(upload_folder, filename)
+    
     # Registra error handlers com logging
     register_error_handlers(app)
     

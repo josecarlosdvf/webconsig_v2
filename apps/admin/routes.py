@@ -594,14 +594,14 @@ def users_send_invite(user_id):
 @admin_required
 def terms_settings():
     """Configurações de termos de uso e consentimento"""
-    from apps.settings.models import SystemSetting
+    from apps.settings.models import SystemSettings
     
     if request.method == 'POST':
         try:
-            SystemSetting.set('terms_of_use', request.form.get('terms_of_use', ''))
-            SystemSetting.set('privacy_policy', request.form.get('privacy_policy', ''))
-            SystemSetting.set('terms_version', request.form.get('terms_version', '1.0'))
-            SystemSetting.set('require_terms_acceptance', 
+            SystemSettings.set('terms_of_use', request.form.get('terms_of_use', ''))
+            SystemSettings.set('privacy_policy', request.form.get('privacy_policy', ''))
+            SystemSettings.set('terms_version', request.form.get('terms_version', '1.0'))
+            SystemSettings.set('require_terms_acceptance', 
                               'true' if request.form.get('require_terms_acceptance') else 'false')
             
             AuditLog.log(
@@ -618,10 +618,10 @@ def terms_settings():
     
     # Carrega configurações atuais
     settings = {
-        'terms_of_use': SystemSetting.get('terms_of_use', ''),
-        'privacy_policy': SystemSetting.get('privacy_policy', ''),
-        'terms_version': SystemSetting.get('terms_version', '1.0'),
-        'require_terms_acceptance': SystemSetting.get('require_terms_acceptance', 'false') == 'true'
+        'terms_of_use': SystemSettings.get('terms_of_use', ''),
+        'privacy_policy': SystemSettings.get('privacy_policy', ''),
+        'terms_version': SystemSettings.get('terms_version', '1.0'),
+        'require_terms_acceptance': SystemSettings.get('require_terms_acceptance', 'false') == 'true'
     }
     
     return render_template('admin/terms/settings.html', settings=settings)

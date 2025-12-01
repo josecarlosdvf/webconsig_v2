@@ -108,16 +108,33 @@
                 <!-- Card do Perfil -->
                 <div class="card mb-4">
                     <div class="card-body text-center">
-                        <span class="avatar avatar-xl mb-3" 
-                              style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})">
-                        </span>
+                        <div class="position-relative d-inline-block mb-3">
+                            <span class="avatar avatar-xl avatar-profile" id="avatarPreview"
+                                  style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% elif current_user.employee and current_user.employee.photo_url %}{{ current_user.employee.photo_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})">
+                            </span>
+                            <label class="avatar-upload-overlay" for="avatarInput" title="Alterar foto">
+                                <i class="ti ti-camera"></i>
+                            </label>
+                        </div>
                         <h3 class="m-0 mb-1">{{ current_user.full_name }}</h3>
                         <div class="text-muted">@{{ current_user.username }}</div>
                         <div class="text-muted mb-3">{{ current_user.email }}</div>
                         
-                        <button class="btn btn-outline-primary btn-sm" disabled>
-                            <i class="ti ti-camera me-1"></i> Alterar Foto
-                        </button>
+                        <form id="avatarForm" action="{{ url_for('authentication_blueprint.update_avatar') }}" method="POST" enctype="multipart/form-data" class="d-none">
+                            {{ form.hidden_tag() }}
+                            <input type="file" id="avatarInput" name="avatar" accept="image/png, image/jpeg, image/gif, image/webp">
+                        </form>
+                        
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('avatarInput').click()">
+                                <i class="ti ti-camera me-1"></i> Alterar Foto
+                            </button>
+                            {% if current_user.avatar_url %}
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAvatar()">
+                                <i class="ti ti-trash me-1"></i> Remover
+                            </button>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 
@@ -181,4 +198,164 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block styles %}
+<style>
+.avatar-profile {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.avatar-profile:hover {
+    opacity: 0.8;
+}
+.avatar-upload-overlay {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: var(--tblr-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    border: 2px solid var(--tblr-bg-surface);
+}
+.avatar-upload-overlay:hover {
+    transform: scale(1.1);
+    background: var(--tblr-primary-darken);
+}
+.avatar-upload-overlay i {
+    font-size: 14px;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('avatarInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validações do lado do cliente
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Formato inválido',
+            text: 'Use: PNG, JPG, GIF ou WebP'
+        });
+        return;
+    }
+    
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Arquivo muito grande',
+            text: 'O tamanho máximo é 5MB'
+        });
+        return;
+    }
+    
+    // Preview da imagem
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('avatarPreview').style.backgroundImage = `url(${e.target.result})`;
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload via AJAX
+    const formData = new FormData(document.getElementById('avatarForm'));
+    
+    Swal.fire({
+        title: 'Atualizando foto...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('{{ url_for("authentication_blueprint.update_avatar") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: data.error || 'Erro ao atualizar foto'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: 'Erro de conexão'
+        });
+    });
+});
+
+function removeAvatar() {
+    Swal.fire({
+        title: 'Remover foto?',
+        text: 'A foto do perfil será removida.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, remover',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('{{ url_for("authentication_blueprint.remove_avatar") }}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Foto removida!',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
 {% endblock %}

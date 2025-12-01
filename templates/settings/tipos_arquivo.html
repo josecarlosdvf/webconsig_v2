@@ -35,9 +35,19 @@
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
+                            {% if category.reference_image %}
+                            <div class="file-preview-container me-2" style="position: relative;">
+                                <span class="avatar avatar-sm bg-azure-lt cursor-pointer" data-bs-toggle="tooltip" data-bs-html="true" 
+                                      title="<img src='{{ url_for('static', filename='uploads/references/' + category.reference_image) }}' style='max-width:200px;max-height:200px;'>">
+                                    <img src="{{ url_for('static', filename='uploads/references/' + category.reference_image) }}" 
+                                         style="width:100%;height:100%;object-fit:cover;">
+                                </span>
+                            </div>
+                            {% else %}
                             <span class="avatar avatar-sm bg-azure-lt me-2">
                                 <i class="fas fa-file"></i>
                             </span>
+                            {% endif %}
                             <div>
                                 <div class="fw-medium">{{ category.name }}</div>
                                 {% if category.description %}
@@ -58,36 +68,39 @@
                     <td class="text-muted small">{{ category.max_size_mb }}MB</td>
                     <td>
                         {% if category.is_required %}
-                        <span class="badge bg-yellow-lt" title="Obrigatório">
-                            <i class="fas fa-exclamation-circle"></i>
+                        <span class="badge bg-warning text-dark" title="Obrigatório">
+                            <i class="fas fa-exclamation-circle me-1"></i>Obrig.
                         </span>
                         {% endif %}
                         {% if category.requires_validation %}
-                        <span class="badge bg-purple-lt" title="Requer validação">
-                            <i class="fas fa-check-circle"></i>
+                        <span class="badge bg-purple" title="Requer validação">
+                            <i class="fas fa-check-circle me-1"></i>Valid.
                         </span>
                         {% endif %}
                         {% if category.allow_multiple %}
-                        <span class="badge bg-cyan-lt" title="Permite múltiplos">
-                            <i class="fas fa-copy"></i>
+                        <span class="badge bg-info" title="Permite múltiplos">
+                            <i class="fas fa-copy me-1"></i>Multi
                         </span>
                         {% endif %}
                         {% if category.enable_visual_validation %}
-                        <span class="badge bg-green-lt" title="Validação visual ativada">
-                            <i class="fas fa-eye"></i>
+                        <span class="badge bg-success" title="Validação visual ativada">
+                            <i class="fas fa-eye me-1"></i>Visual
                         </span>
+                        {% endif %}
+                        {% if not category.is_required and not category.requires_validation and not category.allow_multiple and not category.enable_visual_validation %}
+                        <span class="text-muted">-</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if category.is_active %}
-                        <span class="badge bg-success-lt">Ativo</span>
+                        <span class="badge bg-success">Ativo</span>
                         {% else %}
-                        <span class="badge bg-danger-lt">Inativo</span>
+                        <span class="badge bg-danger">Inativo</span>
                         {% endif %}
                     </td>
                     <td>
                         <div class="dropdown">
-                            <button class="btn btn-ghost-secondary btn-icon btn-sm" data-bs-toggle="dropdown">
+                            <button class="btn btn-outline-secondary btn-icon btn-sm" data-bs-toggle="dropdown">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end" style="z-index: 1050;">

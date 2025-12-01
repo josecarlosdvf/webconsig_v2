@@ -222,13 +222,9 @@ def change_password():
 @blueprint.route('/perfil/avatar', methods=['POST'])
 @login_required
 def update_avatar():
-    """Upload/atualização de foto do perfil"""
-    import os
-    from werkzeug.utils import secure_filename
-    
-    # Extensões permitidas para avatar
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-    MAX_SIZE = 5 * 1024 * 1024  # 5MB
+    """Upload/atualização de foto do perfil usando o serviço de arquivos"""
+    from apps.files.services import FileService, FileValidationError
+    from apps.files.models import File, FileCategory
     
     if 'avatar' not in request.files:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -244,49 +240,42 @@ def update_avatar():
         flash('Arquivo inválido.', 'danger')
         return redirect(url_for('authentication_blueprint.profile'))
     
-    # Verifica extensão
-    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    if ext not in ALLOWED_EXTENSIONS:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'error': 'Formato não permitido. Use: PNG, JPG, GIF ou WebP'}), 400
-        flash('Formato não permitido. Use: PNG, JPG, GIF ou WebP', 'danger')
-        return redirect(url_for('authentication_blueprint.profile'))
-    
-    # Verifica tamanho
-    file.seek(0, 2)
-    size = file.tell()
-    file.seek(0)
-    
-    if size > MAX_SIZE:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'error': 'Arquivo muito grande. Máximo: 5MB'}), 400
-        flash('Arquivo muito grande. Máximo: 5MB', 'danger')
-        return redirect(url_for('authentication_blueprint.profile'))
-    
     try:
-        # Define pasta de avatars
-        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-        avatar_folder = os.path.join(upload_folder, 'avatars')
-        os.makedirs(avatar_folder, exist_ok=True)
+        # Verificar se existe categoria para foto de perfil de usuário
+        category = FileCategory.get_by_code('user_avatar')
         
-        # Nome do arquivo: user_{id}_{timestamp}.{ext}
-        from datetime import datetime
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        filename = f"user_{current_user.id}_{timestamp}.{ext}"
-        filepath = os.path.join(avatar_folder, filename)
+        if not category:
+            # Criar categoria se não existir
+            category = FileCategory(
+                code='user_avatar',
+                name='Foto de Perfil',
+                description='Foto de perfil de usuários',
+                entity_type='user',
+                allowed_extensions='jpg,jpeg,png,gif,webp',
+                max_file_size_mb=5,
+                allow_multiple=False,
+                is_active=True
+            )
+            db.session.add(category)
+            db.session.commit()
         
-        # Remove avatar anterior se existir
-        if current_user.avatar_url:
-            old_filename = current_user.avatar_url.split('/')[-1]
-            old_filepath = os.path.join(avatar_folder, old_filename)
-            if os.path.exists(old_filepath):
-                os.remove(old_filepath)
+        # Remove arquivo anterior se existir
+        existing_files = File.get_for_entity('user', current_user.id, 'user_avatar')
+        for f in existing_files:
+            f.soft_delete(current_user.id)
         
-        # Salva novo arquivo
-        file.save(filepath)
+        # Faz upload usando o FileService
+        file_record = FileService.upload(
+            file=file,
+            category_code='user_avatar',
+            entity_type='user',
+            entity_id=current_user.id,
+            uploaded_by_id=current_user.id,
+            description=f'Foto de perfil de {current_user.username}'
+        )
         
-        # Atualiza URL no usuário
-        current_user.avatar_url = f"/uploads/avatars/{filename}"
+        # Atualiza URL no usuário (usa URL direta para avatares)
+        current_user.avatar_url = file_record.direct_url
         db.session.commit()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -298,9 +287,15 @@ def update_avatar():
         
         flash('Foto atualizada com sucesso!', 'success')
         
+    except FileValidationError as e:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': str(e)}), 400
+        flash(str(e), 'danger')
+        
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f'Erro ao atualizar avatar: {e}')
+        current_app.logger.error(f'Erro ao atualizar avatar: {e}', exc_info=True)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': False, 'error': 'Erro ao salvar arquivo'}), 500
         flash('Erro ao salvar arquivo.', 'danger')
@@ -312,19 +307,17 @@ def update_avatar():
 @login_required
 def remove_avatar():
     """Remove a foto do perfil"""
-    import os
+    from apps.files.models import File
     
     try:
-        if current_user.avatar_url:
-            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-            filename = current_user.avatar_url.split('/')[-1]
-            filepath = os.path.join(upload_folder, 'avatars', filename)
-            
-            if os.path.exists(filepath):
-                os.remove(filepath)
-            
-            current_user.avatar_url = None
-            db.session.commit()
+        # Remove arquivos de avatar do usuário
+        existing_files = File.get_for_entity('user', current_user.id, 'user_avatar')
+        for f in existing_files:
+            f.soft_delete(current_user.id)
+        
+        # Limpa URL do avatar no usuário
+        current_user.avatar_url = None
+        db.session.commit()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'message': 'Foto removida com sucesso!'})
@@ -333,7 +326,7 @@ def remove_avatar():
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f'Erro ao remover avatar: {e}')
+        current_app.logger.error(f'Erro ao remover avatar: {e}', exc_info=True)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': False, 'error': 'Erro ao remover foto'}), 500
         flash('Erro ao remover foto.', 'danger')

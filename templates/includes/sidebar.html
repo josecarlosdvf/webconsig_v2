@@ -8,9 +8,7 @@
         
         <h1 class="navbar-brand navbar-brand-autodark">
             <a href="{{ url_for('home_blueprint.dashboard') }}" class="d-flex flex-column align-items-center">
-                <!-- Sidebar é sempre escuro, então usa logo_dark_url (versão clara para fundos escuros) -->
-                <img src="{{ system.logo_dark_url or system.logo_url }}" height="32" alt="{{ system.name }}" class="navbar-brand-image">
-                <span class="mt-1">{{ system.name }}</span>
+                <span class="fs-3 fw-bold">{{ system.name }}</span>
             </a>
         </h1>
         
@@ -18,7 +16,7 @@
         <div class="navbar-nav flex-row d-lg-none">
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
-                    <span class="avatar avatar-sm" style="background-image: url('{% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %}')"></span>
+                    <span class="avatar avatar-sm" style="background-image: url({% if current_user.avatar_url %}{{ current_user.avatar_url }}{% else %}{{ ASSETS_ROOT }}/img/team/profile-picture-3.jpg{% endif %})"></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
                     <a class="dropdown-item" href="{{ url_for('authentication_blueprint.profile') }}">
@@ -97,11 +95,6 @@
                         <a class="dropdown-item" href="{{ url_for('files_blueprint.index') }}">
                             <i class="ti ti-files me-2"></i> Meus Arquivos
                         </a>
-                        {% if user_has_permission('files.validate') or current_user.is_admin %}
-                        <a class="dropdown-item" href="{{ url_for('files_blueprint.pending_validation') }}">
-                            <i class="ti ti-file-check me-2"></i> Validação Pendente
-                        </a>
-                        {% endif %}
                         {% if user_has_permission('files.manage_categories') or current_user.is_admin %}
                         <a class="dropdown-item" href="{{ url_for('files_blueprint.categories') }}">
                             <i class="ti ti-category me-2"></i> Categorias

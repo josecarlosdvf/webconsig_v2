@@ -361,20 +361,28 @@ const csrfToken = '{{ csrf_token() }}';
 
 // Toggle entre fator único e diário
 function toggleFatorTipo() {
-    const tipoUnico = document.querySelector('input[name="fator_tipo"][value="unico"]').checked;
-    document.getElementById('fator_unico_container').classList.toggle('d-none', !tipoUnico);
-    document.getElementById('fator_diario_container').classList.toggle('d-none', tipoUnico);
+    const tipoUnico = document.querySelector('input[name="fator_tipo"][value="unico"]');
+    if (!tipoUnico) return;
+    
+    const isUnico = tipoUnico.checked;
+    const unicoContainer = document.getElementById('fator_unico_container');
+    const diarioContainer = document.getElementById('fator_diario_container');
+    
+    if (unicoContainer) unicoContainer.classList.toggle('d-none', !isUnico);
+    if (diarioContainer) diarioContainer.classList.toggle('d-none', isUnico);
 }
 
 // Inicializar toggle na carga
 document.addEventListener('DOMContentLoaded', function() {
     toggleFatorTipo();
     
-    // Inicializar tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    // Inicializar tooltips (com verificação)
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
 });
 
 // Modal de Cadastro (Tipo/Órgão/Banco)
@@ -386,18 +394,28 @@ const titles = {
 };
 
 function openCadastroModal(tipo) {
-    if (!cadastroModal) {
-        cadastroModal = new bootstrap.Modal(document.getElementById('cadastroModal'));
+    const modalEl = document.getElementById('cadastroModal');
+    if (!modalEl) return;
+    
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        if (!cadastroModal) {
+            cadastroModal = new bootstrap.Modal(modalEl);
+        }
+        
+        document.getElementById('cadastroModalTitle').textContent = titles[tipo];
+        document.getElementById('cadastro_tipo').value = tipo;
+        document.getElementById('cadastroForm').reset();
+        
+        // Mostrar campo nome_curto apenas para banco
+        document.getElementById('nome_curto_container').classList.toggle('d-none', tipo !== 'banco');
+        
+        cadastroModal.show();
+    } else {
+        // Fallback: usar data-bs-toggle
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        document.body.classList.add('modal-open');
     }
-    
-    document.getElementById('cadastroModalTitle').textContent = titles[tipo];
-    document.getElementById('cadastro_tipo').value = tipo;
-    document.getElementById('cadastroForm').reset();
-    
-    // Mostrar campo nome_curto apenas para banco
-    document.getElementById('nome_curto_container').classList.toggle('d-none', tipo !== 'banco');
-    
-    cadastroModal.show();
 }
 
 async function saveCadastro() {
@@ -445,10 +463,20 @@ async function saveCadastro() {
 let fatoresModal;
 
 function openFatoresDiariosModal() {
-    if (!fatoresModal) {
-        fatoresModal = new bootstrap.Modal(document.getElementById('fatoresDiariosModal'));
+    const modalEl = document.getElementById('fatoresDiariosModal');
+    if (!modalEl) return;
+    
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        if (!fatoresModal) {
+            fatoresModal = new bootstrap.Modal(modalEl);
+        }
+        fatoresModal.show();
+    } else {
+        // Fallback
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        document.body.classList.add('modal-open');
     }
-    fatoresModal.show();
 }
 
 function preencherFatoresIguais() {
@@ -486,9 +514,21 @@ function salvarFatoresDiarios() {
     });
     
     document.getElementById('fatores_diarios_json').value = JSON.stringify(fatores);
-    document.getElementById('fatores_count').textContent = Object.keys(fatores).length;
+    const countEl = document.getElementById('fatores_count');
+    if (countEl) countEl.textContent = Object.keys(fatores).length;
     
-    fatoresModal.hide();
+    // Fechar modal
+    if (fatoresModal && typeof fatoresModal.hide === 'function') {
+        fatoresModal.hide();
+    } else {
+        const modalEl = document.getElementById('fatoresDiariosModal');
+        if (modalEl) {
+            modalEl.classList.remove('show');
+            modalEl.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+    }
+    
     Swal.fire('Sucesso', `${Object.keys(fatores).length} fatores configurados`, 'success');
 }
 </script>

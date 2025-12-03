@@ -67,7 +67,7 @@
                                 </option>
                                 {% endfor %}
                             </select>
-                            <button type="button" class="btn btn-outline-primary" onclick="openCadastroModal('tipo')" title="Adicionar novo tipo">
+                            <button type="button" class="btn btn-outline-primary" onclick="openCadastroModalTipo()" title="Adicionar novo tipo">
                                 <i class="ti ti-plus"></i>
                             </button>
                         </div>
@@ -85,7 +85,7 @@
                                 </option>
                                 {% endfor %}
                             </select>
-                            <button type="button" class="btn btn-outline-primary" onclick="openCadastroModal('orgao')" title="Adicionar novo órgão">
+                            <button type="button" class="btn btn-outline-primary" onclick="openCadastroModalOrgao()" title="Adicionar novo órgão">
                                 <i class="ti ti-plus"></i>
                             </button>
                         </div>
@@ -103,7 +103,7 @@
                                 </option>
                                 {% endfor %}
                             </select>
-                            <button type="button" class="btn btn-outline-primary" onclick="openCadastroModal('banco')" title="Adicionar novo banco">
+                            <button type="button" class="btn btn-outline-primary" onclick="openCadastroModalBanco()" title="Adicionar novo banco">
                                 <i class="ti ti-plus"></i>
                             </button>
                         </div>
@@ -267,36 +267,101 @@
 
 <!-- Modal para Cadastro de Tipo/Órgão/Banco -->
 <div class="modal fade" id="cadastroModal" tabindex="-1">
+</div>
+
+<!-- Modal para Cadastro de Tipo -->
+<div class="modal fade" id="cadastroModalTipo" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="cadastroModalTitle">Novo Cadastro</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Novo Tipo de Tabela</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="cadastroForm">
-                    <input type="hidden" id="cadastro_tipo" name="tipo">
+                <form id="cadastroFormTipo">
+                    <input type="hidden" id="cadastro_tipo_tipo" name="tipo" value="tipo">
                     
                     <div class="mb-3">
                         <label class="form-label required">Código</label>
-                        <input type="text" class="form-control" id="cadastro_codigo" name="codigo" required maxlength="20">
+                        <input type="text" class="form-control" id="cadastro_codigo_tipo" name="codigo" required maxlength="20">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label required">Nome</label>
-                        <input type="text" class="form-control" id="cadastro_nome" name="nome" required>
+                        <input type="text" class="form-control" id="cadastro_nome_tipo" name="nome" required>
                     </div>
-                    
-                    <div class="mb-3 d-none" id="nome_curto_container">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveCadastroTipo()">
+                    <i class="ti ti-check me-1"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cadastro de Órgão -->
+<div class="modal fade" id="cadastroModalOrgao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Órgão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cadastroFormOrgao">
+                    <input type="hidden" id="cadastro_tipo_orgao" name="tipo" value="orgao">
+                    <div class="mb-3">
+                        <label class="form-label required">Código</label>
+                        <input type="text" class="form-control" id="cadastro_codigo_orgao" name="codigo" required maxlength="20">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Nome</label>
+                        <input type="text" class="form-control" id="cadastro_nome_orgao" name="nome" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveCadastroOrgao()">
+                    <i class="ti ti-check me-1"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cadastro de Banco -->
+<div class="modal fade" id="cadastroModalBanco" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Banco</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cadastroFormBanco">
+                    <input type="hidden" id="cadastro_tipo_banco" name="tipo" value="banco">
+                    <div class="mb-3">
+                        <label class="form-label required">Código</label>
+                        <input type="text" class="form-control" id="cadastro_codigo_banco" name="codigo" required maxlength="20">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Nome</label>
+                        <input type="text" class="form-control" id="cadastro_nome_banco" name="nome" required>
+                    </div>
+                    <div class="mb-3" id="nome_curto_container_banco">
                         <label class="form-label">Nome Curto</label>
-                        <input type="text" class="form-control" id="cadastro_nome_curto" name="nome_curto" maxlength="50">
+                        <input type="text" class="form-control" id="cadastro_nome_curto_banco" name="nome_curto" maxlength="50">
                         <small class="text-muted">Usado para exibição em listas compactas</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveCadastro()">
+                <button type="button" class="btn btn-primary" onclick="saveCadastroBanco()">
                     <i class="ti ti-check me-1"></i> Salvar
                 </button>
             </div>
@@ -386,46 +451,56 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Modal de Cadastro (Tipo/Órgão/Banco)
-let cadastroModal;
-const titles = {
-    'tipo': 'Novo Tipo de Tabela',
-    'orgao': 'Novo Órgão',
-    'banco': 'Novo Banco'
-};
-
-function openCadastroModal(tipo) {
-    const modalEl = document.getElementById('cadastroModal');
-    if (!modalEl) return;
-    
-    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        if (!cadastroModal) {
-            cadastroModal = new bootstrap.Modal(modalEl);
-        }
-        
-        document.getElementById('cadastroModalTitle').textContent = titles[tipo];
-        document.getElementById('cadastro_tipo').value = tipo;
-        document.getElementById('cadastroForm').reset();
-        
-        // Mostrar campo nome_curto apenas para banco
-        document.getElementById('nome_curto_container').classList.toggle('d-none', tipo !== 'banco');
-        
-        cadastroModal.show();
-    } else {
-        // Fallback: usar data-bs-toggle
-        modalEl.classList.add('show');
-        modalEl.style.display = 'block';
-        document.body.classList.add('modal-open');
-    }
+// Helpers para abrir modais específicos e gerar código automático
+function gerarCodigo(prefixo) {
+    const now = new Date();
+    const y = String(now.getFullYear()).slice(-2);
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    return `${prefixo}-${y}${m}${d}${h}${min}${s}`;
 }
 
-async function saveCadastro() {
-    const tipo = document.getElementById('cadastro_tipo').value;
-    const codigo = document.getElementById('cadastro_codigo').value;
-    const nome = document.getElementById('cadastro_nome').value;
-    const nome_curto = document.getElementById('cadastro_nome_curto').value;
+function openCadastroModalTipo() {
+    const modalEl = document.getElementById('cadastroModalTipo');
+    if (!modalEl) return;
+    document.getElementById('cadastroFormTipo').reset();
+    document.getElementById('cadastro_codigo_tipo').value = gerarCodigo('TIP');
+    new bootstrap.Modal(modalEl).show();
+}
+
+function openCadastroModalOrgao() {
+    const modalEl = document.getElementById('cadastroModalOrgao');
+    if (!modalEl) return;
+    document.getElementById('cadastroFormOrgao').reset();
+    document.getElementById('cadastro_codigo_orgao').value = gerarCodigo('ORG');
+    new bootstrap.Modal(modalEl).show();
+}
+
+function openCadastroModalBanco() {
+    const modalEl = document.getElementById('cadastroModalBanco');
+    if (!modalEl) return;
+    document.getElementById('cadastroFormBanco').reset();
+    document.getElementById('cadastro_codigo_banco').value = gerarCodigo('BAN');
+    new bootstrap.Modal(modalEl).show();
+}
+
+async function saveCadastroTipo() {
+    const saveBtn = document.querySelector('#cadastroModalTipo .btn.btn-primary');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
+    const tipo = 'tipo';
+    const codigo = document.getElementById('cadastro_codigo_tipo').value;
+    const nome = document.getElementById('cadastro_nome_tipo').value;
+    const nome_curto = '';
     
     if (!codigo || !nome) {
         Swal.fire('Erro', 'Preencha todos os campos obrigatórios', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Salvar';
+        }
         return;
     }
     
@@ -439,23 +514,107 @@ async function saveCadastro() {
             body: JSON.stringify({ codigo, nome, nome_curto })
         });
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = { success: false, message: 'Resposta inválida do servidor' };
+        }
         
-        if (data.success) {
+        if (response.ok && data.success) {
             // Adicionar nova opção ao select correspondente
-            const selectId = tipo === 'tipo' ? 'tipo_cadastro_id' : 
-                            tipo === 'orgao' ? 'orgao_cadastro_id' : 'banco_cadastro_id';
+            const selectId = 'tipo_cadastro_id';
             const select = document.getElementById(selectId);
             const option = new Option(data.item.nome_curto || data.item.nome, data.item.id, true, true);
             select.add(option);
             
-            cadastroModal.hide();
+            bootstrap.Modal.getInstance(document.getElementById('cadastroModalTipo')).hide();
             Swal.fire('Sucesso', data.message, 'success');
         } else {
-            Swal.fire('Erro', data.message, 'error');
+            const msg = data && data.message ? data.message : `Erro ${response.status || ''}`;
+            Swal.fire('Erro', msg, 'error');
         }
     } catch (error) {
         Swal.fire('Erro', 'Erro ao salvar cadastro', 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Salvar';
+        }
+    }
+}
+
+async function saveCadastroOrgao() {
+    const saveBtn = document.querySelector('#cadastroModalOrgao .btn.btn-primary');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
+    const tipo = 'orgao';
+    const codigo = document.getElementById('cadastro_codigo_orgao').value;
+    const nome = document.getElementById('cadastro_nome_orgao').value;
+    const nome_curto = '';
+    if (!codigo || !nome) {
+        Swal.fire('Erro', 'Preencha todos os campos obrigatórios', 'error');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
+        return;
+    }
+    try {
+        const response = await fetch(`/propostas/cadastros/${tipo}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ codigo, nome, nome_curto })
+        });
+        let data; try { data = await response.json(); } catch (e) { data = { success: false, message: 'Resposta inválida do servidor' }; }
+        if (response.ok && data.success) {
+            const selectId = 'orgao_cadastro_id';
+            const select = document.getElementById(selectId);
+            const option = new Option(data.item.nome, data.item.id, true, true);
+            select.add(option);
+            bootstrap.Modal.getInstance(document.getElementById('cadastroModalOrgao')).hide();
+            Swal.fire('Sucesso', data.message, 'success');
+        } else {
+            const msg = data && data.message ? data.message : `Erro ${response.status || ''}`;
+            Swal.fire('Erro', msg, 'error');
+        }
+    } catch (error) {
+        Swal.fire('Erro', 'Erro ao salvar cadastro', 'error');
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
+    }
+}
+
+async function saveCadastroBanco() {
+    const saveBtn = document.querySelector('#cadastroModalBanco .btn.btn-primary');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
+    const tipo = 'banco';
+    const codigo = document.getElementById('cadastro_codigo_banco').value;
+    const nome = document.getElementById('cadastro_nome_banco').value;
+    const nome_curto = document.getElementById('cadastro_nome_curto_banco').value;
+    if (!codigo || !nome) {
+        Swal.fire('Erro', 'Preencha todos os campos obrigatórios', 'error');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
+        return;
+    }
+    try {
+        const response = await fetch(`/propostas/cadastros/${tipo}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ codigo, nome, nome_curto })
+        });
+        let data; try { data = await response.json(); } catch (e) { data = { success: false, message: 'Resposta inválida do servidor' }; }
+        if (response.ok && data.success) {
+            const selectId = 'banco_cadastro_id';
+            const select = document.getElementById(selectId);
+            const option = new Option(data.item.nome_curto || data.item.nome, data.item.id, true, true);
+            select.add(option);
+            bootstrap.Modal.getInstance(document.getElementById('cadastroModalBanco')).hide();
+            Swal.fire('Sucesso', data.message, 'success');
+        } else {
+            const msg = data && data.message ? data.message : `Erro ${response.status || ''}`;
+            Swal.fire('Erro', msg, 'error');
+        }
+    } catch (error) {
+        Swal.fire('Erro', 'Erro ao salvar cadastro', 'error');
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
     }
 }
 

@@ -104,19 +104,22 @@
                         <div class="mb-3">
                             <label class="form-label">Funcionário Vinculado</label>
                             <div class="input-group">
-                                {{ form.employee_id(class="form-select") }}
-                                <a href="{{ url_for('hr_blueprint.employee_create') }}?return_to=user_form" class="btn btn-outline-primary" title="Cadastrar novo funcionário">
+                                          {{ form.employee_id(class="form-select") }}
+                                          <a href="{{ url_for('hr_blueprint.employee_create') }}?return_to=user_form" 
+                                              class="btn btn-outline-primary" title="Cadastrar novo funcionário">
                                     <i class="ti ti-plus"></i>
                                 </a>
                             </div>
                             <small class="form-hint">Vincule este usuário a um funcionário</small>
                         </div>
                         
+                        {% if form.team_id %}
                         <div class="mb-3">
                             <label class="form-label">Equipe/Corban</label>
                             {{ form.team_id(class="form-select") }}
-                            <small class="form-hint">Equipe ou Corban associado ao usuário</small>
+                            <small class="form-hint">Equipe ou correspondente bancário do usuário</small>
                         </div>
+                        {% endif %}
                         
                         <div class="mb-3">
                             <label class="form-label">Observações</label>

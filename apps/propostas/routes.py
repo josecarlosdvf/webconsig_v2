@@ -16,7 +16,8 @@ from apps import db
 from apps.propostas import blueprint
 from apps.propostas.models import (
     Tabela, FatoresDiariosTabela, Proposta, RPCProposta, BoletoProposta,
-    TipoProposta, PropostaStatus, TipoTabela, TipoRPC, StatusRPC
+    TipoProposta, PropostaStatus, TipoTabela, TipoRPC, StatusRPC,
+    TipoTabelaCadastro, OrgaoCadastro, BancoCadastro
 )
 from apps.propostas.forms import (
     TabelaForm, TabelaSearchForm, PropostaForm, PropostaSearchForm,
@@ -81,6 +82,30 @@ def tabela_create():
         tabela = Tabela()
         form.populate_obj(tabela)
         
+        # Campos adicionais do formulário
+        tabela.tipo_cadastro_id = request.form.get('tipo_cadastro_id', type=int)
+        tabela.orgao_cadastro_id = request.form.get('orgao_cadastro_id', type=int)
+        tabela.banco_cadastro_id = request.form.get('banco_cadastro_id', type=int)
+        tabela.fator_tipo = request.form.get('fator_tipo', 'unico')
+        tabela.comissao_incidencia_tipo = request.form.get('comissao_incidencia_tipo', 'bruto')
+        tabela.aceita_externos = 'aceita_externos' in request.form
+        tabela.observacoes = request.form.get('observacoes', '')
+        
+        # Processar fatores diários se tipo for diário
+        if tabela.fator_tipo == 'diario':
+            import json
+            fatores_json = request.form.get('fatores_diarios_json', '{}')
+            if fatores_json:
+                fatores = json.loads(fatores_json)
+                # Salvar fatores na tabela fatores_diarios
+                for dia, valor in fatores.items():
+                    fator = FatoresDiariosTabela(
+                        tabela_id=tabela.id,
+                        dia=int(dia),
+                        fator=float(valor)
+                    )
+                    db.session.add(fator)
+        
         db.session.add(tabela)
         db.session.commit()
         
@@ -95,10 +120,18 @@ def tabela_create():
         flash('Tabela criada com sucesso!', 'success')
         return redirect(url_for('propostas_blueprint.tabela_view', tabela_id=tabela.id))
     
+    # Buscar cadastros para os selects
+    tipos = TipoTabelaCadastro.query.filter_by(ativo=True).order_by(TipoTabelaCadastro.nome).all()
+    orgaos = OrgaoCadastro.query.filter_by(ativo=True).order_by(OrgaoCadastro.nome).all()
+    bancos = BancoCadastro.query.filter_by(ativo=True).order_by(BancoCadastro.nome).all()
+    
     return render_template(
         'propostas/tabelas/form.html',
         form=form,
-        title='Nova Tabela'
+        title='Nova Tabela',
+        tipos=tipos,
+        orgaos=orgaos,
+        bancos=bancos
     )
 
 
@@ -125,6 +158,32 @@ def tabela_edit(tabela_id):
     
     if form.validate_on_submit():
         form.populate_obj(tabela)
+        
+        # Campos adicionais do formulário
+        tabela.tipo_cadastro_id = request.form.get('tipo_cadastro_id', type=int)
+        tabela.orgao_cadastro_id = request.form.get('orgao_cadastro_id', type=int)
+        tabela.banco_cadastro_id = request.form.get('banco_cadastro_id', type=int)
+        tabela.fator_tipo = request.form.get('fator_tipo', 'unico')
+        tabela.comissao_incidencia_tipo = request.form.get('comissao_incidencia_tipo', 'bruto')
+        tabela.aceita_externos = 'aceita_externos' in request.form
+        tabela.observacoes = request.form.get('observacoes', '')
+        
+        # Processar fatores diários se tipo for diário
+        if tabela.fator_tipo == 'diario':
+            import json
+            fatores_json = request.form.get('fatores_diarios_json', '{}')
+            if fatores_json:
+                # Limpar fatores antigos
+                FatoresDiariosTabela.query.filter_by(tabela_id=tabela.id).delete()
+                fatores = json.loads(fatores_json)
+                for dia, valor in fatores.items():
+                    fator = FatoresDiariosTabela(
+                        tabela_id=tabela.id,
+                        dia=int(dia),
+                        fator=float(valor)
+                    )
+                    db.session.add(fator)
+        
         db.session.commit()
         
         AuditLog.log(
@@ -138,11 +197,19 @@ def tabela_edit(tabela_id):
         flash('Tabela atualizada com sucesso!', 'success')
         return redirect(url_for('propostas_blueprint.tabela_view', tabela_id=tabela.id))
     
+    # Buscar cadastros para os selects
+    tipos = TipoTabelaCadastro.query.filter_by(ativo=True).order_by(TipoTabelaCadastro.nome).all()
+    orgaos = OrgaoCadastro.query.filter_by(ativo=True).order_by(OrgaoCadastro.nome).all()
+    bancos = BancoCadastro.query.filter_by(ativo=True).order_by(BancoCadastro.nome).all()
+    
     return render_template(
         'propostas/tabelas/form.html',
         form=form,
         tabela=tabela,
-        title='Editar Tabela'
+        title='Editar Tabela',
+        tipos=tipos,
+        orgaos=orgaos,
+        bancos=bancos
     )
 
 
@@ -967,3 +1034,85 @@ def api_stats():
     ).count()
     
     return jsonify(stats)
+
+
+# =============================================================================
+# CADASTROS (Tipo, Órgão, Banco)
+# =============================================================================
+
+@blueprint.route('/cadastros/<tipo>', methods=['GET', 'POST'])
+@login_required
+def cadastros_manage(tipo):
+    """API para gerenciar cadastros (tipo, orgao, banco)"""
+    
+    # Mapear tipo para modelo
+    models = {
+        'tipo': TipoTabelaCadastro,
+        'orgao': OrgaoCadastro,
+        'banco': BancoCadastro
+    }
+    
+    if tipo not in models:
+        return jsonify({'success': False, 'message': 'Tipo inválido'}), 400
+    
+    Model = models[tipo]
+    
+    if request.method == 'GET':
+        # Listar cadastros
+        items = Model.query.filter_by(ativo=True).order_by(Model.nome).all()
+        return jsonify({
+            'success': True,
+            'items': [{
+                'id': item.id,
+                'codigo': item.codigo,
+                'nome': item.nome,
+                'nome_curto': getattr(item, 'nome_curto', None)
+            } for item in items]
+        })
+    
+    elif request.method == 'POST':
+        # Criar novo cadastro
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'message': 'Dados não fornecidos'}), 400
+        
+        codigo = data.get('codigo', '').strip()
+        nome = data.get('nome', '').strip()
+        nome_curto = data.get('nome_curto', '').strip() if tipo == 'banco' else None
+        
+        if not codigo or not nome:
+            return jsonify({'success': False, 'message': 'Código e nome são obrigatórios'}), 400
+        
+        # Verificar se já existe
+        existing = Model.query.filter_by(codigo=codigo).first()
+        if existing:
+            return jsonify({'success': False, 'message': f'Já existe um cadastro com código {codigo}'}), 400
+        
+        # Criar novo
+        item = Model(codigo=codigo, nome=nome)
+        if tipo == 'banco' and nome_curto:
+            item.nome_curto = nome_curto
+        
+        db.session.add(item)
+        db.session.commit()
+        
+        AuditLog.log(
+            action='create',
+            table_name=f'{tipo}_cadastros',
+            record_id=item.id,
+            description=f'Cadastro criado: {nome}'
+        )
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Cadastro criado com sucesso!',
+            'item': {
+                'id': item.id,
+                'codigo': item.codigo,
+                'nome': item.nome,
+                'nome_curto': getattr(item, 'nome_curto', None)
+            }
+        })
+

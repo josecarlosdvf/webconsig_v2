@@ -204,6 +204,91 @@ class TipoTabela:
 
 
 # =============================================================================
+# CADASTROS AUXILIARES (Tipo, Órgão, Banco)
+# =============================================================================
+
+@audited
+class TipoTabelaCadastro(db.Model, BaseModel):
+    """Tipos de tabela cadastráveis pelo usuário"""
+    
+    __tablename__ = 'tipos_tabela'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    nome = db.Column(db.String(50), nullable=False)
+    descricao = db.Column(db.String(200), nullable=True)
+    ativo = db.Column(db.Boolean, default=True)
+    ordem = db.Column(db.Integer, default=0)
+    
+    def __repr__(self):
+        return f'<TipoTabelaCadastro {self.nome}>'
+    
+    @classmethod
+    def get_ativos(cls):
+        return cls.query_active().filter_by(ativo=True).order_by(cls.ordem, cls.nome).all()
+    
+    @classmethod
+    def get_choices(cls):
+        return [(t.codigo, t.nome) for t in cls.get_ativos()]
+
+
+@audited
+class OrgaoCadastro(db.Model, BaseModel):
+    """Órgãos cadastráveis (INSS, Exército, etc)"""
+    
+    __tablename__ = 'orgaos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    nome = db.Column(db.String(100), nullable=False)
+    sigla = db.Column(db.String(20), nullable=True)
+    descricao = db.Column(db.String(200), nullable=True)
+    ativo = db.Column(db.Boolean, default=True)
+    ordem = db.Column(db.Integer, default=0)
+    
+    def __repr__(self):
+        return f'<OrgaoCadastro {self.nome}>'
+    
+    @classmethod
+    def get_ativos(cls):
+        return cls.query_active().filter_by(ativo=True).order_by(cls.ordem, cls.nome).all()
+    
+    @classmethod
+    def get_choices(cls):
+        return [(o.codigo, f'{o.sigla} - {o.nome}' if o.sigla else o.nome) for o in cls.get_ativos()]
+
+
+@audited
+class BancoCadastro(db.Model, BaseModel):
+    """Bancos cadastráveis"""
+    
+    __tablename__ = 'bancos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(10), unique=True, nullable=False, index=True, comment='Código FEBRABAN')
+    nome = db.Column(db.String(100), nullable=False)
+    nome_curto = db.Column(db.String(50), nullable=True)
+    ativo = db.Column(db.Boolean, default=True)
+    ordem = db.Column(db.Integer, default=0)
+    
+    # Configurações específicas do banco
+    aceita_refin = db.Column(db.Boolean, default=True)
+    aceita_port = db.Column(db.Boolean, default=True)
+    aceita_margem = db.Column(db.Boolean, default=True)
+    
+    def __repr__(self):
+        return f'<BancoCadastro {self.nome}>'
+    
+    @classmethod
+    def get_ativos(cls):
+        return cls.query_active().filter_by(ativo=True).order_by(cls.ordem, cls.nome).all()
+    
+    @classmethod
+    def get_choices(cls):
+        return [(b.codigo, f'{b.codigo} - {b.nome_curto or b.nome}') for b in cls.get_ativos()]
+
+
+# =============================================================================
 # TABELA DE EMPRÉSTIMO
 # =============================================================================
 
@@ -256,7 +341,13 @@ class Tabela(db.Model, BaseModel):
     fator = db.Column(
         db.Float,
         nullable=True,
-        comment='Fator de conversão'
+        comment='Fator de conversão (único)'
+    )
+    fator_tipo = db.Column(
+        db.String(10),
+        nullable=False,
+        default='unico',
+        comment='Tipo de fator: unico ou diario'
     )
     idade_max = db.Column(
         db.Integer,
@@ -269,31 +360,31 @@ class Tabela(db.Model, BaseModel):
         db.Float,
         nullable=True,
         default=0,
-        comment='Comissão total (%)'
+        comment='Comissão bruta total (%) acordada para a empresa'
     )
     comissao_empresa = db.Column(
         db.Float,
         nullable=True,
         default=0,
-        comment='Comissão empresa (%)'
+        comment='Percentual da comissão para equipes internas (%)'
     )
     comissao_externos = db.Column(
         db.Float,
         nullable=True,
         default=0,
-        comment='Comissão externos (%)'
+        comment='Percentual da comissão para corbans/externos (%)'
     )
     comissao_bonus = db.Column(
         db.Float,
         nullable=True,
         default=0,
-        comment='Comissão bônus (%)'
+        comment='Comissão bônus adicional (%)'
     )
     comissao_incidencia = db.Column(
-        db.Float,
-        nullable=True,
-        default=0,
-        comment='Incidência de comissão'
+        db.String(10),
+        nullable=False,
+        default='bruto',
+        comment='Incidência da comissão: bruto (valor AF) ou liquido'
     )
     
     # Status

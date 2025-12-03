@@ -1,6 +1,32 @@
 {% extends "layouts/base.html" %}
 {% block title %}Usuários{% endblock %}
 
+{% block styles %}
+<style>
+/* Fix z-index dropdown para aparecer acima da tabela */
+.table-responsive {
+    overflow: visible !important;
+}
+.dropdown-menu {
+    z-index: 1050 !important;
+}
+
+/* Toggle switch estilizado */
+.form-switch-custom {
+    padding-left: 2.5em;
+}
+.form-switch-custom .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    cursor: pointer;
+}
+.form-switch-custom .form-check-input:checked {
+    background-color: #2fb344;
+    border-color: #2fb344;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header d-print-none">
     <div class="container-xl">
@@ -10,12 +36,24 @@
                 <h2 class="page-title">Usuários</h2>
             </div>
             <div class="col-auto ms-auto d-print-none btn-list">
+<<<<<<< HEAD
+                <a href="{{ url_for('admin_blueprint.terms_settings') }}" class="btn btn-outline-secondary" title="Termos de Uso">
+                    <i class="ti ti-file-text me-2"></i> Termos de Uso
+                </a>
+                {% if perm.can('users.create') %}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                    <i class="ti ti-file-import me-2"></i> Importar CSV
+                </button>
+                {% endif %}
+                {% if perm.can('users.invite') %}
+=======
                 {% if perm.can('users.invite') %}
                 <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#termsModal">
                     <i class="ti ti-file-text me-2"></i> Termos de Uso
                 </a>
                 {% endif %}
                 {% if perm.can('users.invite') %}
+>>>>>>> origin/main
                 <a href="{{ url_for('admin_blueprint.invitations_create') }}" class="btn btn-success">
                     <i class="ti ti-mail-forward me-2"></i> Enviar Convite
                 </a>
@@ -68,9 +106,12 @@
                         <tr>
                             <th>Usuário</th>
                             <th>Funcionário</th>
+<<<<<<< HEAD
+=======
                             <th>E-mail</th>
+>>>>>>> origin/main
                             <th>Grupos</th>
-                            <th>Status</th>
+                            <th class="text-center">Ativo</th>
                             <th>Último Login</th>
                             <th class="w-1">Ações</th>
                         </tr>
@@ -88,13 +129,18 @@
                                         <div class="font-weight-medium">
                                             {{ user.full_name }}
                                             {% if user.is_admin %}
-                                            <span class="badge bg-red ms-2">Admin</span>
+                                            <span class="badge bg-red ms-1">Admin</span>
+                                            {% endif %}
+                                            {% if user.is_locked %}
+                                            <span class="badge bg-orange ms-1">Bloqueado</span>
                                             {% endif %}
                                         </div>
-                                        <div class="text-muted">@{{ user.username }}</div>
+                                        <div class="text-muted small">@{{ user.username }} • {{ user.email }}</div>
                                     </div>
                                 </div>
                             </td>
+<<<<<<< HEAD
+=======
                             <td>
                                 {% if user.employee %}
                                 <a href="{{ url_for('hr_blueprint.employee_view', employee_id=user.employee.id) }}" class="text-reset">
@@ -112,15 +158,41 @@
                                 </a>
                                 {% endif %}
                             </td>
+>>>>>>> origin/main
                             <td>
-                                {% for group in user.user_groups[:3] %}
-                                <span class="badge bg-blue-lt">{{ group.name }}</span>
-                                {% endfor %}
-                                {% if user.user_groups|length > 3 %}
-                                <span class="badge bg-secondary">+{{ user.user_groups|length - 3 }}</span>
+                                {% if user.employee %}
+                                <a href="{{ url_for('hr_blueprint.employee_view', employee_id=user.employee.id) }}" class="text-reset">
+                                    <i class="ti ti-id-badge me-1"></i>{{ user.employee.name }}
+                                </a>
+                                {% if user.employee.team %}
+                                <div class="text-muted small">{{ user.employee.team.name }}</div>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
+<<<<<<< HEAD
+                                {% for group in user.user_groups[:2] %}
+                                <span class="badge bg-blue-lt">{{ group.name }}</span>
+                                {% endfor %}
+                                {% if user.user_groups|length > 2 %}
+                                <span class="badge bg-secondary" title="{{ user.user_groups[2:]|map(attribute='name')|join(', ') }}">
+                                    +{{ user.user_groups|length - 2 }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if user.id != current_user.id and perm.can('users.edit') %}
+                                <label class="form-check form-switch form-switch-custom mb-0 d-inline-block">
+                                    <input type="checkbox" class="form-check-input" 
+                                           {% if user.is_active %}checked{% endif %}
+                                           onchange="toggleActiveInline({{ user.id }}, this.checked)"
+                                           {% if user.is_locked %}disabled{% endif %}>
+                                </label>
+                                {% else %}
+                                {% if user.is_active %}
+=======
                                 {% if perm.can('users.edit') and user.id != current_user.id %}
                                 <label class="form-check form-switch m-0">
                                     <input class="form-check-input" type="checkbox" 
@@ -135,6 +207,7 @@
                                 {% if user.is_locked %}
                                 <span class="badge bg-red">Bloqueado</span>
                                 {% elif user.is_active %}
+>>>>>>> origin/main
                                 <span class="badge bg-green">Ativo</span>
                                 {% else %}
                                 <span class="badge bg-secondary">Inativo</span>
@@ -143,6 +216,52 @@
                             </td>
                             <td class="text-muted">
                                 {% if user.last_login %}
+<<<<<<< HEAD
+                                <span title="{{ user.last_login.strftime('%d/%m/%Y às %H:%M:%S') }}">
+                                    {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                                {% else %}
+                                <span class="text-warning" title="Nunca acessou">Nunca</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-list flex-nowrap">
+                                    {% if perm.can('users.invite') and not user.last_login %}
+                                    <button class="btn btn-sm btn-icon btn-ghost-success" 
+                                            onclick="sendInvite({{ user.id }}, '{{ user.email }}')"
+                                            title="Enviar convite por e-mail">
+                                        <i class="ti ti-mail-forward"></i>
+                                    </button>
+                                    {% endif %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-icon btn-ghost-secondary" data-bs-toggle="dropdown">
+                                            <i class="ti ti-dots-vertical"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_view', user_id=user.id) }}">
+                                                <i class="ti ti-eye me-2"></i> Visualizar
+                                            </a>
+                                            {% if perm.can('users.edit') %}
+                                            <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_edit', user_id=user.id) }}">
+                                                <i class="ti ti-edit me-2"></i> Editar
+                                            </a>
+                                            {% endif %}
+                                            {% if perm.can('users.unlock') and user.is_locked %}
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-warning" href="#" 
+                                               onclick="event.preventDefault(); unlockUser({{ user.id }})">
+                                                <i class="ti ti-lock-open me-2"></i> Desbloquear
+                                            </a>
+                                            {% endif %}
+                                            {% if perm.can('users.delete') and user.id != current_user.id %}
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="#"
+                                               onclick="event.preventDefault(); deleteUser({{ user.id }}, '{{ user.username }}')">
+                                                <i class="ti ti-trash me-2"></i> Excluir
+                                            </a>
+                                            {% endif %}
+                                        </div>
+=======
                                 <span title="{{ user.last_login.strftime('%d/%m/%Y %H:%M:%S') }}">
                                     {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
                                 </span>
@@ -177,6 +296,7 @@
                                             <i class="ti ti-trash me-2"></i> Excluir
                                         </a>
                                         {% endif %}
+>>>>>>> origin/main
                                     </div>
                                 </div>
                             </td>
@@ -233,6 +353,77 @@
     </div>
 </div>
 
+<<<<<<< HEAD
+<!-- Modal Importar CSV -->
+<div class="modal modal-blur fade" id="importCsvModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ti ti-file-import me-2"></i>
+                    Importar Usuários via CSV
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="importCsvForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <div><i class="ti ti-info-circle alert-icon"></i></div>
+                            <div>
+                                <h4 class="alert-title">Formato do arquivo</h4>
+                                <p class="mb-2">O arquivo CSV deve conter as seguintes colunas:</p>
+                                <code>username;email;first_name;last_name;password;is_admin;group_name</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <a href="{{ url_for('admin_blueprint.users_csv_template') }}" class="btn btn-outline-primary">
+                            <i class="ti ti-download me-2"></i> Baixar Modelo CSV
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required">Arquivo CSV</label>
+                        <input type="file" name="csv_file" id="csvFile" class="form-control" accept=".csv" required>
+                        <small class="form-hint">Selecione um arquivo CSV com os dados dos usuários</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-check">
+                            <input type="checkbox" name="send_invite" class="form-check-input" checked>
+                            <span class="form-check-label">Enviar convite por e-mail após criar</span>
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-check">
+                            <input type="checkbox" name="skip_errors" class="form-check-input" checked>
+                            <span class="form-check-label">Continuar importação mesmo com erros (ignora linhas inválidas)</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Preview dos dados -->
+                    <div id="csvPreview" style="display: none;">
+                        <hr>
+                        <h4>Pré-visualização</h4>
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-sm table-striped">
+                                <thead id="csvPreviewHead"></thead>
+                                <tbody id="csvPreviewBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-upload me-1"></i> Importar Usuários
+                    </button>
+                </div>
+            </form>
+=======
 <!-- Modal de Termos de Uso -->
 <div class="modal modal-blur fade" id="termsModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -272,6 +463,7 @@
                     <i class="ti ti-device-floppy me-1"></i> Salvar Termos
                 </button>
             </div>
+>>>>>>> origin/main
         </div>
     </div>
 </div>
@@ -286,6 +478,10 @@
 </form>
 
 <form id="delete-form" method="post" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<form id="invite-form" method="post" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 {% endblock %}
@@ -308,6 +504,40 @@ function unlockUser(userId) {
             form.action = '/admin/usuarios/' + userId + '/desbloquear';
             form.submit();
         }
+    });
+}
+
+function toggleActiveInline(userId, activate) {
+    fetch('/admin/usuarios/' + userId + '/toggle-active', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ active: activate })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Toast de sucesso
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message || (activate ? 'Usuário ativado' : 'Usuário desativado'),
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        } else {
+            // Reverte o toggle
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        location.reload();
     });
 }
 
@@ -337,10 +567,10 @@ function deleteUser(userId, username) {
     });
 }
 
-function sendInvite(email, name) {
+function sendInvite(userId, email) {
     Swal.fire({
-        title: 'Enviar Convite?',
-        text: 'Enviar convite de acesso para ' + email + '?',
+        title: 'Enviar convite?',
+        html: 'Um e-mail de convite será enviado para:<br><strong>' + email + '</strong>',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#2fb344',
@@ -349,9 +579,121 @@ function sendInvite(email, name) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '{{ url_for("admin_blueprint.invitations_create") }}?email=' + encodeURIComponent(email) + '&name=' + encodeURIComponent(name);
+            fetch('/admin/usuarios/' + userId + '/send-invite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: data.success ? 'success' : 'error',
+                    title: data.message,
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            })
+            .catch(error => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Erro ao enviar convite',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            });
         }
     });
 }
+
+// === Importação CSV ===
+document.getElementById('csvFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+            Swal.fire('Erro', 'O arquivo deve ter pelo menos o cabeçalho e uma linha de dados', 'error');
+            return;
+        }
+        
+        // Parse CSV (considerando ; como separador)
+        const separator = lines[0].includes(';') ? ';' : ',';
+        const headers = lines[0].split(separator).map(h => h.trim().replace(/"/g, ''));
+        
+        const headHtml = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+        document.getElementById('csvPreviewHead').innerHTML = headHtml;
+        
+        let bodyHtml = '';
+        const maxPreview = Math.min(lines.length, 6); // Mostra até 5 linhas
+        for (let i = 1; i < maxPreview; i++) {
+            const cols = lines[i].split(separator).map(c => c.trim().replace(/"/g, ''));
+            bodyHtml += '<tr>' + cols.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        }
+        if (lines.length > 6) {
+            bodyHtml += `<tr><td colspan="${headers.length}" class="text-muted text-center">... e mais ${lines.length - 6} linhas</td></tr>`;
+        }
+        document.getElementById('csvPreviewBody').innerHTML = bodyHtml;
+        document.getElementById('csvPreview').style.display = 'block';
+    };
+    reader.readAsText(file);
+});
+
+document.getElementById('importCsvForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    Swal.fire({
+        title: 'Importando...',
+        html: 'Processando arquivo CSV...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+    
+    fetch('{{ url_for("admin_blueprint.users_import_csv") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let message = `${data.created} usuário(s) criado(s) com sucesso.`;
+            if (data.errors && data.errors.length > 0) {
+                message += `<br><br><strong>Erros:</strong><br>` + 
+                    data.errors.slice(0, 5).map(e => `- ${e}`).join('<br>');
+                if (data.errors.length > 5) {
+                    message += `<br>... e mais ${data.errors.length - 5} erros`;
+                }
+            }
+            
+            Swal.fire({
+                icon: data.errors && data.errors.length > 0 ? 'warning' : 'success',
+                title: 'Importação concluída',
+                html: message
+            }).then(() => {
+                if (data.created > 0) location.reload();
+            });
+        } else {
+            Swal.fire('Erro', data.error || 'Erro na importação', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        Swal.fire('Erro', 'Erro de conexão', 'error');
+    });
+});
 </script>
 {% endblock %}

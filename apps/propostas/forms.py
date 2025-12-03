@@ -23,6 +23,11 @@ class TabelaForm(FlaskForm):
         validators=[DataRequired(), Length(max=100)],
         render_kw={'placeholder': 'Nome da tabela'}
     )
+    codigo = StringField(
+        'Código',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': 'Código interno'}
+    )
     tipo = SelectField(
         'Tipo',
         choices=TipoTabela.CHOICES,

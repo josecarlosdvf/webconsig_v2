@@ -16,6 +16,37 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 
 
+def ensure_directories(app):
+    """
+    Cria as pastas necessárias para o funcionamento do sistema.
+    Executado automaticamente na inicialização da aplicação.
+    """
+    # Pasta base de uploads
+    upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+    
+    # Lista de pastas que devem existir
+    directories = [
+        upload_folder,
+        os.path.join(upload_folder, 'avatars'),      # Fotos de perfil de usuários
+        os.path.join(upload_folder, 'employee'),     # Fotos de funcionários
+        os.path.join(upload_folder, 'general'),      # Arquivos gerais
+        os.path.join(upload_folder, 'temp'),         # Arquivos temporários
+        os.path.join(upload_folder, 'documents'),    # Documentos
+        os.path.join(upload_folder, 'imports'),      # Arquivos de importação (CSV, etc)
+        os.path.join(upload_folder, 'exports'),      # Arquivos de exportação
+        'logs',                                       # Logs do sistema
+        'instance',                                   # Dados de instância (SQLite, etc)
+    ]
+    
+    for directory in directories:
+        if not os.path.exists(directory):
+            try:
+                os.makedirs(directory, exist_ok=True)
+                app.logger.info(f'Pasta criada: {directory}')
+            except Exception as e:
+                app.logger.warning(f'Não foi possível criar pasta {directory}: {e}')
+
+
 def register_extensions(app):
     """Registra extensões do Flask"""
     db.init_app(app)
@@ -170,6 +201,9 @@ def create_app(config):
     # Carrega configurações
     app.config.from_object(config)
     
+    # Cria pastas necessárias do sistema
+    ensure_directories(app)
+    
     # Registra extensões
     register_extensions(app)
     
@@ -192,6 +226,15 @@ def create_app(config):
     # Inicializa suporte HTMX
     from apps.htmx import init_htmx
     init_htmx(app)
+    
+    # Registra rota para servir arquivos de upload (avatars, etc.)
+    from flask import send_from_directory
+    
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        """Serve arquivos da pasta de uploads"""
+        upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+        return send_from_directory(upload_folder, filename)
     
     # Registra error handlers com logging
     register_error_handlers(app)

@@ -42,9 +42,14 @@
                                     <a class="dropdown-item" href="{{ url_for('admin_blueprint.groups_view', group_id=group.id) }}">
                                         <i class="ti ti-eye me-2"></i> Visualizar
                                     </a>
+                                    {% if perm.can('groups.edit') %}
+                                    <a class="dropdown-item" href="#" onclick="event.preventDefault(); openPermissionsModal({{ group.id }}, '{{ group.name }}')">
+                                        <i class="ti ti-key me-2"></i> Editar Permissões
+                                    </a>
+                                    {% endif %}
                                     {% if perm.can('groups.edit') and not group.is_system %}
                                     <a class="dropdown-item" href="{{ url_for('admin_blueprint.groups_edit', group_id=group.id) }}">
-                                        <i class="ti ti-edit me-2"></i> Editar
+                                        <i class="ti ti-edit me-2"></i> Editar Grupo
                                     </a>
                                     {% endif %}
                                     {% if perm.can('groups.delete') and not group.is_system %}
@@ -76,9 +81,16 @@
                         {% endif %}
                     </div>
                     <div class="card-footer">
-                        <a href="{{ url_for('admin_blueprint.groups_view', group_id=group.id) }}" class="btn btn-ghost-primary w-100">
-                            Ver detalhes
-                        </a>
+                        <div class="btn-list">
+                            <a href="{{ url_for('admin_blueprint.groups_view', group_id=group.id) }}" class="btn btn-ghost-primary flex-grow-1">
+                                Ver detalhes
+                            </a>
+                            {% if perm.can('groups.edit') %}
+                            <button type="button" class="btn btn-ghost-secondary" onclick="openPermissionsModal({{ group.id }}, '{{ group.name }}')" title="Editar Permissões">
+                                <i class="ti ti-key"></i>
+                            </button>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -102,6 +114,43 @@
     </div>
 </div>
 
+<!-- Modal de Permissões -->
+<div class="modal modal-blur fade" id="permissionsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ti ti-key me-2"></i>
+                    Permissões do Grupo: <span id="modalGroupName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="permissionsLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Carregando permissões...</p>
+                </div>
+                <div id="permissionsContent" style="display: none;">
+                    <div class="alert alert-info mb-3">
+                        <i class="ti ti-info-circle me-2"></i>
+                        Selecione as permissões que os membros deste grupo terão acesso. 
+                        As permissões definem quais menus e funcionalidades estarão disponíveis.
+                    </div>
+                    <div class="row" id="permissionsGrid">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="savePermissions()">
+                    <i class="ti ti-device-floppy me-1"></i> Salvar Permissões
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <form id="delete-form" method="post" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
@@ -109,6 +158,132 @@
 
 {% block scripts %}
 <script>
+let currentGroupId = null;
+let permissionsModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    permissionsModal = new bootstrap.Modal(document.getElementById('permissionsModal'));
+});
+
+function openPermissionsModal(groupId, groupName) {
+    currentGroupId = groupId;
+    document.getElementById('modalGroupName').textContent = groupName;
+    document.getElementById('permissionsLoading').style.display = 'block';
+    document.getElementById('permissionsContent').style.display = 'none';
+    
+    permissionsModal.show();
+    
+    // Carrega permissões do grupo
+    fetch(`{{ url_for('admin_blueprint.groups_permissions_api', group_id=0) }}`.replace('/0', '/' + groupId))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderPermissions(data.all_permissions, data.group_permissions);
+            } else {
+                Swal.fire('Erro', data.error || 'Erro ao carregar permissões', 'error');
+                permissionsModal.hide();
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            Swal.fire('Erro', 'Erro de conexão', 'error');
+            permissionsModal.hide();
+        });
+}
+
+function renderPermissions(allPermissions, groupPermissions) {
+    const grid = document.getElementById('permissionsGrid');
+    grid.innerHTML = '';
+    
+    for (const [module, perms] of Object.entries(allPermissions)) {
+        const col = document.createElement('div');
+        col.className = 'col-md-6 col-lg-4 mb-3';
+        
+        let checksHtml = '';
+        perms.forEach(p => {
+            const checked = groupPermissions.includes(p.id) ? 'checked' : '';
+            checksHtml += `
+                <label class="form-check mb-1">
+                    <input type="checkbox" class="form-check-input perm-checkbox" 
+                           data-module="${module}" value="${p.id}" ${checked}>
+                    <span class="form-check-label">${p.name}</span>
+                </label>
+            `;
+        });
+        
+        col.innerHTML = `
+            <div class="card h-100">
+                <div class="card-header py-2">
+                    <h4 class="card-title mb-0 text-capitalize">
+                        <i class="ti ti-folder me-2"></i>${module}
+                    </h4>
+                    <div class="card-actions">
+                        <a href="#" class="btn btn-link btn-sm p-0" onclick="event.preventDefault(); toggleModule('${module}', true)">Todos</a>
+                        <span class="mx-1">|</span>
+                        <a href="#" class="btn btn-link btn-sm p-0" onclick="event.preventDefault(); toggleModule('${module}', false)">Nenhum</a>
+                    </div>
+                </div>
+                <div class="card-body py-2" style="max-height: 200px; overflow-y: auto;">
+                    ${checksHtml}
+                </div>
+            </div>
+        `;
+        
+        grid.appendChild(col);
+    }
+    
+    document.getElementById('permissionsLoading').style.display = 'none';
+    document.getElementById('permissionsContent').style.display = 'block';
+}
+
+function toggleModule(module, checked) {
+    document.querySelectorAll(`.perm-checkbox[data-module="${module}"]`).forEach(cb => {
+        cb.checked = checked;
+    });
+}
+
+function savePermissions() {
+    const permissions = [];
+    document.querySelectorAll('.perm-checkbox:checked').forEach(cb => {
+        permissions.push(parseInt(cb.value));
+    });
+    
+    Swal.fire({
+        title: 'Salvando...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+    
+    fetch(`{{ url_for('admin_blueprint.groups_permissions_api', group_id=0) }}`.replace('/0', '/' + currentGroupId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ permissions: permissions })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Permissões salvas!',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                permissionsModal.hide();
+                location.reload();
+            });
+        } else {
+            Swal.fire('Erro', data.error || 'Erro ao salvar', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        Swal.fire('Erro', 'Erro de conexão', 'error');
+    });
+}
+
 function deleteGroup(groupId, groupName) {
     Swal.fire({
         title: 'Excluir grupo?',

@@ -1,0 +1,129 @@
+{% extends "layouts/base.html" %}
+{% block title %}Termos de Uso{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <a href="{{ url_for('admin_blueprint.users_list') }}" class="btn btn-ghost-secondary me-3">
+                    <i class="ti ti-arrow-left"></i>
+                </a>
+            </div>
+            <div class="col">
+                <div class="page-pretitle">Administração</div>
+                <h2 class="page-title">Termos de Uso e Consentimento</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Termos de Uso -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-file-text me-2"></i> Termos de Uso
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Conteúdo dos Termos de Uso</label>
+                                <textarea name="terms_of_use" class="form-control" rows="10" 
+                                          placeholder="Digite os termos de uso que os usuários devem aceitar...">{{ settings.terms_of_use }}</textarea>
+                                <small class="form-hint">Suporta HTML para formatação</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Política de Privacidade -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-shield-lock me-2"></i> Política de Privacidade
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Conteúdo da Política de Privacidade</label>
+                                <textarea name="privacy_policy" class="form-control" rows="10" 
+                                          placeholder="Digite a política de privacidade...">{{ settings.privacy_policy }}</textarea>
+                                <small class="form-hint">Suporta HTML para formatação</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Configurações -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-settings me-2"></i> Configurações
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Versão dos Termos</label>
+                                <input type="text" name="terms_version" class="form-control" 
+                                       value="{{ settings.terms_version }}" placeholder="1.0">
+                                <small class="form-hint">Altere a versão para exigir novo aceite</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-check form-switch">
+                                    <input type="checkbox" name="require_terms_acceptance" class="form-check-input"
+                                           {% if settings.require_terms_acceptance %}checked{% endif %}>
+                                    <span class="form-check-label">Exigir aceite no primeiro acesso</span>
+                                </label>
+                                <small class="form-hint d-block">
+                                    Quando ativo, usuários precisam aceitar os termos antes de usar o sistema
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="ti ti-info-circle me-2"></i> Informações
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-muted small">
+                                <p class="mb-2">
+                                    <strong>Como funciona:</strong>
+                                </p>
+                                <ul class="ps-3 mb-0">
+                                    <li>Os termos são exibidos no primeiro login do usuário</li>
+                                    <li>O usuário deve aceitar para continuar</li>
+                                    <li>A data e versão do aceite são registradas</li>
+                                    <li>Alterar a versão exige novo aceite de todos</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-transparent border-0">
+                <div class="d-flex">
+                    <a href="{{ url_for('admin_blueprint.users_list') }}" class="btn btn-ghost-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary ms-auto">
+                        <i class="ti ti-device-floppy me-2"></i> Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

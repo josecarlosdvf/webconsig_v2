@@ -107,11 +107,24 @@ class UserForm(FlaskForm):
         render_kw={'placeholder': 'Observações sobre o usuário...', 'rows': 3}
     )
     
+    team_id = SelectField(
+        'Equipe/Corban',
+        coerce=int,
+        validators=[Optional()],
+        choices=[]
+    )
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Carrega grupos disponíveis
         self.groups.choices = [
             (g.id, g.name) for g in UserGroup.get_active()
+        ]
+        # Carrega equipes/corbans
+        from apps.hr.models import Team
+        teams = Team.get_active()
+        self.team_id.choices = [(0, '-- Nenhuma --')] + [
+            (t.id, f'{t.name} ({("Equipe" if t.is_team else "Corban")})') for t in teams
         ]
         # employee_id será preenchido na view
     

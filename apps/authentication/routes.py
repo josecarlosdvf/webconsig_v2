@@ -3,7 +3,7 @@
 Rotas de Autenticação
 """
 
-from flask import render_template, redirect, request, url_for, flash, session, jsonify, make_response
+from flask import render_template, redirect, request, url_for, flash, session, jsonify, make_response, current_app
 from flask_login import current_user, login_user, logout_user, login_required
 
 from apps import db
@@ -57,6 +57,9 @@ def login():
             if not user.is_active:
                 msg = Messages.get('account_inactive')
             else:
+                # Atualiza último login
+                user.update_last_login()
+                
                 # Realiza o login
                 login_user(user, remember=form.remember.data)
                 
@@ -212,6 +215,121 @@ def change_password():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(error, 'danger')
+    
+    return redirect(url_for('authentication_blueprint.profile'))
+
+
+@blueprint.route('/perfil/avatar', methods=['POST'])
+@login_required
+def update_avatar():
+    """Upload/atualização de foto do perfil usando o serviço de arquivos"""
+    from apps.files.services import FileService, FileValidationError
+    from apps.files.models import File, FileCategory
+    
+    if 'avatar' not in request.files:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Nenhum arquivo selecionado'}), 400
+        flash('Nenhum arquivo selecionado.', 'danger')
+        return redirect(url_for('authentication_blueprint.profile'))
+    
+    file = request.files['avatar']
+    
+    if not file or file.filename == '':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Arquivo inválido'}), 400
+        flash('Arquivo inválido.', 'danger')
+        return redirect(url_for('authentication_blueprint.profile'))
+    
+    try:
+        # Verificar se existe categoria para foto de perfil de usuário
+        category = FileCategory.get_by_code('user_avatar')
+        
+        if not category:
+            # Criar categoria se não existir
+            category = FileCategory(
+                code='user_avatar',
+                name='Foto de Perfil',
+                description='Foto de perfil de usuários',
+                entity_type='user',
+                allowed_extensions='jpg,jpeg,png,gif,webp',
+                max_file_size_mb=5,
+                allow_multiple=False,
+                is_active=True
+            )
+            db.session.add(category)
+            db.session.commit()
+        
+        # Remove arquivo anterior se existir
+        existing_files = File.get_for_entity('user', current_user.id, 'user_avatar')
+        for f in existing_files:
+            f.soft_delete(current_user.id)
+        
+        # Faz upload usando o FileService
+        file_record = FileService.upload(
+            file=file,
+            category_code='user_avatar',
+            entity_type='user',
+            entity_id=current_user.id,
+            uploaded_by_id=current_user.id,
+            description=f'Foto de perfil de {current_user.username}'
+        )
+        
+        # Atualiza URL no usuário (usa URL direta para avatares)
+        current_user.avatar_url = file_record.direct_url
+        db.session.commit()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'avatar_url': current_user.avatar_url,
+                'message': 'Foto atualizada com sucesso!'
+            })
+        
+        flash('Foto atualizada com sucesso!', 'success')
+        
+    except FileValidationError as e:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': str(e)}), 400
+        flash(str(e), 'danger')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Erro ao atualizar avatar: {e}', exc_info=True)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Erro ao salvar arquivo'}), 500
+        flash('Erro ao salvar arquivo.', 'danger')
+    
+    return redirect(url_for('authentication_blueprint.profile'))
+
+
+@blueprint.route('/perfil/avatar/remover', methods=['POST'])
+@login_required
+def remove_avatar():
+    """Remove a foto do perfil"""
+    from apps.files.models import File
+    
+    try:
+        # Remove arquivos de avatar do usuário
+        existing_files = File.get_for_entity('user', current_user.id, 'user_avatar')
+        for f in existing_files:
+            f.soft_delete(current_user.id)
+        
+        # Limpa URL do avatar no usuário
+        current_user.avatar_url = None
+        db.session.commit()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': 'Foto removida com sucesso!'})
+        
+        flash('Foto removida com sucesso!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Erro ao remover avatar: {e}', exc_info=True)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Erro ao remover foto'}), 500
+        flash('Erro ao remover foto.', 'danger')
     
     return redirect(url_for('authentication_blueprint.profile'))
 

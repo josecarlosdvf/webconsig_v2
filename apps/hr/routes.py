@@ -47,6 +47,11 @@ def team_create():
     """Criar nova equipe/corban"""
     form = TeamForm()
     
+<<<<<<< HEAD
+    # Define cor automática para nova equipe
+    if request.method == 'GET':
+        form.color.data = Team.get_next_color()
+=======
     # Gera uma cor única que não é usada por nenhuma outra equipe
     existing_colors = [t.color for t in Team.query_active().filter(Team.color.isnot(None)).all()]
     default_colors = [
@@ -66,6 +71,7 @@ def team_create():
     
     if request.method == 'GET' and not form.color.data:
         form.color.data = available_color
+>>>>>>> origin/main
     
     if form.validate_on_submit():
         team = Team()

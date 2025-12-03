@@ -487,6 +487,11 @@ class File(db.Model, BaseModel):
         return url_for('files_blueprint.download', file_id=self.id)
     
     @property
+    def direct_url(self):
+        """Retorna URL direta para o arquivo (para uso em img src, etc)"""
+        return f'/uploads/{self.path}'
+    
+    @property
     def thumbnail_url(self):
         """Retorna URL da thumbnail (para imagens)"""
         if self.is_image:

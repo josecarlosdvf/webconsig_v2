@@ -198,6 +198,16 @@ Categorias disponíveis:
 
 Certifique-se que os arquivos estão em UTF-8.
 
+## 🤝 Contribuição e Fluxo de PRs
+
+Siga o guia em `CONTRIBUTING.md` para manter uma única linha de desenvolvimento (`main`) e evitar branches paralelos longos. Resumo:
+- Use branches curtas `feature/*` ou `fix/*`
+- Abra PRs pequenos com base em `main`
+- Resolva conflitos localmente antes de abrir o PR
+- Após o merge, apague a branch remota e aplique tags de versão quando necessário
+
+Comandos úteis com GitHub CLI estão documentados no `CONTRIBUTING.md`.
+
 ### Migrações de banco
 
 ```bash

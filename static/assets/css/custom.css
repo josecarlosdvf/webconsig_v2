@@ -1,6 +1,7 @@
 /**
- * Estilos Customizados
+ * Estilos Customizados para Tabler
  * Sistema em pt-BR
+ * Todos os estilos são subordinados ao Tabler CSS
  */
 
 /* ========================================
@@ -24,7 +25,7 @@
     display: block;
     font-size: 0.75rem;
     font-weight: 400;
-    color: var(--volt-gray-400);
+    color: var(--tblr-muted);
 }
 
 /* Sidebar Toggle Button */
@@ -37,10 +38,10 @@
     width: 3rem;
     height: 3rem;
     border-radius: 50%;
-    background-color: var(--volt-primary);
+    background-color: var(--tblr-primary);
     color: #fff;
     border: none;
-    box-shadow: var(--volt-shadow);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 @media (max-width: 991.98px) {
@@ -109,7 +110,7 @@
 }
 
 .page-title p {
-    color: var(--volt-gray-500);
+    color: var(--tblr-muted);
     margin-bottom: 0;
 }
 
@@ -131,7 +132,7 @@
 .stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--volt-gray-800);
+    color: var(--tblr-body-color);
 }
 
 /* Quick Actions */
@@ -141,7 +142,7 @@
 }
 
 .quick-action-card:hover {
-    background-color: var(--volt-gray-100);
+    background-color: var(--tblr-bg-surface-secondary);
 }
 
 .quick-action-card .icon {
@@ -151,7 +152,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background-color: var(--volt-primary);
+    background-color: var(--tblr-primary);
     color: #fff;
     font-size: 1.25rem;
 }
@@ -171,7 +172,7 @@
     width: 120px;
     height: 120px;
     border: 4px solid #fff;
-    box-shadow: var(--volt-shadow);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .profile-card .status-indicator {
@@ -180,7 +181,7 @@
     right: 0.5rem;
     width: 1rem;
     height: 1rem;
-    background-color: var(--volt-success);
+    background-color: var(--tblr-success);
     border: 2px solid #fff;
     border-radius: 50%;
 }
@@ -231,17 +232,17 @@
 
 .empty-state .icon {
     font-size: 4rem;
-    color: var(--volt-gray-300);
+    color: var(--tblr-border-color);
     margin-bottom: 1rem;
 }
 
 .empty-state h3 {
-    color: var(--volt-gray-600);
+    color: var(--tblr-body-color);
     margin-bottom: 0.5rem;
 }
 
 .empty-state p {
-    color: var(--volt-gray-500);
+    color: var(--tblr-muted);
 }
 
 /* Password Strength Indicator */
@@ -249,7 +250,7 @@
     height: 4px;
     border-radius: 2px;
     margin-top: 0.5rem;
-    background-color: var(--volt-gray-200);
+    background-color: var(--tblr-border-color);
     overflow: hidden;
 }
 
@@ -260,39 +261,39 @@
 
 .password-strength-bar.weak {
     width: 25%;
-    background-color: var(--volt-danger);
+    background-color: var(--tblr-danger);
 }
 
 .password-strength-bar.fair {
     width: 50%;
-    background-color: var(--volt-warning);
+    background-color: var(--tblr-warning);
 }
 
 .password-strength-bar.good {
     width: 75%;
-    background-color: var(--volt-info);
+    background-color: var(--tblr-info);
 }
 
 .password-strength-bar.strong {
     width: 100%;
-    background-color: var(--volt-success);
+    background-color: var(--tblr-success);
 }
 
 /* Custom Checkbox Switch */
 .form-check-input:checked {
-    background-color: var(--volt-primary);
-    border-color: var(--volt-primary);
+    background-color: var(--tblr-primary);
+    border-color: var(--tblr-primary);
 }
 
 .form-check-input:focus {
-    border-color: var(--volt-primary);
-    box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.25);
+    border-color: var(--tblr-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--tblr-primary-rgb), 0.25);
 }
 
 /* File Upload Area */
 .file-upload-area {
-    border: 2px dashed var(--volt-gray-300);
-    border-radius: var(--volt-radius);
+    border: 2px dashed var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
     padding: 2rem;
     text-align: center;
     cursor: pointer;
@@ -300,13 +301,13 @@
 }
 
 .file-upload-area:hover {
-    border-color: var(--volt-primary);
-    background-color: var(--volt-gray-100);
+    border-color: var(--tblr-primary);
+    background-color: var(--tblr-bg-surface-secondary);
 }
 
 .file-upload-area.dragging {
-    border-color: var(--volt-primary);
-    background-color: rgba(31, 41, 55, 0.1);
+    border-color: var(--tblr-primary);
+    background-color: rgba(var(--tblr-primary-rgb), 0.1);
 }
 
 /* Data Table Actions */
@@ -371,7 +372,7 @@ button:focus,
 input:focus,
 select:focus,
 textarea:focus {
-    outline: 2px solid var(--volt-primary);
+    outline: 2px solid var(--tblr-primary);
     outline-offset: 2px;
 }
 
@@ -380,7 +381,7 @@ textarea:focus {
     position: absolute;
     top: -40px;
     left: 0;
-    background: var(--volt-primary);
+    background: var(--tblr-primary);
     color: #fff;
     padding: 0.5rem 1rem;
     z-index: 100;

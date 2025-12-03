@@ -68,13 +68,13 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex align-items-center">
-                            <span class="avatar bg-{{ 'azure' if team.team_type == 'team' else 'purple' }}-lt me-3">
-                                <i class="ti ti-{{ 'users' if team.team_type == 'team' else 'building' }} text-{{ 'azure' if team.team_type == 'team' else 'purple' }}"></i>
+                            <span class="avatar bg-{{ 'azure' if team.type == 'team' else 'purple' }}-lt me-3">
+                                <i class="ti ti-{{ 'users' if team.type == 'team' else 'building' }} text-{{ 'azure' if team.type == 'team' else 'purple' }}"></i>
                             </span>
                             <div>
                                 <h3 class="card-title mb-0">{{ team.name }}</h3>
-                                <span class="badge bg-{{ 'azure' if team.team_type == 'team' else 'purple' }}-lt">
-                                    {{ 'Equipe Interna' if team.team_type == 'team' else 'Corban' }}
+                                <span class="badge bg-{{ 'azure' if team.type == 'team' else 'purple' }}-lt">
+                                    {{ 'Equipe Interna' if team.type == 'team' else 'Corban' }}
                                 </span>
                             </div>
                             <div class="ms-auto">

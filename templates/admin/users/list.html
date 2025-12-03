@@ -36,6 +36,7 @@
                 <h2 class="page-title">Usuários</h2>
             </div>
             <div class="col-auto ms-auto d-print-none btn-list">
+<<<<<<< HEAD
                 <a href="{{ url_for('admin_blueprint.terms_settings') }}" class="btn btn-outline-secondary" title="Termos de Uso">
                     <i class="ti ti-file-text me-2"></i> Termos de Uso
                 </a>
@@ -45,6 +46,14 @@
                 </button>
                 {% endif %}
                 {% if perm.can('users.invite') %}
+=======
+                {% if perm.can('users.invite') %}
+                <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#termsModal">
+                    <i class="ti ti-file-text me-2"></i> Termos de Uso
+                </a>
+                {% endif %}
+                {% if perm.can('users.invite') %}
+>>>>>>> origin/main
                 <a href="{{ url_for('admin_blueprint.invitations_create') }}" class="btn btn-success">
                     <i class="ti ti-mail-forward me-2"></i> Enviar Convite
                 </a>
@@ -97,6 +106,10 @@
                         <tr>
                             <th>Usuário</th>
                             <th>Funcionário</th>
+<<<<<<< HEAD
+=======
+                            <th>E-mail</th>
+>>>>>>> origin/main
                             <th>Grupos</th>
                             <th class="text-center">Ativo</th>
                             <th>Último Login</th>
@@ -126,6 +139,26 @@
                                     </div>
                                 </div>
                             </td>
+<<<<<<< HEAD
+=======
+                            <td>
+                                {% if user.employee %}
+                                <a href="{{ url_for('hr_blueprint.employee_view', employee_id=user.employee.id) }}" class="text-reset">
+                                    {{ user.employee.name }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-muted">{{ user.email }}</div>
+                                {% if perm.can('users.invite') and user.email and user.id != current_user.id %}
+                                <a href="#" class="btn btn-sm btn-ghost-primary mt-1" onclick="sendInvite('{{ user.email }}', '{{ user.full_name }}')">
+                                    <i class="ti ti-mail-forward"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+>>>>>>> origin/main
                             <td>
                                 {% if user.employee %}
                                 <a href="{{ url_for('hr_blueprint.employee_view', employee_id=user.employee.id) }}" class="text-reset">
@@ -139,6 +172,7 @@
                                 {% endif %}
                             </td>
                             <td>
+<<<<<<< HEAD
                                 {% for group in user.user_groups[:2] %}
                                 <span class="badge bg-blue-lt">{{ group.name }}</span>
                                 {% endfor %}
@@ -158,6 +192,22 @@
                                 </label>
                                 {% else %}
                                 {% if user.is_active %}
+=======
+                                {% if perm.can('users.edit') and user.id != current_user.id %}
+                                <label class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" 
+                                           {% if user.is_active and not user.is_locked %}checked{% endif %}
+                                           onchange="toggleActive({{ user.id }}, this.checked)"
+                                           {% if user.is_locked %}disabled{% endif %}>
+                                </label>
+                                {% if user.is_locked %}
+                                <span class="badge bg-red ms-1">Bloqueado</span>
+                                {% endif %}
+                                {% else %}
+                                {% if user.is_locked %}
+                                <span class="badge bg-red">Bloqueado</span>
+                                {% elif user.is_active %}
+>>>>>>> origin/main
                                 <span class="badge bg-green">Ativo</span>
                                 {% else %}
                                 <span class="badge bg-secondary">Inativo</span>
@@ -166,6 +216,7 @@
                             </td>
                             <td class="text-muted">
                                 {% if user.last_login %}
+<<<<<<< HEAD
                                 <span title="{{ user.last_login.strftime('%d/%m/%Y às %H:%M:%S') }}">
                                     {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
                                 </span>
@@ -210,13 +261,49 @@
                                             </a>
                                             {% endif %}
                                         </div>
+=======
+                                <span title="{{ user.last_login.strftime('%d/%m/%Y %H:%M:%S') }}">
+                                    {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Nunca</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="ti ti-dots-vertical"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end" style="position: absolute;">
+                                        <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_view', user_id=user.id) }}">
+                                            <i class="ti ti-eye me-2"></i> Visualizar
+                                        </a>
+                                        {% if perm.can('users.edit') %}
+                                        <a class="dropdown-item" href="{{ url_for('admin_blueprint.users_edit', user_id=user.id) }}">
+                                            <i class="ti ti-edit me-2"></i> Editar
+                                        </a>
+                                        {% endif %}
+                                        {% if perm.can('users.unlock') and user.is_locked %}
+                                        <a class="dropdown-item" href="#" 
+                                           onclick="event.preventDefault(); unlockUser({{ user.id }})">
+                                            <i class="ti ti-lock-open me-2"></i> Desbloquear
+                                        </a>
+                                        {% endif %}
+                                        {% if perm.can('users.delete') and user.id != current_user.id %}
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#"
+                                           onclick="event.preventDefault(); deleteUser({{ user.id }}, '{{ user.username }}')">
+                                            <i class="ti ti-trash me-2"></i> Excluir
+                                        </a>
+                                        {% endif %}
+>>>>>>> origin/main
                                     </div>
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 Nenhum usuário encontrado.
                             </td>
                         </tr>
@@ -266,6 +353,7 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <!-- Modal Importar CSV -->
 <div class="modal modal-blur fade" id="importCsvModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -335,6 +423,47 @@
                     </button>
                 </div>
             </form>
+=======
+<!-- Modal de Termos de Uso -->
+<div class="modal modal-blur fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ti ti-file-text me-2"></i> Termos de Uso e Consentimento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="ti ti-info-circle me-2"></i>
+                    Os termos de uso são exibidos para os usuários no primeiro acesso ao sistema.
+                </div>
+                <form id="termsForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Versão</label>
+                        <input type="text" name="version" class="form-control" placeholder="Ex: 1.0" value="1.0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Conteúdo dos Termos</label>
+                        <textarea name="content" class="form-control" rows="10" placeholder="Digite os termos de uso e consentimento..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-check">
+                            <input type="checkbox" name="require_acceptance" class="form-check-input" checked>
+                            <span class="form-check-label">Exigir aceite dos termos no próximo login</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="alert('Funcionalidade em desenvolvimento')">
+                    <i class="ti ti-device-floppy me-1"></i> Salvar Termos
+                </button>
+            </div>
+>>>>>>> origin/main
         </div>
     </div>
 </div>
@@ -413,23 +542,10 @@ function toggleActiveInline(userId, activate) {
 }
 
 function toggleActive(userId, activate) {
-    var action = activate ? 'ativar' : 'desativar';
-    Swal.fire({
-        title: 'Confirmar ' + action + '?',
-        text: activate ? 'O usuário poderá acessar o sistema.' : 'O usuário não poderá acessar o sistema.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: activate ? '#2fb344' : '#d63939',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sim, ' + action,
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            var form = document.getElementById('toggle-form');
-            form.action = '/admin/usuarios/' + userId + '/ativar';
-            form.submit();
-        }
-    });
+    // The backend toggles the state, so we just submit to the toggle endpoint
+    var form = document.getElementById('toggle-form');
+    form.action = '/admin/usuarios/' + userId + '/ativar';
+    form.submit();
 }
 
 function deleteUser(userId, username) {

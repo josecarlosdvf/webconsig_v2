@@ -134,13 +134,19 @@ def users_create():
     form = UserForm()
     
     # Carrega funcionários disponíveis para vinculação
-    from apps.hr.models import Employee, EmployeeStatus
+    from apps.hr.models import Employee, EmployeeStatus, Team
     employees = Employee.query_active().filter_by(
         status=EmployeeStatus.ACTIVE,
         user_id=None
     ).order_by(Employee.name).all()
     form.employee_id.choices = [(0, '-- Nenhum --')] + [
         (e.id, e.name) for e in employees
+    ]
+    
+    # Carrega equipes disponíveis
+    teams = Team.query_active().filter_by(is_active=True).order_by(Team.name).all()
+    form.team_id.choices = [(0, '-- Nenhuma --')] + [
+        (t.id, f"{t.name} ({'Corban' if t.type == 'corban' else 'Equipe'})") for t in teams
     ]
     
     if form.validate_on_submit():
@@ -172,6 +178,9 @@ def users_create():
                 employee = Employee.query.get(form.employee_id.data)
                 if employee:
                     employee.user_id = user.id
+                    # Se equipe selecionada, vincula o funcionário à equipe
+                    if form.team_id.data:
+                        employee.team_id = form.team_id.data
             
             db.session.commit()
             
@@ -365,7 +374,7 @@ def users_edit(user_id):
     form = UserForm(obj=user)
     
     # Carrega funcionários disponíveis
-    from apps.hr.models import Employee, EmployeeStatus
+    from apps.hr.models import Employee, EmployeeStatus, Team
     employees = Employee.query_active().filter(
         or_(
             Employee.user_id.is_(None),
@@ -377,10 +386,18 @@ def users_edit(user_id):
         (e.id, e.name) for e in employees
     ]
     
+    # Carrega equipes disponíveis
+    teams = Team.query_active().filter_by(is_active=True).order_by(Team.name).all()
+    form.team_id.choices = [(0, '-- Nenhuma --')] + [
+        (t.id, f"{t.name} ({'Corban' if t.type == 'corban' else 'Equipe'})") for t in teams
+    ]
+    
     if request.method == 'GET':
         form.groups.data = [m.group_id for m in user.groups if not m.deleted_at]
         if hasattr(user, 'employee') and user.employee:
             form.employee_id.data = user.employee.id
+            if user.employee.team_id:
+                form.team_id.data = user.employee.team_id
     
     if form.validate_on_submit():
         try:
@@ -427,6 +444,9 @@ def users_edit(user_id):
                 employee = Employee.query.get(form.employee_id.data)
                 if employee:
                     employee.user_id = user.id
+                    # Atualiza equipe do funcionário
+                    if form.team_id.data:
+                        employee.team_id = form.team_id.data
             
             db.session.commit()
             

@@ -13,8 +13,8 @@ services:
       APP_ENV: production
       APP_DEBUG: "false"
       API_WORKERS: ${API_WORKERS:-4}
-    ports:
-      - "${BACKEND_PORT:-18001}:8001"
+    expose:
+      - "8001"
     restart: unless-stopped
 
   web:
@@ -23,8 +23,23 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - api
+    expose:
+      - "80"
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+      - web
+    environment:
+      HTTPS_DOMAIN: ${HTTPS_DOMAIN:-localhost}
+      HTTPS_ADMIN_USER: ${HTTPS_ADMIN_USER:-admin}
+      HTTPS_ADMIN_PASSWORD: ${HTTPS_ADMIN_PASSWORD:-Admin@123!ChangeMe}
     ports:
-      - "${FRONTEND_PORT:-15174}:80"
+      - "${HTTPS_PORT:-15443}:443"
     restart: unless-stopped
 
   postgres:

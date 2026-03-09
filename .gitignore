@@ -74,6 +74,7 @@ logs/
 
 # Local env
 .env
+.env.docker.local
 
 # Uploads
 uploads/*

@@ -18,7 +18,7 @@ alembic upgrade head
 python run_api.py
 ```
 
-API base: `http://localhost:8001/api/v1`
+API base (dev direto): `http://localhost:8001/api/v1`
 
 ### Frontend
 
@@ -28,7 +28,27 @@ npm install
 npm run dev
 ```
 
-App base: `http://localhost:5174`
+App base (dev direto): `http://localhost:5174`
+
+## Acesso seguro (HTTPS)
+
+O acesso recomendado em ambiente container é via gateway TLS:
+
+```bash
+cp .env.docker.example .env.docker.local
+docker compose up -d --build
+```
+
+URL segura padrão:
+
+- `https://localhost:15443`
+
+Credenciais de acesso (Basic Auth) via `.env`:
+
+- `HTTPS_ADMIN_USER`
+- `HTTPS_ADMIN_PASSWORD`
+
+No frontend, a API usa caminho relativo `/api/v1`, mantendo tráfego seguro no mesmo domínio HTTPS.
 
 ## Observação importante
 

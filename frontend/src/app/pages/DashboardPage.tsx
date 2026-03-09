@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { RealtimeFeed } from "../../components/RealtimeFeed";
 
 function MetricCard({ title, value, hint }: { title: string; value: string; hint: string }) {
   return (
@@ -31,6 +32,10 @@ export function DashboardPage() {
       <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-800">Resumo de operação</h3>
         <p className="mt-2 text-sm text-slate-600">Plataforma pronta para evolução de módulos administrativos, CRM e ERP com arquitetura modular.</p>
+      </div>
+
+      <div className="mt-4">
+        <RealtimeFeed />
       </div>
     </section>
   );

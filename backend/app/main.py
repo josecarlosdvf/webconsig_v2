@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.debug_store import push_debug_event
 from app.core.logging import setup_logging
+from app.core.realtime_hub import publish_event
 from app.domain.models import audit, financial, idempotency, plugin  # noqa: F401
 
 setup_logging()
@@ -38,6 +39,7 @@ def on_startup() -> None:
     if settings.auto_create_tables:
         Base.metadata.create_all(bind=engine)
     logger.info("startup_complete", extra={"area": "backend"})
+    publish_event(event_type="system.startup", payload={"message": "backend_ready"})
 
 
 @app.exception_handler(OperationalError)

@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.realtime_hub import publish_event
 from app.domain.models.audit import AuditEvent
 
 
@@ -45,6 +46,19 @@ class AuditGateway:
             detail=json.dumps(detail, default=str),
         )
         self.db.add(event)
+
+        publish_event(
+            event_type="audit.event",
+            payload={
+                "area": area,
+                "action": action,
+                "actor": actor or "anonymous",
+                "request_id": request_id,
+                "source": source,
+                "severity": severity.upper(),
+                "http_path": http_path,
+            },
+        )
 
     def list_recent(
         self,

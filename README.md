@@ -63,3 +63,13 @@ python run_governance.py
 cd ../frontend
 npm run governance:check
 ```
+
+## Tempo real (WebSocket + HTMX)
+
+- WebSocket: `/api/v1/realtime/ws`
+- REST fallback: `/api/v1/realtime/events`
+- Fragmento HTMX: `/api/v1/realtime/htmx/audit-feed`
+
+Contrato detalhado em:
+
+- `docs/development/REALTIME_CONTRACTS.md`

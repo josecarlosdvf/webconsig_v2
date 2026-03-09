@@ -13,6 +13,9 @@ STACK OFICIAL (MODERN-ONLY) - FASTAPI + REACT
   GET  /api/v1/health
   POST /api/v1/financial/transactions (header obrigatório: Idempotency-Key)
   POST /api/v1/debug/frontend-log
+  WS   /api/v1/realtime/ws
+  GET  /api/v1/realtime/events
+  GET  /api/v1/realtime/htmx/audit-feed
 
 2) Frontend moderno:
 - Pasta: frontend

@@ -2,6 +2,8 @@ from collections import deque
 from datetime import datetime
 from threading import Lock
 
+from app.core.realtime_hub import publish_event
+
 
 _EVENTS: deque[dict] = deque(maxlen=5000)
 _LOCK = Lock()
@@ -29,6 +31,8 @@ def push_debug_event(
     }
     with _LOCK:
         _EVENTS.append(event)
+
+    publish_event(event_type="debug.event", payload=event)
 
 
 def list_debug_events(*, limit: int = 200, source: str | None = None, level: str | None = None) -> list[dict]:

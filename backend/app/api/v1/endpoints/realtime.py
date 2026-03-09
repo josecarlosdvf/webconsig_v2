@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
+from app.api.deps import require_permission
 from app.core.realtime_hub import list_recent_events, publish_event, subscribe, unsubscribe
 from app.domain.schemas.realtime import RealtimeEvent, RealtimeEventListResponse
 
@@ -16,13 +17,17 @@ router = APIRouter(prefix="/realtime", tags=["realtime"])
 def get_realtime_events(
     limit: int = Query(default=100, ge=1, le=1000),
     event_type: str | None = Query(default=None),
+    _: None = Depends(require_permission("api:/realtime/events", "view")),
 ) -> RealtimeEventListResponse:
     items = [RealtimeEvent(**item) for item in list_recent_events(limit=limit, event_type=event_type)]
     return RealtimeEventListResponse(items=items, total=len(items))
 
 
 @router.get("/htmx/audit-feed", response_class=HTMLResponse, summary="Fragmento HTMX de feed em tempo real")
-def get_htmx_audit_feed(limit: int = Query(default=10, ge=1, le=100)) -> HTMLResponse:
+def get_htmx_audit_feed(
+    limit: int = Query(default=10, ge=1, le=100),
+    _: None = Depends(require_permission("api:/realtime/htmx/audit-feed", "view")),
+) -> HTMLResponse:
     items = list_recent_events(limit=limit)
     lines: list[str] = ["<ul class='list-group'>"]
     for item in items:

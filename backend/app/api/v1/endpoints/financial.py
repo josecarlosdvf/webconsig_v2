@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Header, status
 
-from app.api.deps import get_actor, get_financial_service, get_request_id
+from app.api.deps import get_actor, get_financial_service, get_request_id, require_permission
 from app.application.services.financial_service import FinancialService
 from app.domain.schemas.finance import FinancialCreateRequest, FinancialCreateResponse
 
@@ -12,6 +12,7 @@ router = APIRouter(prefix="/financial", tags=["financial"])
     response_model=FinancialCreateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar transação financeira (idempotente)",
+    dependencies=[Depends(require_permission("api:/financial/transactions", "create"))],
 )
 def create_transaction(
     payload: FinancialCreateRequest,

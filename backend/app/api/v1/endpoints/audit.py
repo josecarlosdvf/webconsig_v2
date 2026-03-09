@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.adapters.gateways.audit_gateway import AuditGateway
-from app.api.deps import get_db
+from app.api.deps import get_db, require_permission
 from app.domain.schemas.audit import AuditEventResponse, AuditListResponse, AuditSummaryResponse
 
 router = APIRouter(prefix="/audit", tags=["audit"])
@@ -21,6 +21,7 @@ def list_audit_events(
     severity: str | None = Query(default=None),
     http_path: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    _: None = Depends(require_permission("api:/audit/events", "view")),
 ) -> AuditListResponse:
     records = AuditGateway(db).list_recent(
         limit=limit,
@@ -69,6 +70,7 @@ def audit_summary(
     starts_at: datetime | None = Query(default=None),
     ends_at: datetime | None = Query(default=None),
     db: Session = Depends(get_db),
+    _: None = Depends(require_permission("api:/audit/summary", "view")),
 ) -> AuditSummaryResponse:
     summary = AuditGateway(db).summary(starts_at=starts_at, ends_at=ends_at)
     return AuditSummaryResponse(**summary)

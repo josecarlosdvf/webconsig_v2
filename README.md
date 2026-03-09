@@ -50,6 +50,32 @@ Credenciais de acesso (Basic Auth) via `.env`:
 
 No frontend, a API usa caminho relativo `/api/v1`, mantendo tráfego seguro no mesmo domínio HTTPS.
 
+## IAM e Autorização dinâmica (Keycloak + Casbin)
+
+- Keycloak (OIDC) é o provedor de autenticação e papéis/grupos.
+- Casbin é o motor de autorização dinâmica orientado por políticas.
+- Governança: recursos e políticas podem ser gerenciados sem alteração de código.
+
+Subida local com IAM:
+
+```bash
+cp .env.docker.example .env.docker.local
+docker compose --env-file .env.docker.local up -d --build
+docker compose --env-file .env.docker.local exec api alembic upgrade head
+```
+
+URLs padrão:
+
+- App seguro: `https://localhost:15443`
+- Keycloak (via gateway): `https://localhost:15443/auth`
+
+Credenciais iniciais do realm importado:
+
+- Usuário: `admin`
+- Senha: `Admin@123!ChangeMe`
+
+Detalhes de governança em `docs/development/ACCESS_CONTROL_GOVERNANCE.md`.
+
 ## Observação importante
 
 Diretórios legados foram removidos e não fazem parte do runtime oficial.

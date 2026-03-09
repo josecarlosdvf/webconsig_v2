@@ -6,7 +6,7 @@ import json
 
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
-from app.api.deps import get_actor, get_notification_service, get_request_id
+from app.api.deps import get_actor, get_notification_service, get_request_id, require_permission
 from app.application.services.notification_service import NotificationService
 from app.core.notification_hub import subscribe_recipient, unsubscribe_recipient
 from app.domain.schemas.notification import NotificationCreateRequest, NotificationListResponse, NotificationResponse
@@ -20,6 +20,7 @@ def list_notifications(
     unread_only: bool = Query(default=False),
     actor: str = Depends(get_actor),
     service: NotificationService = Depends(get_notification_service),
+    _: None = Depends(require_permission("api:/notifications", "view")),
 ) -> NotificationListResponse:
     return service.list_for_actor(actor=actor, limit=limit, unread_only=unread_only)
 
@@ -30,6 +31,7 @@ def send_notification(
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
     service: NotificationService = Depends(get_notification_service),
+    _: None = Depends(require_permission("api:/notifications/send", "create")),
 ) -> NotificationResponse:
     return service.send_notification(payload=payload, actor=actor, request_id=request_id)
 
@@ -40,6 +42,7 @@ def read_notification(
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
     service: NotificationService = Depends(get_notification_service),
+    _: None = Depends(require_permission("api:/notifications/read", "edit")),
 ) -> NotificationResponse:
     return service.mark_read(actor=actor, notification_id=notification_id, request_id=request_id)
 
@@ -49,6 +52,7 @@ def read_all_notifications(
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
     service: NotificationService = Depends(get_notification_service),
+    _: None = Depends(require_permission("api:/notifications/read-all", "edit")),
 ) -> dict:
     return service.mark_all_read(actor=actor, request_id=request_id)
 

@@ -1,0 +1,77 @@
+{
+  "realm": "webconsig",
+  "enabled": true,
+  "displayName": "Webconsig",
+  "registrationAllowed": false,
+  "rememberMe": true,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "admin" },
+      { "name": "manager" },
+      { "name": "auditor" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "webconsig-frontend",
+      "name": "Webconsig Frontend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "https://localhost:15443/*",
+        "http://localhost:5174/*",
+        "http://127.0.0.1:5174/*"
+      ],
+      "webOrigins": [
+        "https://localhost:15443",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "Webconsig",
+      "email": "admin@webconsig.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin@123!ChangeMe",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "manager",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Manager",
+      "lastName": "Webconsig",
+      "email": "manager@webconsig.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Manager@123!ChangeMe",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["manager"]
+    }
+  ]
+}

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from app.adapters.gateways.audit_gateway import AuditGateway
-from app.api.deps import get_actor, get_db, get_request_id
+from app.api.deps import get_actor, get_db, get_request_id, require_permission
 from app.core.debug_store import debug_summary, list_debug_events, push_debug_event
 from app.domain.schemas.common import StrictSchema
 from app.domain.schemas.debug import DebugEventListResponse, DebugEventResponse, DebugSummaryResponse
@@ -24,6 +24,7 @@ def ingest_frontend_log(
     db: Session = Depends(get_db),
     request_id: str = Depends(get_request_id),
     actor: str = Depends(get_actor),
+    _: None = Depends(require_permission("api:/debug/frontend-log", "create")),
 ) -> dict:
     push_debug_event(
         source="frontend",
@@ -57,11 +58,12 @@ def get_debug_events(
     limit: int = Query(default=200, ge=1, le=2000),
     source: str | None = Query(default=None),
     level: str | None = Query(default=None),
+    _: None = Depends(require_permission("api:/debug/events", "view")),
 ) -> DebugEventListResponse:
     items = [DebugEventResponse(**item) for item in list_debug_events(limit=limit, source=source, level=level)]
     return DebugEventListResponse(items=items, total=len(items))
 
 
 @router.get("/summary", response_model=DebugSummaryResponse, summary="Resumo operacional de debug")
-def get_debug_summary() -> DebugSummaryResponse:
+def get_debug_summary(_: None = Depends(require_permission("api:/debug/summary", "view"))) -> DebugSummaryResponse:
     return DebugSummaryResponse(**debug_summary())

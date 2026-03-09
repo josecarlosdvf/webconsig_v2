@@ -13,6 +13,14 @@ services:
       APP_ENV: production
       APP_DEBUG: "false"
       API_WORKERS: ${API_WORKERS:-4}
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      AUTH_ALLOW_DEV_HEADER_FALLBACK: ${AUTH_ALLOW_DEV_HEADER_FALLBACK:-true}
+      AUTHZ_ENABLED: ${AUTHZ_ENABLED:-true}
+      KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL:-http://keycloak:8080}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-webconsig}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-webconsig-frontend}
+      KEYCLOAK_VERIFY_TLS: ${KEYCLOAK_VERIFY_TLS:-false}
+      KEYCLOAK_JWKS_CACHE_SECONDS: ${KEYCLOAK_JWKS_CACHE_SECONDS:-300}
     expose:
       - "8001"
     restart: unless-stopped
@@ -21,8 +29,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-keycloak}
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-https://localhost:15443/auth}
+        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-webconsig}
+        VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-webconsig-frontend}
     depends_on:
       - api
+      - keycloak
     expose:
       - "80"
     restart: unless-stopped
@@ -34,6 +49,7 @@ services:
     depends_on:
       - api
       - web
+      - keycloak
     environment:
       HTTPS_DOMAIN: ${HTTPS_DOMAIN:-localhost}
       HTTPS_ADMIN_USER: ${HTTPS_ADMIN_USER:-admin}
@@ -60,6 +76,18 @@ services:
     profiles: ["local-infra"]
     ports:
       - "${REDIS_PORT:-16379}:6379"
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    command: ["start-dev", "--import-realm", "--http-relative-path=/auth"]
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-Admin@123!ChangeMe}
+    ports:
+      - "${KEYCLOAK_PORT:-18080}:8080"
+    volumes:
+      - ./infra/keycloak/realm-webconsig.json:/opt/keycloak/data/import/realm-webconsig.json:ro
     restart: unless-stopped
 
 volumes:

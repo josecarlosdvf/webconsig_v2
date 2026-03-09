@@ -47,3 +47,9 @@ STACK OFICIAL (MODERN-ONLY) - FASTAPI + REACT
 - Check frontend:
   cd frontend
   npm run governance:check
+
+6) IAM e autorização dinâmica:
+- Autenticação e identidade via Keycloak (OIDC).
+- Autorização dinâmica via Casbin com políticas persistidas em banco.
+- Catálogo de recursos de acesso (API/UI/menu/componentes) para gestão sem alteração de código.
+- Endpoints de gestão: /api/v1/access-control/*

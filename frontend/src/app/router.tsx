@@ -10,7 +10,10 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { useAuth } from "../features/auth/AuthProvider";
 
 function ProtectedLayout() {
-  const { user } = useAuth();
+  const { user, isReady } = useAuth();
+  if (!isReady) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">Carregando autenticação...</div>;
+  }
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -19,7 +22,10 @@ function ProtectedLayout() {
 }
 
 function LoginRoute() {
-  const { user } = useAuth();
+  const { user, isReady } = useAuth();
+  if (!isReady) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">Carregando autenticação...</div>;
+  }
   if (user) {
     return <Navigate to="/" replace />;
   }

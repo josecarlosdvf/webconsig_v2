@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     api_port: int = 8001
     api_workers: int = 2
 
+    auth_enabled: bool = True
+    auth_allow_dev_header_fallback: bool = True
+    authz_enabled: bool = True
+
+    keycloak_base_url: str = "http://localhost:18080"
+    keycloak_realm: str = "webconsig"
+    keycloak_client_id: str = "webconsig-frontend"
+    keycloak_verify_tls: bool = False
+    keycloak_jwks_cache_seconds: int = 300
+
     model_config = SettingsConfigDict(
         env_file=str(ROOT_ENV_FILE),
         env_file_encoding="utf-8",

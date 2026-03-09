@@ -4,7 +4,7 @@ import json
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import get_actor, get_plugin_service, get_request_id
+from app.api.deps import get_actor, get_plugin_service, get_request_id, require_permission
 from app.application.services.plugin_service import PluginService
 from app.domain.schemas.plugin import (
     PluginListResponse,
@@ -35,13 +35,19 @@ def _to_response(item) -> PluginResponse:
 
 
 @router.get("", response_model=PluginListResponse, summary="Listar plugins")
-def list_plugins(service: PluginService = Depends(get_plugin_service)) -> PluginListResponse:
+def list_plugins(
+    service: PluginService = Depends(get_plugin_service),
+    _: None = Depends(require_permission("api:/plugins", "view")),
+) -> PluginListResponse:
     items = [_to_response(item) for item in service.list_plugins()]
     return PluginListResponse(items=items, total=len(items))
 
 
 @router.get("/discover", summary="Descobrir plugins locais")
-def discover_plugins(service: PluginService = Depends(get_plugin_service)) -> dict:
+def discover_plugins(
+    service: PluginService = Depends(get_plugin_service),
+    _: None = Depends(require_permission("api:/plugins/discover", "view")),
+) -> dict:
     items = service.discover_manifests()
     return {"items": items, "total": len(items)}
 
@@ -52,6 +58,7 @@ def register_plugin(
     service: PluginService = Depends(get_plugin_service),
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
+    _: None = Depends(require_permission("api:/plugins/register", "create")),
 ) -> PluginResponse:
     plugin = service.register_plugin(payload=payload, actor=actor, request_id=request_id)
     return _to_response(plugin)
@@ -64,6 +71,7 @@ def set_plugin_state(
     service: PluginService = Depends(get_plugin_service),
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
+    _: None = Depends(require_permission("api:/plugins/state", "edit")),
 ) -> PluginResponse:
     plugin = service.set_state(plugin_id=plugin_id, enabled=payload.enabled, actor=actor, request_id=request_id)
     return _to_response(plugin)
@@ -76,6 +84,7 @@ def run_plugin_task(
     service: PluginService = Depends(get_plugin_service),
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
+    _: None = Depends(require_permission("api:/plugins/tasks/run", "execute")),
 ) -> PluginRunTaskResponse:
     return service.run_task(plugin_id=plugin_id, payload=payload, actor=actor, request_id=request_id)
 
@@ -85,6 +94,7 @@ def list_plugin_task_logs(
     plugin_id: int,
     limit: int = Query(default=100, ge=1, le=1000),
     service: PluginService = Depends(get_plugin_service),
+    _: None = Depends(require_permission("api:/plugins/tasks/logs", "view")),
 ) -> PluginTaskLogListResponse:
     logs = service.list_logs(plugin_id=plugin_id, limit=limit)
     items: list[PluginTaskLogResponse] = []

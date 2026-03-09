@@ -17,6 +17,7 @@ def main() -> int:
     steps = [
         [sys.executable, "tools/architecture_guard.py"],
         [sys.executable, "tools/duplicate_guard.py"],
+        [sys.executable, "tools/authz_guard.py"],
     ]
 
     for command in steps:

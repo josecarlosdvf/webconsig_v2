@@ -50,6 +50,20 @@ Credenciais de acesso (Basic Auth) via `.env`:
 
 No frontend, a API usa caminho relativo `/api/v1`, mantendo tráfego seguro no mesmo domínio HTTPS.
 
+## Rebuild completo do stack
+
+Para garantir que mudanças de código fiquem ativas nas imagens/containers:
+
+```powershell
+./scripts/rebuild_all.ps1
+```
+
+Opções úteis:
+
+- `./scripts/rebuild_all.ps1 -NoCache`
+- `./scripts/rebuild_all.ps1 -SkipMigrations`
+- `./scripts/rebuild_all.ps1 -DryRun`
+
 ## IAM e Autorização dinâmica (Keycloak + Casbin)
 
 - Keycloak (OIDC) é o provedor de autenticação e papéis/grupos.

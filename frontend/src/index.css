@@ -11,5 +11,15 @@
 
 	body {
 		@apply antialiased text-slate-900;
+		background-color: #f1f5f9;
+	}
+
+	:root {
+		--brand-color: #0f172a;
+	}
+
+	html[data-theme="dark"] body {
+		background-color: #020617;
+		color: #e2e8f0;
 	}
 }

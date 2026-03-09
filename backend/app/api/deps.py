@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.adapters.gateways.audit_gateway import AuditGateway
 from app.adapters.gateways.idempotency_gateway import IdempotencyGateway
+from app.adapters.gateways.notification_gateway import NotificationGateway
 from app.adapters.gateways.transaction_gateway import TransactionGateway
 from app.application.services.financial_service import FinancialService
+from app.application.services.notification_service import NotificationService
 from app.application.services.plugin_service import PluginService
 from app.core.database import SessionLocal
 
@@ -40,3 +42,10 @@ def get_financial_service(db: Session = Depends(get_db)) -> FinancialService:
 
 def get_plugin_service(db: Session = Depends(get_db)) -> PluginService:
     return PluginService(db=db)
+
+
+def get_notification_service(db: Session = Depends(get_db)) -> NotificationService:
+    return NotificationService(
+        gateway=NotificationGateway(db),
+        audit_gateway=AuditGateway(db),
+    )

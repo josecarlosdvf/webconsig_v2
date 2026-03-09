@@ -6,7 +6,7 @@ from sqlalchemy import pool
 
 from app.core.config import settings
 from app.core.database import Base
-from app.domain.models import audit, financial, idempotency, plugin  # noqa: F401
+from app.domain.models import audit, financial, idempotency, notification, plugin  # noqa: F401
 
 config = context.config
 

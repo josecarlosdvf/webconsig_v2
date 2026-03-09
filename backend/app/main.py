@@ -14,7 +14,7 @@ from app.core.database import Base, SessionLocal, engine
 from app.core.debug_store import push_debug_event
 from app.core.logging import setup_logging
 from app.core.realtime_hub import publish_event
-from app.domain.models import audit, financial, idempotency, plugin  # noqa: F401
+from app.domain.models import audit, financial, idempotency, notification, plugin  # noqa: F401
 
 setup_logging()
 logger = logging.getLogger("backend")

@@ -1,5 +1,5 @@
-import { BarChart3, BriefcaseBusiness, LayoutDashboard, LogOut, MessageCircle, Settings, ShieldCheck, Users } from "lucide-react";
-import { useMemo } from "react";
+import { BarChart3, BriefcaseBusiness, LayoutDashboard, LogOut, Menu, MessageCircle, Settings, ShieldCheck, Users, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { NotificationCenter } from "../../components/NotificationCenter";
 import { useAuth } from "../../features/auth/AuthProvider";
@@ -20,11 +20,13 @@ const menu = [
 export function AdminLayout() {
   const { user, logout } = useAuth();
   const { settings } = useUISettings();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isTopMenu = settings.menuMode === "top";
   const menuWidth = settings.menuMode === "compact" ? "w-20" : "w-72";
   const asideOrder = settings.menuPosition === "right" ? "order-2" : "order-1";
   const mainOrder = settings.menuPosition === "right" ? "order-1" : "order-2";
+  const isAdmin = Boolean(user?.roles?.includes("admin") || user?.role === "admin");
 
   const permissionItems = useMemo(() => menu.map((item) => ({ resource: item.resource, action: item.action })), []);
   const menuPermissions = useBatchPermissions(permissionItems);
@@ -33,18 +35,33 @@ export function AdminLayout() {
       if (!menuPermissions.data) {
         return menu;
       }
+      if (isAdmin) {
+        return menu;
+      }
       return menu.filter((item) => permissionMapLookup(menuPermissions.data, item.resource, item.action));
     },
-    [menuPermissions.data]
+    [isAdmin, menuPermissions.data]
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <div className="mx-auto max-w-7xl p-4 lg:p-6">
-        <header className="mb-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm dark:bg-slate-900">
-          <div>
+    <div className="min-h-screen bg-slate-100 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+      <div className="mx-auto w-full max-w-screen-2xl px-3 py-3 sm:px-4 lg:px-6 2xl:max-w-[1800px]">
+        <header className="mb-4 flex items-center justify-between rounded-2xl bg-white px-3 py-3 shadow-sm transition-all duration-200 dark:bg-slate-900 sm:px-4">
+          <div className="flex items-center gap-2">
+            {!isTopMenu ? (
+              <button
+                type="button"
+                onClick={() => setMobileOpen((current) => !current)}
+                className="inline-flex items-center rounded-md border border-slate-300 p-1.5 text-slate-700 lg:hidden"
+                aria-label="Alternar menu"
+              >
+                {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+              </button>
+            ) : null}
+            <div>
             <h2 className="text-lg font-semibold" style={{ color: "var(--brand-color)" }}>Painel Administrativo</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">Usuário: {user?.username}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <NotificationCenter />
@@ -58,6 +75,32 @@ export function AdminLayout() {
             </button>
           </div>
         </header>
+
+        {!isTopMenu && mobileOpen ? (
+          <div className="mb-4 rounded-2xl bg-slate-900 p-3 text-slate-100 shadow-sm lg:hidden">
+            <nav className="space-y-2">
+              {visibleMenu.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={`mobile-${item.to}`}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition",
+                        isActive ? "bg-slate-100 text-slate-900" : "hover:bg-slate-800"
+                      )
+                    }
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        ) : null}
 
         {isTopMenu ? (
           <nav className="mb-4 flex flex-wrap gap-2 rounded-2xl bg-slate-900 p-3 text-slate-100 shadow-sm">
@@ -84,7 +127,7 @@ export function AdminLayout() {
 
         <div className="flex gap-4">
           {!isTopMenu ? (
-            <aside className={cn("hidden shrink-0 rounded-2xl bg-slate-900 p-4 text-slate-100 shadow-lg lg:block", menuWidth, asideOrder)}>
+            <aside className={cn("hidden shrink-0 rounded-2xl bg-slate-900 p-4 text-slate-100 shadow-lg transition-all duration-200 lg:block", menuWidth, asideOrder)}>
           <h1 className="mb-5 text-lg font-semibold">Webconsig Admin</h1>
           <nav className="space-y-2">
             {visibleMenu.map((item) => {
@@ -115,7 +158,7 @@ export function AdminLayout() {
         </aside>
           ) : null}
 
-        <main className={cn("flex-1", mainOrder)}>
+        <main className={cn("min-w-0 flex-1", mainOrder)}>
           <Outlet />
         </main>
         </div>

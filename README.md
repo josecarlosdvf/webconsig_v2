@@ -64,6 +64,22 @@ Opções úteis:
 - `./scripts/rebuild_all.ps1 -SkipMigrations`
 - `./scripts/rebuild_all.ps1 -DryRun`
 
+## Aplicação incremental (sem recriar tudo)
+
+Para aplicar mudanças apenas nos serviços afetados:
+
+```powershell
+./scripts/apply_changes.ps1
+```
+
+Exemplos:
+
+- Só backend: `./scripts/apply_changes.ps1 -Services api`
+- Backend + migração: `./scripts/apply_changes.ps1 -Services api`
+- Só frontend+gateway: `./scripts/apply_changes.ps1 -Services web,gateway -SkipMigrations`
+- Apenas restart (sem build): `./scripts/apply_changes.ps1 -Services api -OnlyRestart`
+- Simular comandos: `./scripts/apply_changes.ps1 -DryRun`
+
 ## IAM e Autorização dinâmica (Keycloak + Casbin)
 
 - Keycloak (OIDC) é o provedor de autenticação e papéis/grupos.

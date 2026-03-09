@@ -1,0 +1,7 @@
+* @webconsig/arquitetura @webconsig/backend
+
+/backend/app/api/ @webconsig/backend
+/backend/app/application/ @webconsig/backend @webconsig/arquitetura
+/backend/app/adapters/ @webconsig/backend @webconsig/arquitetura
+/frontend/ @webconsig/frontend
+/docs/ @webconsig/arquitetura

@@ -1,0 +1,51 @@
+name: webconsig
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      APP_ENV: production
+      APP_DEBUG: "false"
+      API_WORKERS: ${API_WORKERS:-4}
+    ports:
+      - "${BACKEND_PORT:-18001}:8001"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "${FRONTEND_PORT:-15174}:80"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    profiles: ["local-infra"]
+    environment:
+      POSTGRES_DB: webconsig
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["local-infra"]
+    ports:
+      - "${REDIS_PORT:-16379}:6379"
+    restart: unless-stopped
+
+volumes:
+  pg_data:

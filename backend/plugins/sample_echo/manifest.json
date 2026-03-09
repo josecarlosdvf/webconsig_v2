@@ -1,0 +1,6 @@
+{
+  "slug": "sample-echo",
+  "name": "Sample Echo Plugin",
+  "version": "1.0.0",
+  "module_path": "plugins.sample_echo.plugin:EchoPlugin"
+}

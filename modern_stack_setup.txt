@@ -1,0 +1,46 @@
+STACK OFICIAL (MODERN-ONLY) - FASTAPI + REACT
+
+1) Backend moderno:
+- Pasta: backend
+- Instalação: pip install -r backend\requirements.txt
+- Configuração: use `.env` único na raiz e ajuste PostgreSQL/Redis.
+- Migração banco:
+  cd backend
+  alembic upgrade head
+- Execução API:
+  python run_api.py
+- Endpoints base:
+  GET  /api/v1/health
+  POST /api/v1/financial/transactions (header obrigatório: Idempotency-Key)
+  POST /api/v1/debug/frontend-log
+
+2) Frontend moderno:
+- Pasta: frontend
+- Instalação: npm install
+- Configuração: usa o mesmo `.env` da raiz (via `envDir`).
+- Execução:
+  npm run dev
+
+3) Política de runtime (obrigatória):
+- O sistema roda somente pela stack moderna (`backend` + `frontend`).
+- O sistema roda somente pela stack moderna (`backend` + `frontend`).
+- Fluxos legados em `apps/`, `templates/` e `static/` são apenas acervo histórico e não fazem parte da operação.
+- Não usar bootstrap Flask legado para desenvolvimento, homologação ou produção.
+
+4) Diretrizes implementadas:
+- Controllers sem regra de banco; regra em application/services com gateways em adapters.
+- Contratos rígidos com Pydantic strict + extra=forbid.
+- Idempotência para operação financeira.
+- Auditoria e trilha de debug (backend, frontend e dados/SQL).
+- Event-driven via Redis Streams com suporte opcional a RabbitMQ.
+
+5) Governança de crescimento (obrigatória):
+- Documento central: GOVERNANCE.md (raiz)
+- Arquitetura: docs/architecture/ARCHITECTURE.md
+- ADR: docs/adr/
+- Check automático backend:
+  cd backend
+  python run_governance.py
+- Check frontend:
+  cd frontend
+  npm run governance:check

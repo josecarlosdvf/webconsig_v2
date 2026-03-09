@@ -81,4 +81,16 @@ uploads/*
 
 # Node (se usar build de assets)
 node_modules/
-package-lock.json
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python modern backend
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/.venv/
+
+# Local infra/artifacts
+*.tsbuildinfo
+backend/alembic/versions/__pycache__/

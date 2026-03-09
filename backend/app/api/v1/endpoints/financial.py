@@ -12,7 +12,7 @@ router = APIRouter(prefix="/financial", tags=["financial"])
     response_model=FinancialCreateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar transação financeira (idempotente)",
-    dependencies=[Depends(require_permission("api:/financial/transactions", "create"))],
+    dependencies=[Depends(require_permission("api:/api/v1/financial/transactions", "create"))],
 )
 def create_transaction(
     payload: FinancialCreateRequest,

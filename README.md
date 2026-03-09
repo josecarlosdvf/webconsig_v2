@@ -76,6 +76,11 @@ Credenciais iniciais do realm importado:
 
 Detalhes de governança em `docs/development/ACCESS_CONTROL_GOVERNANCE.md`.
 
+Rotas administrativas adicionadas no frontend:
+
+- `/admin/permissoes` (matriz visual de políticas e agrupamentos)
+- `/plugins/chat` (chat como plugin com permissão dinâmica)
+
 ## Observação importante
 
 Diretórios legados foram removidos e não fazem parte do runtime oficial.

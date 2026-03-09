@@ -14,6 +14,11 @@ from app.core.security import Principal, principal_subjects
 from app.domain.schemas.access_control import (
     AccessResourceListResponse,
     AccessResourcePayload,
+    AuthorizePayload,
+    AuthorizeResponse,
+    BatchAuthorizePayload,
+    BatchAuthorizeResponse,
+    BatchAuthorizeResult,
     CasbinGroupingListResponse,
     CasbinGroupingPayload,
     CasbinPolicyListResponse,
@@ -21,6 +26,7 @@ from app.domain.schemas.access_control import (
     EnforceCheckPayload,
     EnforceCheckResponse,
 )
+from app.core.casbin_enforcer import enforce
 
 router = APIRouter(prefix="/access-control", tags=["access-control"])
 
@@ -37,6 +43,31 @@ def whoami(principal: Principal = Depends(get_principal)) -> dict:
         "auth_enabled": settings.auth_enabled,
         "authz_enabled": settings.authz_enabled,
     }
+
+
+@router.post("/authorize", response_model=AuthorizeResponse, summary="Validar autorização do usuário atual")
+def authorize_current_user(
+    payload: AuthorizePayload,
+    principal: Principal = Depends(get_principal),
+) -> AuthorizeResponse:
+    allowed = enforce(principal=principal, resource=payload.resource, action=payload.action)
+    return AuthorizeResponse(allowed=allowed, resource=payload.resource, action=payload.action)
+
+
+@router.post("/authorize/batch", response_model=BatchAuthorizeResponse, summary="Validar autorização em lote")
+def authorize_batch(
+    payload: BatchAuthorizePayload,
+    principal: Principal = Depends(get_principal),
+) -> BatchAuthorizeResponse:
+    items = [
+        BatchAuthorizeResult(
+            resource=item.resource,
+            action=item.action,
+            allowed=enforce(principal=principal, resource=item.resource, action=item.action),
+        )
+        for item in payload.items
+    ]
+    return BatchAuthorizeResponse(items=items, total=len(items))
 
 
 @router.get("/resources", response_model=AccessResourceListResponse, summary="Listar catálogo de recursos")

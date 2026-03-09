@@ -22,6 +22,8 @@ Garantir autorização dinâmica e auditável sem alteração de código para ca
 ## Endpoints de governança
 
 - `GET /api/v1/access-control/whoami`
+- `POST /api/v1/access-control/authorize`
+- `POST /api/v1/access-control/authorize/batch`
 - `GET /api/v1/access-control/resources`
 - `POST /api/v1/access-control/resources/upsert`
 - `POST /api/v1/access-control/resources/sync-api`
@@ -32,6 +34,20 @@ Garantir autorização dinâmica e auditável sem alteração de código para ca
 - `POST /api/v1/access-control/grouping`
 - `DELETE /api/v1/access-control/grouping`
 - `POST /api/v1/access-control/check`
+
+## Plugin Chat (dinâmico)
+
+- Plugin: `chat-hub` (manifesto em `backend/plugins/chat_hub/manifest.json`)
+- Endpoints:
+  - `POST /api/v1/plugins/chat/messages`
+  - `POST /api/v1/plugins/chat/messages/list`
+  - `GET /api/v1/plugins/chat/rooms`
+- Permissões recomendadas:
+  - `ui:/plugins/chat` + `view`
+  - `ui:/plugins/chat/send` + `create`
+  - `api:/api/v1/plugins/chat/messages` + `create`
+  - `api:/api/v1/plugins/chat/messages/list` + `view`
+  - `api:/api/v1/plugins/chat/rooms` + `view`
 
 ## Convenções de política
 

@@ -20,7 +20,7 @@ def list_notifications(
     unread_only: bool = Query(default=False),
     actor: str = Depends(get_actor),
     service: NotificationService = Depends(get_notification_service),
-    _: None = Depends(require_permission("api:/notifications", "view")),
+    _: None = Depends(require_permission("api:/api/v1/notifications", "view")),
 ) -> NotificationListResponse:
     return service.list_for_actor(actor=actor, limit=limit, unread_only=unread_only)
 
@@ -31,7 +31,7 @@ def send_notification(
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
     service: NotificationService = Depends(get_notification_service),
-    _: None = Depends(require_permission("api:/notifications/send", "create")),
+    _: None = Depends(require_permission("api:/api/v1/notifications/send", "create")),
 ) -> NotificationResponse:
     return service.send_notification(payload=payload, actor=actor, request_id=request_id)
 
@@ -42,7 +42,7 @@ def read_notification(
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
     service: NotificationService = Depends(get_notification_service),
-    _: None = Depends(require_permission("api:/notifications/read", "edit")),
+    _: None = Depends(require_permission("api:/api/v1/notifications/{notification_id}/read", "edit")),
 ) -> NotificationResponse:
     return service.mark_read(actor=actor, notification_id=notification_id, request_id=request_id)
 
@@ -52,7 +52,7 @@ def read_all_notifications(
     actor: str = Depends(get_actor),
     request_id: str = Depends(get_request_id),
     service: NotificationService = Depends(get_notification_service),
-    _: None = Depends(require_permission("api:/notifications/read-all", "edit")),
+    _: None = Depends(require_permission("api:/api/v1/notifications/read-all", "edit")),
 ) -> dict:
     return service.mark_all_read(actor=actor, request_id=request_id)
 

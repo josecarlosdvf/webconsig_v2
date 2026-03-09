@@ -81,3 +81,34 @@ class EnforceCheckPayload(StrictSchema):
 
 class EnforceCheckResponse(StrictSchema):
     allowed: bool
+
+
+class AuthorizePayload(StrictSchema):
+    resource: str = Field(min_length=1)
+    action: str = Field(min_length=1)
+
+
+class AuthorizeResponse(StrictSchema):
+    allowed: bool
+    resource: str
+    action: str
+
+
+class BatchAuthorizeItem(StrictSchema):
+    resource: str = Field(min_length=1)
+    action: str = Field(min_length=1)
+
+
+class BatchAuthorizePayload(StrictSchema):
+    items: list[BatchAuthorizeItem] = Field(min_length=1, max_length=200)
+
+
+class BatchAuthorizeResult(StrictSchema):
+    resource: str
+    action: str
+    allowed: bool
+
+
+class BatchAuthorizeResponse(StrictSchema):
+    items: list[BatchAuthorizeResult]
+    total: int

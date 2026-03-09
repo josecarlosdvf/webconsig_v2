@@ -148,3 +148,18 @@ class PluginService:
         if not plugin:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plugin não encontrado")
         return self.gateway.list_task_logs(plugin_id=plugin_id, limit=limit)
+
+    def run_task_by_slug(
+        self,
+        *,
+        slug: str,
+        task: str,
+        payload: dict,
+        actor: str,
+        request_id: str,
+    ) -> PluginRunTaskResponse:
+        plugin = self.gateway.get_by_slug(slug)
+        if not plugin:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plugin não encontrado")
+        request = PluginRunTaskRequest(task=task, payload=payload)
+        return self.run_task(plugin_id=plugin.id, payload=request, actor=actor, request_id=request_id)

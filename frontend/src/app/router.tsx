@@ -3,8 +3,10 @@ import { AdminLayout } from "./layouts/AdminLayout";
 import { CustomersPage } from "./pages/CustomersPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { FinancePage } from "./pages/FinancePage";
+import { ChatPluginPage } from "./pages/ChatPluginPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { PermissionsPage } from "./pages/PermissionsPage";
 import { PipelinePage } from "./pages/PipelinePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useAuth } from "../features/auth/AuthProvider";
@@ -46,6 +48,8 @@ const router = createBrowserRouter([
       { path: "crm/clientes", element: <CustomersPage /> },
       { path: "crm/pipeline", element: <PipelinePage /> },
       { path: "erp/financeiro", element: <FinancePage /> },
+      { path: "plugins/chat", element: <ChatPluginPage /> },
+      { path: "admin/permissoes", element: <PermissionsPage /> },
       { path: "admin/configuracoes", element: <SettingsPage /> }
     ]
   },

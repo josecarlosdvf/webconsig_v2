@@ -1,0 +1,6 @@
+{
+  "slug": "chat-hub",
+  "name": "Chat Hub Plugin",
+  "version": "1.0.0",
+  "module_path": "plugins.chat_hub.plugin:ChatHubPlugin"
+}

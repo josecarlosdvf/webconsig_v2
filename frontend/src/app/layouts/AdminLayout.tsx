@@ -1,16 +1,20 @@
-import { BarChart3, BriefcaseBusiness, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, LayoutDashboard, LogOut, MessageCircle, Settings, ShieldCheck, Users } from "lucide-react";
+import { useMemo } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { NotificationCenter } from "../../components/NotificationCenter";
 import { useAuth } from "../../features/auth/AuthProvider";
+import { permissionMapLookup, useBatchPermissions } from "../../features/authz/AccessControlProvider";
 import { useUISettings } from "../../features/ui/UISettingsProvider";
 import { cn } from "../../lib/utils";
 
 const menu = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/crm/clientes", label: "Clientes", icon: Users },
-  { to: "/crm/pipeline", label: "Pipeline", icon: BriefcaseBusiness },
-  { to: "/erp/financeiro", label: "Financeiro", icon: BarChart3 },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings }
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, resource: "ui:/dashboard", action: "view" },
+  { to: "/crm/clientes", label: "Clientes", icon: Users, resource: "ui:/crm/clientes", action: "view" },
+  { to: "/crm/pipeline", label: "Pipeline", icon: BriefcaseBusiness, resource: "ui:/crm/pipeline", action: "view" },
+  { to: "/erp/financeiro", label: "Financeiro", icon: BarChart3, resource: "ui:/erp/financeiro", action: "view" },
+  { to: "/plugins/chat", label: "Chat", icon: MessageCircle, resource: "ui:/plugins/chat", action: "view" },
+  { to: "/admin/permissoes", label: "Permissões", icon: ShieldCheck, resource: "ui:/admin/permissoes", action: "view" },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, resource: "ui:/admin/configuracoes", action: "view" }
 ];
 
 export function AdminLayout() {
@@ -21,6 +25,18 @@ export function AdminLayout() {
   const menuWidth = settings.menuMode === "compact" ? "w-20" : "w-72";
   const asideOrder = settings.menuPosition === "right" ? "order-2" : "order-1";
   const mainOrder = settings.menuPosition === "right" ? "order-1" : "order-2";
+
+  const permissionItems = useMemo(() => menu.map((item) => ({ resource: item.resource, action: item.action })), []);
+  const menuPermissions = useBatchPermissions(permissionItems);
+  const visibleMenu = useMemo(
+    () => {
+      if (!menuPermissions.data) {
+        return menu;
+      }
+      return menu.filter((item) => permissionMapLookup(menuPermissions.data, item.resource, item.action));
+    },
+    [menuPermissions.data]
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -45,7 +61,7 @@ export function AdminLayout() {
 
         {isTopMenu ? (
           <nav className="mb-4 flex flex-wrap gap-2 rounded-2xl bg-slate-900 p-3 text-slate-100 shadow-sm">
-            {menu.map((item) => {
+            {visibleMenu.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
@@ -71,7 +87,7 @@ export function AdminLayout() {
             <aside className={cn("hidden shrink-0 rounded-2xl bg-slate-900 p-4 text-slate-100 shadow-lg lg:block", menuWidth, asideOrder)}>
           <h1 className="mb-5 text-lg font-semibold">Webconsig Admin</h1>
           <nav className="space-y-2">
-            {menu.map((item) => {
+            {visibleMenu.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink

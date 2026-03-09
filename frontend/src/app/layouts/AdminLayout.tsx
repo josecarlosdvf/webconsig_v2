@@ -19,14 +19,15 @@ const menu = [
 
 export function AdminLayout() {
   const { user, logout } = useAuth();
-  const { settings } = useUISettings();
+  const { settings, effectiveSettings, viewportPreset } = useUISettings();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isTopMenu = settings.menuMode === "top";
-  const menuWidth = settings.menuMode === "compact" ? "w-20" : "w-72";
-  const asideOrder = settings.menuPosition === "right" ? "order-2" : "order-1";
-  const mainOrder = settings.menuPosition === "right" ? "order-1" : "order-2";
+  const isTopMenu = effectiveSettings.menuMode === "top";
+  const menuWidth = effectiveSettings.menuMode === "compact" ? "w-20" : "w-72";
+  const asideOrder = effectiveSettings.menuPosition === "right" ? "order-2" : "order-1";
+  const mainOrder = effectiveSettings.menuPosition === "right" ? "order-1" : "order-2";
   const isAdmin = Boolean(user?.roles?.includes("admin") || user?.role === "admin");
+  const isTv = viewportPreset === "tv";
 
   const permissionItems = useMemo(() => menu.map((item) => ({ resource: item.resource, action: item.action })), []);
   const menuPermissions = useBatchPermissions(permissionItems);
@@ -45,8 +46,8 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
-      <div className="mx-auto w-full max-w-screen-2xl px-3 py-3 sm:px-4 lg:px-6 2xl:max-w-[1800px]">
-        <header className="mb-4 flex items-center justify-between rounded-2xl bg-white px-3 py-3 shadow-sm transition-all duration-200 dark:bg-slate-900 sm:px-4">
+      <div className={cn("mx-auto w-full max-w-screen-2xl px-3 py-3 sm:px-4 lg:px-6 2xl:max-w-[1800px]", isTv && "3xl:max-w-[2200px]")}>
+        <header className={cn("mb-4 flex items-center justify-between rounded-2xl bg-white px-3 py-3 shadow-sm transition-all duration-200 dark:bg-slate-900 sm:px-4", isTv && "py-4") }>
           <div className="flex items-center gap-2">
             {!isTopMenu ? (
               <button
@@ -59,7 +60,7 @@ export function AdminLayout() {
               </button>
             ) : null}
             <div>
-            <h2 className="text-lg font-semibold" style={{ color: "var(--brand-color)" }}>Painel Administrativo</h2>
+            <h2 className={cn("text-lg font-semibold", isTv && "text-2xl")} style={{ color: "var(--brand-color)" }}>Painel Administrativo</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">Usuário: {user?.username}</p>
             </div>
           </div>
@@ -138,22 +139,23 @@ export function AdminLayout() {
                   to={item.to}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition",
-                      settings.menuMode === "compact" && "justify-center",
+                        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition",
+                        effectiveSettings.menuMode === "compact" && "justify-center",
                       isActive ? "bg-slate-100 text-slate-900" : "hover:bg-slate-800"
                     )
                   }
                 >
                   <Icon size={16} />
-                  {settings.menuMode === "compact" ? null : item.label}
+                  {effectiveSettings.menuMode === "compact" ? null : item.label}
                 </NavLink>
               );
             })}
           </nav>
 
           <div className="mt-6 rounded-lg border border-slate-700 p-3 text-xs text-slate-300">
-            <p>Layout: {settings.menuMode}</p>
-            <p>Posição: {settings.menuPosition}</p>
+            <p>Layout: {effectiveSettings.menuMode}</p>
+            <p>Posição: {effectiveSettings.menuPosition}</p>
+            <p>Preset: {settings.presetMode === "custom" ? "custom" : settings.presetMode === "auto" ? viewportPreset : settings.manualPreset}</p>
           </div>
         </aside>
           ) : null}

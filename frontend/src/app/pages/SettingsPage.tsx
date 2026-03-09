@@ -22,7 +22,17 @@ type AccessPolicy = {
 };
 
 export function SettingsPage() {
-  const { settings, setTheme, setBrandColor, setMenuMode, setMenuPosition } = useUISettings();
+  const {
+    settings,
+    effectiveSettings,
+    viewportPreset,
+    setTheme,
+    setBrandColor,
+    setMenuMode,
+    setMenuPosition,
+    setPresetMode,
+    setManualPreset,
+  } = useUISettings();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -132,11 +142,41 @@ export function SettingsPage() {
           <h3 className="mb-3 text-sm font-semibold">Menu e navegação</h3>
 
           <div className="mb-3">
+            <label className="mb-1 block text-sm">Modo adaptativo</label>
+            <select
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={settings.presetMode}
+              onChange={(e) => setPresetMode(e.target.value as "auto" | "manual" | "custom")}
+            >
+              <option value="auto">Automático por dispositivo</option>
+              <option value="manual">Preset manual fixo</option>
+              <option value="custom">Customizado (controle direto)</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">Preset detectado agora: {viewportPreset}</p>
+          </div>
+
+          <div className="mb-3">
+            <label className="mb-1 block text-sm">Preset manual</label>
+            <select
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={settings.manualPreset}
+              onChange={(e) => setManualPreset(e.target.value as "mobile" | "tablet" | "desktop" | "tv")}
+              disabled={settings.presetMode !== "manual"}
+            >
+              <option value="mobile">Mobile</option>
+              <option value="tablet">Tablet / Notebook pequeno</option>
+              <option value="desktop">Desktop / Monitor</option>
+              <option value="tv">TV / Painel grande</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
             <label className="mb-1 block text-sm">Tipo de menu</label>
             <select
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-              value={settings.menuMode}
+              value={effectiveSettings.menuMode}
               onChange={(e) => setMenuMode(e.target.value as "sidebar" | "compact" | "top")}
+              disabled={settings.presetMode !== "custom"}
             >
               <option value="sidebar">Lateral completo</option>
               <option value="compact">Lateral compacto</option>
@@ -148,9 +188,9 @@ export function SettingsPage() {
             <label className="mb-1 block text-sm">Posição do menu</label>
             <select
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-              value={settings.menuPosition}
+              value={effectiveSettings.menuPosition}
               onChange={(e) => setMenuPosition(e.target.value as "left" | "right")}
-              disabled={settings.menuMode === "top"}
+              disabled={settings.presetMode !== "custom" || effectiveSettings.menuMode === "top"}
             >
               <option value="left">Esquerda</option>
               <option value="right">Direita</option>
